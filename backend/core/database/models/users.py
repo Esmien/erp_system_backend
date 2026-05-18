@@ -1,7 +1,8 @@
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import BigInteger, String, ForeignKey, Boolean
+from sqlalchemy import BigInteger, String, ForeignKey, Boolean, Enum
 
 from backend.core.database.engine import Base
+from core.config import RoleName
 
 
 class User(Base):
@@ -22,5 +23,5 @@ class Role(Base):
     __tablename__ = "roles"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    name: Mapped[str] = mapped_column(String, unique=True)
+    name: Mapped[RoleName] = mapped_column(Enum(RoleName), unique=True)
     users: Mapped[list["User"]] = relationship(back_populates="role", lazy="selectin")

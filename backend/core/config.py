@@ -1,5 +1,13 @@
+from enum import StrEnum
+
 from pydantic import computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class RoleName(StrEnum):
+    USER = "user"
+    ADMIN = "admin"
+    MANAGER = "manager"
 
 
 class Settings(BaseSettings):
