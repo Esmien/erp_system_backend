@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 import jwt
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -10,7 +10,8 @@ from backend.core.database.engine import get_session
 from backend.core.database.models.users import User
 from backend.core.database.models.rbac import AccessRule, BusinessElement
 from backend.core.config import settings
-from backend.core.database.repository import RegisterRepository
+from backend.core.database.repository import RegisterRepository, AuthRepository
+from backend.core.services.auth_service import AuthService, RegisterService
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
@@ -171,11 +172,38 @@ class PermissionChecker:
         return user
 
 
-async def get_auth_repo(
+async def get_register_repo(
     session: AsyncSession = Depends(get_session),
 ) -> RegisterRepository:
     """Провайдер репозитория для инъекции в роутеры"""
     return RegisterRepository(session)
 
 
-RepositoryDepends = Annotated[RegisterRepository, Depends(get_auth_repo)]
+async def get_auth_repo(
+    session: AsyncSession = Depends(get_session),
+) -> AuthRepository:
+    """Провайдер репозитория для инъекции в роутеры"""
+    return AuthRepository(session)
+
+
+async def get_auth_service(
+    repo: AuthRepository = Depends(get_auth_repo),
+) -> AuthService:
+    return AuthService(repo=repo)
+
+
+async def get_register_service(
+    repo: RegisterRepository = Depends(get_register_repo),
+) -> RegisterService:
+    return RegisterService(repo=repo)
+
+
+RegisterRepositoryDepends = Annotated[RegisterRepository, Depends(get_register_repo)]
+
+AuthRepositoryDepends = Annotated[AuthRepository, Depends(get_auth_repo)]
+
+AuthFormDepends = Annotated[OAuth2PasswordRequestForm, Depends()]
+
+AuthServiceDepends = Annotated[AuthService, Depends(get_auth_service)]
+
+RegisterServiceDepends = Annotated[RegisterService, Depends(get_register_service)]
