@@ -1,5 +1,6 @@
 from pydantic import BaseModel, ConfigDict
 
+
 class RBACPermissions(BaseModel):
     read_permission: bool | None = None
     read_all_permission: bool | None = None
@@ -9,4 +10,4 @@ class RBACPermissions(BaseModel):
     delete_permission: bool | None = None
     delete_all_permission: bool | None = None
 
-    model_config = ConfigDict(extra='forbid')
+    model_config = ConfigDict(extra="forbid")
