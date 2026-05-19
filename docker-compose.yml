@@ -43,6 +43,8 @@ services:
     # Используем твой entrypoint, чтобы дождаться доступности БД
     entrypoint: [ "/bin/bash", "/app/entrypoint.sh" ]
     command: alembic upgrade head
+    volumes:
+      - .:/app
 
   backend:
     build: .
