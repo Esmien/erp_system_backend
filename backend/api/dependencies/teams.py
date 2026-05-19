@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.core.database.engine import get_session
 from backend.core.database.repository.team import TeamRepository
-from backend.core.schemas.team import TeamCreate
+from backend.core.schemas.team import TeamCreate, TeamJoin
 from backend.core.services.team_service import TeamService
 
 
@@ -25,3 +25,5 @@ async def get_team_service(
 TeamServiceDepends = Annotated[TeamService, Depends(get_team_service)]
 
 TeamCreateQuery = Annotated[TeamCreate, Query()]
+
+TeamJoinQuery = Annotated[TeamJoin, Query()]

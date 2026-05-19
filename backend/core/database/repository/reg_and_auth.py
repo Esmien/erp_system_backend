@@ -1,6 +1,6 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, joinedload
 
 from backend.core.constants import RoleName
 from backend.core.database.models import User, Role
@@ -23,9 +23,7 @@ class RegisterRepository:
         # Проверка на существование пользователя с таким же email
         query = select(User).where(User.email == user_in.email)
         result = await self.session.execute(query)
-        user: User | None = result.scalar_one_or_none()
-
-        return True if user else False
+        return result.scalar_one_or_none() is not None
 
     async def get_role_id(self, role_name: RoleName) -> int | None:
         stmt = select(Role).where(Role.name == role_name)
@@ -46,7 +44,7 @@ class AuthRepository:
 
     async def get_user(self, email) -> User | None:
         # Проверяем совпадение пароля и наличие пользователя в БД
-        stmt = select(User).where(User.email == email)
+        stmt = select(User).where(User.email == email).options(joinedload(User.team))
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
