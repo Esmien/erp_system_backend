@@ -29,6 +29,7 @@ async def get_team(
 ):
     """
     Возвращает данные команды и список её участников.
+    Если команда не существует - 404 Not Found
     """
     try:
         team = await service.get_team(team_id=team_id)
@@ -47,6 +48,7 @@ async def get_team(
     summary="Создать новую команду",
     dependencies=[
         Depends(
+            # Проверяет права на создание команды
             PermissionChecker(
                 business_element=BusinessElementName.TEAMS,
                 permission=PermissionName.CREATE,
@@ -59,7 +61,8 @@ async def create_team(
     team_in: TeamCreateBody,
 ):
     """
-    Создает новую пустую команду
+    Создает новую пустую команду.
+    Если такая уже есть - 400 Bad Request
     """
     try:
         team = await service.create_team(team_in)
@@ -84,6 +87,8 @@ async def join_team(
 ):
     """
     Привязывает пользователя к команде по 6-значному коду приглашения.
+    Код неправильный - 404 Not Found
+    Попытка вступить повторно в свою текущую команду - 400 Bad Request
     """
     try:
         team = await service.join_team(

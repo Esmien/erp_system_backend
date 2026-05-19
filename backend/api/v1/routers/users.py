@@ -17,6 +17,9 @@ router = APIRouter(prefix="/users", tags=["Пользователи"])
     summary="Получить инфо о себе",
 )
 async def get_my_info(current_user: CurrentUserDepends):
+    """
+    Возвращает информацию о пользователе
+    """
     return current_user
 
 
@@ -51,7 +54,8 @@ async def delete_me(
     service: UserServiceDepends,
 ):
     """
-    'Мягкое' удаление пользователя
+    'Мягкое' удаление пользователя (is_active=False)
+    Аккаунт восстановить можно через /auth/restore
     """
 
     # Удаляем пользователя, делая его неактивным

@@ -21,8 +21,11 @@ def setup_logging():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """
+    Управляет жизненным циклом приложения
+    """
     setup_logging()
-    logger.info("🚀 API запущено, логгер сконфигурирован")
+    logger.info("API запущено, логгер сконфигурирован")
     logger.info(f"Подключение к БД: {settings.DATABASE_URL.split('@')[-1]}")
 
     yield
@@ -37,7 +40,7 @@ app = FastAPI(
     openapi_prefix="/api/v1",
 )
 
-# Подключаем роутер
+# Подключаем роутеры
 app.include_router(auth_router)
 app.include_router(teams_router)
 app.include_router(users_router)
