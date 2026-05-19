@@ -1,13 +1,12 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-
+from sqlalchemy.orm import selectinload
 
 from backend.core.database.models import User, Role
 from backend.core.schemas.user import UserRegister
 from backend.exceptions import (
     UserExistsError,
     RoleDoesNotExistsError,
-    UserDoesNotExistsError,
 )
 from backend.core.config import RoleName
 
@@ -50,16 +49,16 @@ class AuthRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get_user(self, email) -> User:
+    async def get_user_and_role_by_user_id(self, user_id: int) -> User | None:
+        stmt = select(User).where(User.id == user_id).options(selectinload(User.role))
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def get_user(self, email) -> User | None:
         # Проверяем совпадение пароля и наличие пользователя в БД
         stmt = select(User).where(User.email == email)
         result = await self.session.execute(stmt)
-        user: User | None = result.scalar_one_or_none()
-
-        if user is None:
-            raise UserDoesNotExistsError
-
-        return user
+        return result.scalar_one_or_none()
 
     async def activate_user(self, user: User) -> User:
         self.session.add(user)

@@ -20,3 +20,7 @@ class UserNotActiveError(Exception):
 
 class TeamDoesNotExistsError(Exception):
     pass
+
+
+class AccessDeniedError(Exception):
+    pass

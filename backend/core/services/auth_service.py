@@ -10,6 +10,7 @@ from backend.core.schemas.user import Token, UserRegister
 from backend.exceptions import (
     UserExistsError,
     UserNotActiveError,
+    UserDoesNotExistsError,
 )
 from backend.core.security import (
     verify_password,
@@ -66,7 +67,11 @@ class AuthService:
         Returns:
             Объект пользователя, если учетные данные верны.
         """
-        user: User = await self.repo.get_user(email=email)
+        user = await self.repo.get_user(email=email)
+
+        if not user:
+            raise UserDoesNotExistsError
+
         await verify_password(password, user.hashed_password)
 
         return user
@@ -88,3 +93,13 @@ class AuthService:
         access_token = create_access_token(data={"sub": str(user.id)})
 
         return Token(access_token=access_token, token_type="bearer")
+
+    async def get_active_user_by_id(self, user_id: int) -> User:
+        user = await self.repo.get_user_and_role_by_user_id(user_id)
+
+        if not user:
+            raise UserDoesNotExistsError
+        if not self._check_user_active(user):
+            raise UserNotActiveError
+
+        return user
