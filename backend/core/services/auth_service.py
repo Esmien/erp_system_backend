@@ -11,6 +11,7 @@ from backend.exceptions import (
     UserExistsError,
     UserNotActiveError,
     UserDoesNotExistsError,
+    RoleDoesNotExistsError,
 )
 from backend.core.security import (
     verify_password,
@@ -26,8 +27,15 @@ class RegisterService:
     async def register_user(
         self, user_in: UserRegister, role_name: RoleName = RoleName.USER
     ) -> User:
-        await self.repo.check_user_not_exists(user_in=user_in)
+        is_user_exists = await self.repo.check_user_exists(user_in=user_in)
+
+        if is_user_exists:
+            raise UserExistsError
+
         role_id = await self.repo.get_role_id(role_name=role_name)
+
+        if not role_id:
+            raise RoleDoesNotExistsError
 
         new_user = User(
             email=str(user_in.email),
