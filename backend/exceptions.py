@@ -24,3 +24,7 @@ class TeamDoesNotExistsError(Exception):
 
 class AccessDeniedError(Exception):
     pass
+
+
+class TeamAlreadyExistsError(Exception):
+    pass

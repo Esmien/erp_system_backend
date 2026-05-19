@@ -19,3 +19,7 @@ class TeamRead(TeamBase):
 
 class TeamWithMembersRead(TeamRead):
     members: List[UserRead] = []
+
+
+class TeamCreate(TeamBase):
+    pass
