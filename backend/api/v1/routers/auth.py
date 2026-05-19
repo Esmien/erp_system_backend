@@ -1,14 +1,13 @@
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status
 from loguru import logger
 
-from backend.api.dependencies.permissions import get_current_user
+from backend.api.dependencies.permissions import CurrentUserDepends
 from backend.api.dependencies.reg_and_auth import (
     AuthFormDepends,
     AuthServiceDepends,
     RegisterServiceDepends,
 )
 
-from backend.core.database.models.users import User
 from backend.core.schemas.user import UserRead, Token, UserRegister, UserChangeStatus
 from backend.core.schemas.error_schemas import ErrorResponseSchema
 from backend.exceptions import (
@@ -33,7 +32,7 @@ router = APIRouter(prefix="/auth", tags=["Аутентификация"])
             "model": ErrorResponseSchema,
             "description": "Пользователь уже существует",
         },
-        404: {
+        503: {
             "model": ErrorResponseSchema,
             "description": "Роль не найдена",
         },
@@ -45,8 +44,12 @@ async def register_user(
 ):
     """
     Регистрирует пользователя, назначая ему по умолчанию роль "user"
+    Пользователь существует и активен - 400 Bad Request
+    Роль user не найдена - 503, ошибка на стороне сервера
     """
 
+    # Прогоняем пайплайн регистрации пользователя:
+    # проверка на существование->проверка наличия роли user в БД->присвоение роли и регистрация
     try:
         new_user = await service.register_user(user_in=user_in)
     except UserExistsError:
@@ -56,8 +59,8 @@ async def register_user(
         )
     except RoleDoesNotExistsError:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Запрашиваемая роль не найдена",
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Запрашиваемая роль не найдена, обратитесь в поддержку",
         )
 
     return new_user
@@ -75,18 +78,12 @@ async def restore_user(
 ):
     """
     Восстанавливает активность пользователя после 'мягкого' удаления
-
-    Args:
-        form_data - данные пользователя для восстановления
-        repo - репозиторий для работы с аутентификацией
-
-    Raises:
-        HTTPException: Если пользователь не найден (404), уже активен (409) или неверный пароль (401)
-
-    Returns:
-        UserChangeStatus: Восстановленный пользователь и сообщение об успешном восстановлении
+    Пользователь уже активен - 409 Conflict
+    Неправильные креды - 401 Unauthorized
     """
 
+    # Проверка на корректность кредов и активность.
+    # Если креды в порядке и пользователь неактивен, то активируем
     try:
         user = await service.check_users_creds(form_data.username, form_data.password)
         await service.activate_user(user=user)
@@ -117,20 +114,14 @@ async def login(
 ):
     """
     Аутентификация пользователя
-
-    Args:
-        form_data - данные пользователя для аутентификации
-        service - Сессия БД
-
-    Raises:
-        HTTPException: Если пользователь не найден или не активен (404), неверный лог/пасс (401)
-
-    Returns:
-        Token: Токен доступа
+    Неправильные креды - 401 Unauthorized
+    Пользователь есть, но неактивен - 403 Forbidden
     """
+    # Проверяем креды, получаем JWT-токен
     try:
         user = await service.check_users_creds(form_data.username, form_data.password)
         token = await service.get_auth_token(user=user)
+    # Если что-то не в порядке - сообщаем в респонсе
     except (UserDoesNotExistsError, InvalidPasswordError):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Неверный логин или пароль"
@@ -149,16 +140,10 @@ async def login(
     status_code=status.HTTP_200_OK,
     summary="Выход из системы",
 )
-async def logout(current_user: User = Depends(get_current_user)):
+async def logout(current_user: CurrentUserDepends):
     """
     Выход пользователя из системы
     Примечание: мы используем JWT, поэтому здесь ничего не делаем
-
-    Args:
-        current_user (User): Текущий пользователь
-
-    Returns:
-        Сообщение об успешном выходе
     """
 
     return {"message": "Вы успешно вышли из системы"}
