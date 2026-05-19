@@ -19,3 +19,9 @@ class PermissionName(StrEnum):
     UPDATE_ALL = "update_all_permission"
     DELETE = "delete_permission"
     DELETE_ALL = "delete_all_permission"
+
+
+class TaskStatus(StrEnum):
+    OPEN = "open"
+    IN_PROGRESS = "in_progress"
+    DONE = "done"

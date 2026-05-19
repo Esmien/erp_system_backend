@@ -11,6 +11,7 @@ from backend.core.database.engine import Base
 
 if TYPE_CHECKING:
     from backend.core.database.models.teams import Team
+    from backend.core.database.models.tasks import Task, Comment
 
 
 class User(Base):
@@ -29,6 +30,13 @@ class User(Base):
         ForeignKey("teams.id", ondelete="SET NULL")
     )
     team: Mapped[Team | None] = relationship(back_populates="members")
+    created_tasks: Mapped[list[Task]] = relationship(
+        foreign_keys="[Task.author_id]", back_populates="author"
+    )
+    got_tasks: Mapped[list[Task]] = relationship(
+        foreign_keys="[Task.executor_id]", back_populates="executor"
+    )
+    comments: Mapped[list[Comment]] = relationship(back_populates="author")
 
 
 ALLOWED_ROLES = ", ".join(f"'{role}'" for role in RoleName)
