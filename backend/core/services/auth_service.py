@@ -4,7 +4,10 @@ from backend.core.config import RoleName
 from backend.core.database.models.users import User
 from backend.core.database.repository import AuthRepository, RegisterRepository
 from backend.core.schemas.user import Token, UserRegister
-from backend.exceptions import UserExistsError, UserDoesNotExistsError
+from backend.exceptions import (
+    UserExistsError,
+    UserNotActiveError,
+)
 from backend.core.security import (
     verify_password,
     create_access_token,
@@ -77,7 +80,7 @@ class AuthService:
     async def get_auth_token(self, user: User) -> Token:
         if not self._check_user_active(user=user):
             logger.warning(f"Пользователь {user.name} не активен")
-            raise UserDoesNotExistsError
+            raise UserNotActiveError
 
         access_token = create_access_token(data={"sub": str(user.id)})
 
