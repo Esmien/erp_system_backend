@@ -44,7 +44,7 @@ class AuthRepository:
 
     async def get_user(self, email) -> User | None:
         # Проверяем совпадение пароля и наличие пользователя в БД
-        stmt = select(User).where(User.email == email).options(joinedload(User.team))
+        stmt = select(User).where(User.email == email)
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 

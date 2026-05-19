@@ -28,3 +28,7 @@ class AccessDeniedError(Exception):
 
 class TeamAlreadyExistsError(Exception):
     pass
+
+
+class UserAlreadyInTeamError(Exception):
+    pass
