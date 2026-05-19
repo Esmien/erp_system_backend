@@ -1,3 +1,4 @@
+# Для аннотаций во избежание циклических импортов
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
@@ -9,6 +10,7 @@ from backend.core.constants import RoleName
 from backend.core.database.engine import Base
 
 
+# Для аннотаций во избежание циклических импортов
 if TYPE_CHECKING:
     from backend.core.database.models.teams import Team
     from backend.core.database.models.tasks import Task, Comment
@@ -39,6 +41,8 @@ class User(Base):
     comments: Mapped[list[Comment]] = relationship(back_populates="author")
 
 
+# Собираем роли в строку для кастомных констрейтов на уровне БД.
+# Без них повторные миграции падают
 ALLOWED_ROLES = ", ".join(f"'{role}'" for role in RoleName)
 
 
@@ -47,16 +51,12 @@ class Role(Base):
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     name: Mapped[str] = mapped_column(
-        SQLEnum(
-            RoleName,
-            native_enum=False,
-            length=50,
-            values_callable=lambda obj: [e.value for e in obj],
-        ),
+        SQLEnum(RoleName, native_enum=False, length=50),
         unique=True,
     )
     users: Mapped[list["User"]] = relationship(back_populates="role", lazy="selectin")
 
+    # Создаем кастомные констрейты в Postgres
     __table_args__ = (
         CheckConstraint(f"name IN ({ALLOWED_ROLES})", name="check_valid_role_name"),
     )

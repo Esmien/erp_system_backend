@@ -1,3 +1,4 @@
+# Для аннотаций во избежание циклических импортов
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
@@ -10,10 +11,12 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from backend.core.constants import TaskStatus
 from backend.core.database.engine import Base
 
-
+# Для аннотаций во избежание циклических импортов
 if TYPE_CHECKING:
     from backend.core.database.models.users import User
 
+# Собираем статусы в строку для кастомных констрейтов на уровне БД.
+# Без них повторные миграции падают
 ALLOWED_STATUSES = ", ".join(f"'{status}'" for status in TaskStatus)
 
 
@@ -28,9 +31,9 @@ class Task(Base):
     status: Mapped[str] = mapped_column(
         SQLEnum(
             TaskStatus,
+            # Отключаем нативный Postgres Enum, чтобы миграции не падали
             native_enum=False,
             length=50,
-            values_callable=lambda obj: [e.value for e in obj],
         ),
         default=TaskStatus.OPEN,
     )
@@ -51,6 +54,7 @@ class Task(Base):
         DateTime(timezone=True), server_default=func.now()
     )
 
+    # Создаем кастомные констрейты в Postgres
     __table_args__ = (
         CheckConstraint(
             f"status IN ({ALLOWED_STATUSES})", name="check_valid_status_name"

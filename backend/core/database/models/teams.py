@@ -1,3 +1,4 @@
+# Для аннотаций во избежание циклических импортов
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
@@ -7,6 +8,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.core.database.engine import Base
 
+# Для аннотаций во избежание циклических импортов
 if TYPE_CHECKING:
     from backend.core.database.models.users import User
 

@@ -12,6 +12,7 @@ class BusinessElement(Base):
 
 
 class AccessRule(Base):
+    """Правила доступа: определяет, какие права есть у роли на ресурс"""
     __tablename__ = "access_rules"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
@@ -22,6 +23,7 @@ class AccessRule(Base):
     role_id: Mapped[int] = mapped_column(ForeignKey("roles.id"), nullable=False)
     role = relationship("Role")
 
+    # Все возможные права доступа
     read_permission: Mapped[bool] = mapped_column(Boolean, default=False)
     read_all_permission: Mapped[bool] = mapped_column(Boolean, default=False)
     create_permission: Mapped[bool] = mapped_column(Boolean, default=False)
