@@ -5,6 +5,7 @@ from loguru import logger
 
 from backend.core.config import settings
 from backend.api.v1.routers.auth import router as auth_router
+from backend.api.v1.routers.teams import router as teams_router
 
 
 def setup_logging():
@@ -28,7 +29,13 @@ async def lifespan(app: FastAPI):
     logger.info("🛑 Сервис остановлен")
 
 
-app = FastAPI(title="Business Management Platform", version="0.1.0", lifespan=lifespan)
+app = FastAPI(
+    title="Business Management Platform",
+    version="0.1.0",
+    lifespan=lifespan,
+    openapi_prefix="/api/v1",
+)
 
 # Подключаем роутер
-app.include_router(auth_router, prefix="/api/v1")
+app.include_router(auth_router)
+app.include_router(teams_router)

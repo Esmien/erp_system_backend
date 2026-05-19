@@ -1,9 +1,9 @@
 from fastapi import APIRouter, HTTPException, status, Depends
 
 from backend.api.dependencies.permissions import PermissionChecker
-from backend.api.dependencies.teams import TeamServiceDepends
+from backend.api.dependencies.teams import TeamServiceDepends, TeamCreateQuery
 from backend.core.constants import BusinessElementName, PermissionName
-from backend.core.schemas.team import TeamWithMembersRead, TeamRead, TeamCreate
+from backend.core.schemas.team import TeamWithMembersRead, TeamRead
 from backend.exceptions import TeamDoesNotExistsError, TeamAlreadyExistsError
 
 router = APIRouter(prefix="/teams", tags=["Команды"])
@@ -47,8 +47,8 @@ async def get_team(
     ],
 )
 async def create_team(
-    team_in: TeamCreate,
     service: TeamServiceDepends,
+    team_in: TeamCreateQuery,
 ):
     """
     Создает новую пустую команду
