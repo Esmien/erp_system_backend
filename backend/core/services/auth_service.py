@@ -2,7 +2,10 @@ from loguru import logger
 
 from backend.core.config import RoleName
 from backend.core.database.models.users import User
-from backend.core.database.repository import AuthRepository, RegisterRepository
+from backend.core.database.repository.reg_and_auth import (
+    AuthRepository,
+    RegisterRepository,
+)
 from backend.core.schemas.user import Token, UserRegister
 from backend.exceptions import (
     UserExistsError,

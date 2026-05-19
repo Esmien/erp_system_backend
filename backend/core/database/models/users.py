@@ -28,7 +28,7 @@ class User(Base):
     team_id: Mapped[int | None] = mapped_column(
         ForeignKey("teams.id", ondelete="SET NULL")
     )
-    team: Mapped[Team| None] = relationship(back_populates="members")
+    team: Mapped[Team | None] = relationship(back_populates="members")
 
 
 class Role(Base):

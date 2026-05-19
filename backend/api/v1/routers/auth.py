@@ -1,12 +1,13 @@
 from fastapi import APIRouter, HTTPException, status, Depends
 from loguru import logger
 
-from backend.api.deps import (
-    get_current_user,
+from backend.api.dependencies.permissions import get_current_user
+from backend.api.dependencies.reg_and_auth import (
     AuthFormDepends,
     AuthServiceDepends,
     RegisterServiceDepends,
 )
+
 from backend.core.database.models.users import User
 from backend.core.schemas.user import UserRead, Token, UserRegister, UserChangeStatus
 from backend.core.schemas.error_schemas import ErrorResponseSchema
