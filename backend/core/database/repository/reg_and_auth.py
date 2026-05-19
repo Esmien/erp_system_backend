@@ -4,10 +4,6 @@ from sqlalchemy.orm import selectinload
 
 from backend.core.database.models import User, Role
 from backend.core.schemas.user import UserRegister
-from backend.exceptions import (
-    UserExistsError,
-    RoleDoesNotExistsError,
-)
 from backend.core.config import RoleName
 
 
@@ -23,26 +19,20 @@ class RegisterRepository:
 
         return new_user
 
-    async def check_user_not_exists(self, user_in: UserRegister) -> bool:
+    async def check_user_exists(self, user_in: UserRegister) -> bool:
         # Проверка на существование пользователя с таким же email
         query = select(User).where(User.email == user_in.email)
         result = await self.session.execute(query)
         user: User | None = result.scalar_one_or_none()
 
-        if user is not None:
-            raise UserExistsError
+        return True if user else False
 
-        return True
-
-    async def get_role_id(self, role_name: RoleName) -> int:
+    async def get_role_id(self, role_name: RoleName) -> int | None:
         stmt = select(Role).where(Role.name == role_name)
         result_role = await self.session.execute(stmt)
         role_obj: Role | None = result_role.scalar_one_or_none()
 
-        if role_obj is None:
-            raise RoleDoesNotExistsError
-
-        return role_obj.id
+        return role_obj.id if role_obj else None
 
 
 class AuthRepository:
