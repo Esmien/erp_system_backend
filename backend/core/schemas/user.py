@@ -46,6 +46,14 @@ class UserChangeStatus(BaseModel):
     user: UserRead
 
 
+class UserUpdate(BaseModel):
+    name: str | None = Field(default=None, examples=["Алексей"])
+    surname: str | None = Field(default=None, examples=["Алексеевич"])
+    last_name: str | None = Field(default=None, examples=["Алексеев"])
+
+    model_config = ConfigDict(extra="forbid")
+
+
 class Token(BaseModel):
     access_token: str
     token_type: str
