@@ -55,8 +55,14 @@ class PermissionChecker:
     """Динамический чекер прав доступа через RBAC"""
 
     def __init__(self, business_element: str, permission: str):
-        self.business_element = business_element
-        self.permission = permission
+        self.business_element = (
+            business_element.value
+            if hasattr(business_element, "value")
+            else business_element
+        )
+        self.permission = (
+            permission.value if hasattr(permission, "value") else permission
+        )
 
     async def __call__(
         self,
