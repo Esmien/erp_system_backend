@@ -42,7 +42,7 @@ async def get_current_user(
     # Декодируем токен и проверяем его валидность и вытаскиваем id пользователя
     try:
         payload = jwt.decode(
-            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+            jwt=token, key=settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
         )
         user_id = payload.get("sub")
 
@@ -53,7 +53,7 @@ async def get_current_user(
 
     # Проверяем, активен ли пользователь (is_active=True)
     try:
-        user = await auth_service.get_active_user_by_id(int(user_id))
+        user = await auth_service.get_active_user_by_id(user_id=int(user_id))
         return user
     except (UserDoesNotExistsError, UserNotActiveError):
         raise credentials_exception

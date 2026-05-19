@@ -24,7 +24,7 @@ async def get_register_repo(
     Returns:
         Инстанс репозитория регистрации с проброшенной сессией
     """
-    return RegisterRepository(session)
+    return RegisterRepository(session=session)
 
 
 async def get_auth_repo(
@@ -39,7 +39,7 @@ async def get_auth_repo(
     Returns:
         Инстанс репозитория RBAC с проброшенной сессией
     """
-    return AuthRepository(session)
+    return AuthRepository(session=session)
 
 
 async def get_auth_service(

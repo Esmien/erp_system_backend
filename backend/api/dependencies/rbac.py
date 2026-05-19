@@ -20,7 +20,7 @@ async def get_rbac_repo(
     Returns:
         Инстанс репозитория RBAC с проброшенной сессией
     """
-    return RbacRepository(session)
+    return RbacRepository(session=session)
 
 
 async def get_rbac_service(

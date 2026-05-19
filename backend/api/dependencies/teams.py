@@ -21,7 +21,7 @@ async def get_team_repo(
     Returns:
         Инстанс репозитория команд с проброшенной сессией
     """
-    return TeamRepository(session)
+    return TeamRepository(session=session)
 
 
 async def get_team_service(

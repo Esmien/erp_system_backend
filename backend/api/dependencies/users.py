@@ -21,7 +21,7 @@ async def get_user_repo(
     Returns:
         Инстанс репозитория пользователей с проброшенной сессией
     """
-    return UserRepository(session)
+    return UserRepository(session=session)
 
 
 async def get_user_service(
