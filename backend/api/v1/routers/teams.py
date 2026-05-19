@@ -1,10 +1,19 @@
 from fastapi import APIRouter, HTTPException, status, Depends
 
 from backend.api.dependencies.permissions import PermissionChecker
-from backend.api.dependencies.teams import TeamServiceDepends, TeamCreateQuery
+from backend.api.dependencies.teams import (
+    TeamServiceDepends,
+    TeamCreateQuery,
+    TeamJoinQuery,
+)
+from backend.api.dependencies.users import CurrentUserDepends
 from backend.core.constants import BusinessElementName, PermissionName
 from backend.core.schemas.team import TeamWithMembersRead, TeamRead
-from backend.exceptions import TeamDoesNotExistsError, TeamAlreadyExistsError
+from backend.exceptions import (
+    TeamDoesNotExistsError,
+    TeamAlreadyExistsError,
+    UserAlreadyInTeamError,
+)
 
 router = APIRouter(prefix="/teams", tags=["Команды"])
 
@@ -60,4 +69,35 @@ async def create_team(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Команда с таким названием уже существует",
+        )
+
+
+@router.post(
+    path="/join",
+    response_model=TeamRead,
+    status_code=status.HTTP_200_OK,
+    summary="Присоединиться к команде по коду",
+)
+async def join_team(
+    join_data: TeamJoinQuery,
+    service: TeamServiceDepends,
+    current_user: CurrentUserDepends,
+):
+    """
+    Привязывает пользователя к команде по 6-значному коду приглашения.
+    """
+    try:
+        team = await service.join_team(
+            user=current_user, invite_code=join_data.invite_code
+        )
+        return team
+    except TeamDoesNotExistsError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Команда с таким кодом не найдена",
+        )
+    except UserAlreadyInTeamError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Вы уже состоите в команде",
         )
