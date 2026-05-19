@@ -12,3 +12,7 @@ class RoleDoesNotExistsError(Exception):
 
 class InvalidPasswordError(Exception):
     pass
+
+
+class UserNotActiveError(Exception):
+    pass

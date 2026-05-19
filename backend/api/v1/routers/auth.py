@@ -15,6 +15,7 @@ from backend.exceptions import (
     RoleDoesNotExistsError,
     InvalidPasswordError,
     UserDoesNotExistsError,
+    UserNotActiveError,
 )
 
 
@@ -88,16 +89,11 @@ async def restore_user(
     try:
         user = await service.check_users_creds(form_data.username, form_data.password)
         await service.activate_user(user=user)
-    except UserDoesNotExistsError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Пользователь с таким email не зарегистрирован",
-        )
     except UserExistsError:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="Пользователь уже активен"
         )
-    except InvalidPasswordError:
+    except (UserDoesNotExistsError, InvalidPasswordError):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Неверный логин или пароль"
         )
@@ -134,14 +130,14 @@ async def login(
     try:
         user = await service.check_users_creds(form_data.username, form_data.password)
         token = await service.get_auth_token(user=user)
-    except UserDoesNotExistsError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Пользователь не зарегистрирован",
-        )
-    except InvalidPasswordError:
+    except (UserDoesNotExistsError, InvalidPasswordError):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Неверный логин или пароль"
+        )
+    except UserNotActiveError:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Аккаунт удален или деактивирован",
         )
 
     return token
