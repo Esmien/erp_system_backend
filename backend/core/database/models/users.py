@@ -1,9 +1,16 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import BigInteger, String, ForeignKey, Boolean
 from sqlalchemy import Enum as SQLEnum
 
 from backend.core.database.engine import Base
 from backend.core.config import RoleName
+
+
+if TYPE_CHECKING:
+    from backend.core.database.models.teams import Team
 
 
 class User(Base):
@@ -18,6 +25,10 @@ class User(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     role_id: Mapped[int] = mapped_column(ForeignKey("roles.id"))
     role: Mapped["Role"] = relationship(back_populates="users", lazy="selectin")
+    team_id: Mapped[int | None] = mapped_column(
+        ForeignKey("teams.id", ondelete="SET NULL")
+    )
+    team: Mapped[Team| None] = relationship(back_populates="members")
 
 
 class Role(Base):
