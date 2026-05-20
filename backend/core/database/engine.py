@@ -1,7 +1,7 @@
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.orm import DeclarativeBase
 
 from backend.core.config import settings
@@ -11,13 +11,23 @@ class Base(DeclarativeBase):
     pass
 
 
+# Движок подключения к БД
 engine = create_async_engine(settings.DATABASE_URL, echo=False)
+
+# Фабрика асинхронных сессий БД
 async_session_maker = async_sessionmaker(
     bind=engine, expire_on_commit=False, autoflush=False
 )
 
 
-async def get_session():
+async def get_session() -> AsyncGenerator[AsyncSession, None]:
+    """
+    Провайдер сессии БД для FastAPI Depends.
+    Открывает сессию, отдаёт её, закрывает после завершения запроса.
+
+    Yields:
+        Активная асинхронная сессия БД
+    """
     async with async_session_maker() as session:
         yield session
 
@@ -29,7 +39,7 @@ async def get_repository[T](repo_class: type[T]) -> AsyncGenerator[T, None]:
     Сам открывает сессию, создает репозиторий и закрывает всё за собой.
 
     Yields:
-        Подключение к репозиторию с проброшенной сессией
+        Экземпляр репозитория repo_class с активной сессией
     """
     async with async_session_maker() as session:
-        yield repo_class(session)
+        yield repo_class(session=session)
