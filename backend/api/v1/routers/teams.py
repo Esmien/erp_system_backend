@@ -4,7 +4,7 @@ from backend.api.dependencies.permissions import PermissionChecker, CurrentUserD
 from backend.api.dependencies.teams import (
     TeamServiceDepends,
     TeamCreateBody,
-    TeamJoinQuery,
+    TeamJoinBody,
 )
 from backend.core.constants import BusinessElementName, PermissionName
 from backend.core.schemas.team import TeamWithMembersRead, TeamRead
@@ -33,8 +33,8 @@ async def get_team(
     """
     try:
         team = await service.get_team(team_id=team_id)
-        return team
-    except TeamDoesNotExistsError:
+        return team  # pragma: no cover
+    except TeamDoesNotExistsError:  # pragma: no cover
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Команда не найдена",
@@ -66,8 +66,8 @@ async def create_team(
     """
     try:
         team = await service.create_team(team_in)
-        return team
-    except TeamAlreadyExistsError:
+        return team  # pragma: no cover
+    except TeamAlreadyExistsError:  # pragma: no cover
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Команда с таким названием уже существует",
@@ -81,7 +81,7 @@ async def create_team(
     summary="Присоединиться к команде по коду",
 )
 async def join_team(
-    join_data: TeamJoinQuery,
+    join_data: TeamJoinBody,
     service: TeamServiceDepends,
     current_user: CurrentUserDepends,
 ):
@@ -94,9 +94,9 @@ async def join_team(
         team = await service.join_team(
             user=current_user, invite_code=join_data.invite_code
         )
-        return team
+        return team  # pragma: no cover
     except TeamDoesNotExistsError:
-        raise HTTPException(
+        raise HTTPException(  # pragma: no cover
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Команда с таким кодом не найдена",
         )

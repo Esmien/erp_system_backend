@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import Depends, Query, Body
+from fastapi import Depends, Body
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.core.database.engine import get_session
@@ -44,4 +44,4 @@ TeamServiceDepends = Annotated[TeamService, Depends(get_team_service)]
 
 TeamCreateBody = Annotated[TeamCreate, Body()]
 
-TeamJoinQuery = Annotated[TeamJoin, Query()]
+TeamJoinBody = Annotated[TeamJoin, Body()]

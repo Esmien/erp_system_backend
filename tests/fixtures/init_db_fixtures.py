@@ -10,7 +10,7 @@ from backend.core.database.models import AccessRule, Role, User, BusinessElement
 from backend.core.schemas.rbac import RBACPermissions
 from backend.core.security import get_password_hash
 
-# --- 1. НАСТРОЙКА БАЗЫ ---
+
 TEST_DB_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/test_business_db"
 
 test_engine = create_async_engine(TEST_DB_URL, echo=False, poolclass=NullPool)
@@ -38,7 +38,6 @@ TEAM_NAME = "Dummy name"
 TEAM_CODE = "111111"
 
 
-# --- 2. ТВОИ ФУНКЦИИ-ПОМОЩНИКИ (без @pytest.fixture) ---
 async def _get_or_create(session: AsyncSession, model, **kwargs):
     query = select(model).filter_by(**kwargs)
     result = await session.execute(query)
@@ -72,7 +71,6 @@ async def _create_access_rule_if_not_exists(
 
 
 async def init_db(session: AsyncSession):
-    # Твой код заполнения ролей и прав...
     admin_role = await _get_or_create(session, Role, name="admin")
     manager_role = await _get_or_create(session, Role, name="manager")
     user_role = await _get_or_create(session, Role, name="user")
@@ -138,11 +136,9 @@ async def init_db(session: AsyncSession):
             permissions=permissions_map["user"],
         )
 
-    # Вот тут у тебя происходит финальное сохранение ролей и юзеров
     await session.commit()
 
 
-# --- 3. ГЛАВНАЯ ФИКСТУРА ---
 @pytest.fixture(autouse=True)
 async def prepare_database():
     async with test_engine.begin() as conn:
@@ -151,12 +147,10 @@ async def prepare_database():
 
     # Открываем сессию для заливки данных
     async with test_async_session_maker() as session:
-        # Сначала создаем команду
         team = Team(name=TEAM_NAME, invite_code=TEAM_CODE)
         session.add(team)
         await session.commit()
 
-        # Теперь передаем ЭТУ ЖЕ открытую сессию в твой генератор данных
         await init_db(session)
 
     yield
