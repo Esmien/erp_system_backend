@@ -218,3 +218,5 @@ __marimo__/
 /check_db.py
 
 project_context.txt
+/.coverage
+/.coveragerc
