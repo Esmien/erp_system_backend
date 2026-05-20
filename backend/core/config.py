@@ -1,4 +1,3 @@
-
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -9,6 +8,13 @@ class BaseModelConfig(BaseSettings):
 class LoggerConfig(BaseModelConfig):
     LOG_LEVEL: str = "DEBUG"
     LOG_SERIALIZE: bool = False  # Если True, будет писать в JSON
+
+
+class SecurityConfig(BaseModelConfig):
+    # Security
+    SECRET_KEY: str
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
 
 class DatabaseConfig(BaseModelConfig):
@@ -40,6 +46,8 @@ class Settings(BaseModelConfig):
     db: DatabaseConfig = DatabaseConfig()
     redis: RedisConfig = RedisConfig()
     inv_code: InviteCodeConfig = InviteCodeConfig()
+    logger: LoggerConfig = LoggerConfig()
+    security: SecurityConfig = SecurityConfig()
 
 
 settings = Settings()

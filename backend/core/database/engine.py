@@ -12,7 +12,7 @@ class Base(DeclarativeBase):
 
 
 # Движок подключения к БД
-engine = create_async_engine(settings.DATABASE_URL, echo=False)
+engine = create_async_engine(settings.db.database_url, echo=False)
 
 # Фабрика асинхронных сессий БД
 async_session_maker = async_sessionmaker(
