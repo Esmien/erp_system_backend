@@ -94,6 +94,17 @@ async def init_db(session: AsyncSession):
             await session.flush()
             await session.refresh(new_user)
 
+    inactive_user = User(
+        email="inactive_user@user.com",
+        hashed_password=await get_password_hash("user"),
+        role_id=roles_map["user"].id,
+        name="Inactive user",
+        is_active=False,
+    )
+    session.add(inactive_user)
+    await session.flush()
+    await session.refresh(inactive_user)
+
     permissions_map = {
         "admin": RBACPermissions(
             read_all_permission=True,

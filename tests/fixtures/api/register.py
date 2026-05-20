@@ -4,7 +4,7 @@ import pytest
 @pytest.fixture
 def data_for_register():
     return {
-        "email": "user@example.com",
+        "email": "user1@example.com",
         "name": "Иван",
         "surname": "Иванович",
         "last_name": "Иванов",
@@ -17,12 +17,12 @@ def data_for_register():
 @pytest.fixture
 def success_register_response():
     return {
-        "email": "user@example.com",
+        "email": "user1@example.com",
         "name": "Иван",
         "surname": "Иванович",
         "last_name": "Иванов",
         "team_id": None,
-        "id": 4,
+        "id": 5,
         "is_active": True,
         "role": {"name": "user", "id": 3},
     }
