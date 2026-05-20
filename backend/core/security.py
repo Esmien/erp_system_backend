@@ -94,5 +94,7 @@ def create_access_token(
 
     # Собираем токен со всеми необходимыми данными
     return jwt.encode(
-        payload=curr_data, key=settings.SECRET_KEY, algorithm=settings.ALGORITHM
+        payload=curr_data,
+        key=settings.security.SECRET_KEY,
+        algorithm=settings.security.ALGORITHM,
     )

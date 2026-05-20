@@ -51,7 +51,12 @@ class Role(Base):
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     name: Mapped[str] = mapped_column(
-        SQLEnum(RoleName, native_enum=False, length=50),
+        SQLEnum(
+            RoleName,
+            native_enum=False,
+            length=50,
+            values_callable=lambda obj: [e.value for e in obj],
+        ),
         unique=True,
     )
     users: Mapped[list["User"]] = relationship(back_populates="role", lazy="selectin")

@@ -34,6 +34,7 @@ class Task(Base):
             # Отключаем нативный Postgres Enum, чтобы миграции не падали
             native_enum=False,
             length=50,
+            values_callable=lambda obj: [e.value for e in obj],
         ),
         default=TaskStatus.OPEN,
     )

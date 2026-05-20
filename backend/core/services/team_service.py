@@ -17,7 +17,7 @@ class TeamService:
         self.repo = repo
 
     @staticmethod
-    def generate_invite_code(length: int = settings.inv_code) -> str:
+    def generate_invite_code(length: int = settings.inv_code.CODE_LENGTH) -> str:
         """
         Генерирует криптографически надежный инвайт-код из заглавных букв и цифр.
 

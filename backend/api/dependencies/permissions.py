@@ -42,7 +42,9 @@ async def get_current_user(
     # Декодируем токен и проверяем его валидность и вытаскиваем id пользователя
     try:
         payload = jwt.decode(
-            jwt=token, key=settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+            jwt=token,
+            key=settings.security.SECRET_KEY,
+            algorithms=[settings.security.ALGORITHM],
         )
         user_id = payload.get("sub")
 
