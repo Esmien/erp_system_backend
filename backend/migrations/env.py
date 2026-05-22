@@ -1,7 +1,7 @@
 import sys
 from pathlib import Path
 
-from backend.core.database import Base
+from backend.core.database import Base, load_all_models
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
@@ -29,6 +29,7 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
+load_all_models()
 target_metadata = Base.metadata
 config.set_main_option("sqlalchemy.url", settings.db.database_url)
 

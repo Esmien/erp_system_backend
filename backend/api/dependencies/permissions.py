@@ -18,7 +18,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 async def get_current_user(
     auth_service: AuthServiceDepends,
-    token: str = Depends(oauth2_scheme)
+    token: str = Depends(oauth2_scheme),
 ) -> User:
     """
     Возвращает текущего активного пользователя по JWT токену

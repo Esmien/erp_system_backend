@@ -1,7 +1,9 @@
 import pytest
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.pool import NullPool
+
+from backend.core.database import load_all_models
 
 from backend.api.dependencies.permissions import get_current_user
 from backend.api.main import app
@@ -11,6 +13,9 @@ from backend.rbac.schemas import RBACPermissions
 from backend.core.security import get_password_hash
 from backend.team.models import Team
 from backend.user.models import User, Role
+
+load_all_models()
+
 
 TEST_DB_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/test_business_db"
 
@@ -71,6 +76,16 @@ async def _create_access_rule_if_not_exists(
         session.add(rule)
 
 
+PASSWORDS_CACHE = {}
+
+
+async def get_cached_password_hash(password: str) -> str:
+    """Возвращает закешированный хеш или генерирует новый, если его еще нет"""
+    if password not in PASSWORDS_CACHE:
+        PASSWORDS_CACHE[password] = await get_password_hash(password)
+    return PASSWORDS_CACHE[password]
+
+
 async def init_db(session: AsyncSession):
     admin_role = await _get_or_create(session, Role, name="admin")
     manager_role = await _get_or_create(session, Role, name="manager")
@@ -87,7 +102,7 @@ async def init_db(session: AsyncSession):
         if not existing_user:
             new_user = User(
                 email=email,
-                hashed_password=await get_password_hash(role_name),
+                hashed_password=await get_cached_password_hash(role_name),
                 role_id=roles_map[role_name].id,
                 name=role_name.title(),
             )
@@ -97,7 +112,7 @@ async def init_db(session: AsyncSession):
 
     inactive_user = User(
         email="inactive_user@user.com",
-        hashed_password=await get_password_hash("user"),
+        hashed_password=await get_cached_password_hash("user"),
         role_id=roles_map["user"].id,
         name="Inactive user",
         is_active=False,
@@ -151,21 +166,41 @@ async def init_db(session: AsyncSession):
     await session.commit()
 
 
-@pytest.fixture(autouse=True)
-async def prepare_database():
+# 1. Фикстура для структуры БД (выполняется 1 раз за сессию)
+@pytest.fixture(scope="session", autouse=True)
+async def prepare_schema():
+    """Создает таблицы перед началом тестов и удаляет в конце"""
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
 
-    # Открываем сессию для заливки данных
+    yield
+
+    async with test_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+
+
+# 2. Фикстура для данных (выполняется перед каждым тестом)
+@pytest.fixture(scope="function", autouse=True)
+async def prepare_data():
+    """Очищает таблицы и заливает базовые данные для каждого теста"""
+
+    # 2.1 Жестко очищаем все таблицы
+    async with test_engine.begin() as conn:
+        # Собираем имена всех таблиц из метадаты
+        table_names = ", ".join(Base.metadata.tables.keys())
+
+        if table_names:
+            # RESTART IDENTITY - сбрасывает счетчики (id=1)
+            # CASCADE - игнорирует foreign keys и сносит связанные данные
+            await conn.execute(
+                text(f"TRUNCATE {table_names} RESTART IDENTITY CASCADE;")
+            )
+
+    # 2.2 Заливаем "чистые" дефолтные данные
     async with test_async_session_maker() as session:
         team = Team(name=TEAM_NAME, invite_code=TEAM_CODE)
         session.add(team)
         await session.commit()
 
         await init_db(session)
-
-    yield
-
-    async with test_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
