@@ -27,10 +27,9 @@ app = FastAPI(
     title="Business Management Platform",
     version="0.1.0",
     lifespan=lifespan,
-    openapi_prefix="/api/v1",
 )
 
 # Подключаем роутеры
-app.include_router(auth_router)
-app.include_router(teams_router)
-app.include_router(users_router)
+app.include_router(auth_router, prefix="/v1")
+app.include_router(teams_router, prefix="/v1")
+app.include_router(users_router, prefix="/v1")
