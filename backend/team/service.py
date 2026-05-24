@@ -2,15 +2,14 @@ import secrets
 import string
 
 from backend.core.config import settings
-from backend.team.models import Team
 from backend.team.repository import TeamRepository
-from backend.team.schemas import TeamCreate
+from backend.team.schemas import TeamCreate, TeamWithMembersRead, TeamRead
 from backend.exceptions import (
     TeamDoesNotExistsError,
     TeamAlreadyExistsError,
     UserAlreadyInTeamError,
 )
-from backend.user.models import User
+from backend.user.schemas import UserRead
 
 
 class TeamService:
@@ -31,7 +30,7 @@ class TeamService:
         alphabet = string.ascii_uppercase + string.digits
         return "".join(secrets.choice(alphabet) for _ in range(length))
 
-    async def get_team(self, team_id: int) -> Team:
+    async def get_team(self, team_id: int) -> TeamWithMembersRead:
         """
         Получает полную модель команды по ее ID
 
@@ -51,7 +50,7 @@ class TeamService:
 
         return team
 
-    async def create_team(self, team_in: TeamCreate) -> Team:
+    async def create_team(self, team_in: TeamCreate) -> TeamRead:
         """
         Создает команду
 
@@ -81,7 +80,7 @@ class TeamService:
 
         return await self.repo.create_team(team_in=team_in, invite_code=code)
 
-    async def join_team(self, user: User, invite_code: str) -> Team:
+    async def join_team(self, user: UserRead, invite_code: str) -> TeamRead:
         """
         Регистрирует пользователя в команде
 
@@ -104,5 +103,5 @@ class TeamService:
         if not team:
             raise TeamDoesNotExistsError
 
-        await self.repo.add_user_to_team(user=user, team_id=team.id)
+        await self.repo.add_user_to_team(user_id=user.id, team_id=team.id)
         return team

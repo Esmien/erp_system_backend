@@ -7,7 +7,7 @@ import pytest_asyncio
 from backend.core.security import get_password_hash
 from backend.user.models import User
 from backend.user.repository import RegisterRepository, AuthRepository, UserRepository
-from backend.user.schemas import UserRegister
+from backend.user.schemas import UserRegister, UserDTO
 from backend.user.service import RegisterService, AuthService, UserService
 from tests.fixtures.init_db_fixtures import test_async_session_maker
 
@@ -47,8 +47,9 @@ def user_out():
 
 
 @pytest.fixture
-def user_to_insert():
-    return User(
+def user_to_update():
+    return UserDTO(
+        id=1,
         email="test@test.com",
         hashed_password=HASHED_PASSWORD,
         name="Test",

@@ -50,16 +50,16 @@ async def test_get_user(auth_repo, email, exists):
 
 @pytest.mark.parametrize("initial_active_status", [True, False])
 async def test_activate_user(auth_repo, db_session, initial_active_status):
-    stmt = select(User).where(User.email == "admin@admin.com")
+    testing_email = "admin@admin.com"
+    stmt = select(User).where(User.email == testing_email)
     user = (await db_session.execute(stmt)).scalar_one()
     user.is_active = initial_active_status
 
     db_session.add(user)
     await db_session.commit()
+    await db_session.refresh(user)
 
-    activated_user = await auth_repo.activate_user(user=user)
+    activated_user = await auth_repo.activate_user(user_email=testing_email)
 
     assert activated_user.is_active is True
-
-    await db_session.refresh(user)
     assert user.is_active is True

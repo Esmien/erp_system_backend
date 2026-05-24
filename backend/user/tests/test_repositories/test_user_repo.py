@@ -26,7 +26,7 @@ async def test_update_user(user_repo, db_session, update_dict):
     original_surname = user.surname
     original_last_name = user.last_name
 
-    await user_repo.update_user(user=user, update_dict=update_dict)
+    await user_repo.update_user(user_id=user.id, update_dict=update_dict)
     await db_session.refresh(user)
 
     assert user.name == update_dict.get("name", original_name)
@@ -40,7 +40,7 @@ async def test_soft_delete_user(user_repo, db_session):
 
     assert user.is_active is True
 
-    await user_repo.soft_delete_user(user=user)
+    await user_repo.soft_delete_user(user_id=user.id)
     await db_session.refresh(user)
 
     assert user.is_active is False

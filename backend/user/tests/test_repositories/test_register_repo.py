@@ -4,6 +4,7 @@ import pytest
 
 from backend.core.constants import RoleName
 from backend.user.models import Role
+from backend.user.schemas import UserCreateDTO
 
 
 @pytest.mark.parametrize(
@@ -40,8 +41,14 @@ async def test_user_exists(register_repo, user_in, checking_email, expected_resu
     assert result == expected_result
 
 
-async def test_register_user(register_repo, user_to_insert, user_out):
-    registered_user = await register_repo.register_user(new_user=user_to_insert)
+async def test_register_user(register_repo, user_in, user_out):
+    new_user = UserCreateDTO(
+        **user_in.model_dump(exclude={"password", "repeat_password"}),
+        hashed_password="Fake hash",
+        role_id=1,
+        is_active=True,
+    )
+    registered_user = await register_repo.register_user(user_to_register=new_user)
 
     assert registered_user.id is not None
     assert registered_user.email == user_out.email

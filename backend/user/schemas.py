@@ -15,13 +15,13 @@ class UserBase(BaseModel):
     name: str = Field(..., examples=["Иван"])
     surname: str | None = Field(default=None, examples=["Иванович"])
     last_name: str | None = Field(default=None, examples=["Иванов"])
-    team_id: int | None = Field(default=None)
 
 
 class UserRead(UserBase):
     id: int
     is_active: bool
     role: RoleRead
+    team_id: int | None = Field(default=None)
     model_config = ConfigDict(from_attributes=True)
 
 

@@ -199,8 +199,7 @@ async def prepare_data():
 
     # 2.2 Заливаем "чистые" дефолтные данные
     async with test_async_session_maker() as session:
+        await init_db(session)
         team = Team(name=TEAM_NAME, invite_code=TEAM_CODE)
         session.add(team)
         await session.commit()
-
-        await init_db(session)

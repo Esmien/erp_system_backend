@@ -23,7 +23,7 @@ class RegisterRepository:
         Returns:
             Модель зарегистрированного пользователя
         """
-        new_user = User(**user_to_register.model_dump())
+        new_user = User(**user_to_register.model_dump(exclude_none=True))
         self.session.add(instance=new_user)
         await self.session.commit()
         await self.session.refresh(instance=new_user)

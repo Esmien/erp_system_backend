@@ -8,7 +8,6 @@ def data_for_register():
         "name": "Иван",
         "surname": "Иванович",
         "last_name": "Иванов",
-        "team_id": 0,
         "password": "secret_password",
         "repeat_password": "secret_password",
     }

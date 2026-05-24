@@ -6,11 +6,11 @@ from fastapi.security import OAuth2PasswordBearer
 
 from backend.core.config import settings
 from backend.core.constants import RoleName, BusinessElementName, PermissionName
-from backend.user.models import User
 from backend.exceptions import UserDoesNotExistsError, UserNotActiveError
 
 from backend.api.dependencies.reg_and_auth import AuthServiceDepends
 from backend.api.dependencies.rbac import RbacServiceDepends
+from backend.user.schemas import UserDTO
 
 # Извлекает Bearer-токен из заголовка Authorization
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
@@ -19,7 +19,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 async def get_current_user(
     auth_service: AuthServiceDepends,
     token: str = Depends(oauth2_scheme),
-) -> User:
+) -> UserDTO:
     """
     Возвращает текущего активного пользователя по JWT токену
 
@@ -61,7 +61,7 @@ async def get_current_user(
         raise credentials_exception
 
 
-async def get_admin_user(current_user: "CurrentUserDepends") -> User:
+async def get_admin_user(current_user: "CurrentUserDepends") -> UserDTO:
     """
     Проверяет, является ли пользователь админом
 
@@ -102,8 +102,8 @@ class PermissionChecker:
     async def __call__(
         self,
         user: "CurrentUserDepends",
-        rbac_service: RbacServiceDepends = None,
-    ) -> User:
+        rbac_service: RbacServiceDepends,
+    ) -> UserDTO:
         """
         Делает класс вызываемым.
         Выполняет проверку прав доступа к ресурсу
@@ -135,4 +135,4 @@ class PermissionChecker:
         return user
 
 
-CurrentUserDepends = Annotated[User, Depends(get_current_user)]
+CurrentUserDepends = Annotated[UserDTO, Depends(get_current_user)]
