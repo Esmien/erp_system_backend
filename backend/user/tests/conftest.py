@@ -6,9 +6,9 @@ import pytest_asyncio
 
 from backend.core.security import get_password_hash
 from backend.user.models import User
-from backend.user.repository import RegisterRepository, AuthRepository
+from backend.user.repository import RegisterRepository, AuthRepository, UserRepository
 from backend.user.schemas import UserRegister
-from backend.user.service import RegisterService, AuthService
+from backend.user.service import RegisterService, AuthService, UserService
 from tests.fixtures.init_db_fixtures import test_async_session_maker
 
 
@@ -74,6 +74,11 @@ def auth_service(mock_repo):
     return AuthService(repo=mock_repo)
 
 
+@pytest.fixture
+def user_service(mock_repo):
+    return UserService(repo=mock_repo)
+
+
 @pytest_asyncio.fixture
 async def db_session():
     async with test_async_session_maker() as session:
@@ -88,3 +93,8 @@ def register_repo(db_session):
 @pytest.fixture
 def auth_repo(db_session):
     return AuthRepository(session=db_session)
+
+
+@pytest.fixture
+def user_repo(db_session):
+    return UserRepository(session=db_session)
