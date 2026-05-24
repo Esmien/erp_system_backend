@@ -5,7 +5,6 @@ import pytest
 import pytest_asyncio
 
 from backend.core.security import get_password_hash
-from backend.user.models import User
 from backend.user.repository import RegisterRepository, AuthRepository, UserRepository
 from backend.user.schemas import UserRegister, UserDTO
 from backend.user.service import RegisterService, AuthService, UserService
@@ -34,7 +33,7 @@ def user_in():
 
 @pytest.fixture
 def user_out():
-    return User(
+    return UserDTO(
         id=5,
         email="test@test.com",
         hashed_password=HASHED_PASSWORD,
