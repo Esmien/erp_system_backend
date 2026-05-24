@@ -2,6 +2,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.rbac.models import AccessRule, BusinessElement
+from backend.rbac.schemas import AccessRuleDTO
 
 
 class RbacRepository:
@@ -10,7 +11,7 @@ class RbacRepository:
 
     async def get_access_rule(
         self, role_id: int, element_name: str
-    ) -> AccessRule | None:
+    ) -> AccessRuleDTO | None:
         """
         Возвращает правило доступа для указанной роли на указанный ресурс.
 
@@ -19,7 +20,7 @@ class RbacRepository:
             element_name - название ресурса
 
         Returns:
-            AccessRule если правило найдено, иначе None
+            AccessRuleDTO если правило найдено, иначе None
         """
         stmt = (
             select(AccessRule)
@@ -29,7 +30,7 @@ class RbacRepository:
                 BusinessElement.name == element_name,
             )
         )
-
         result = await self.session.execute(statement=stmt)
+        rule_model = result.scalar_one_or_none()
 
-        return result.scalar_one_or_none()
+        return AccessRuleDTO.model_validate(rule_model) if rule_model else None
