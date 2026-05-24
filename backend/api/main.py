@@ -6,7 +6,6 @@ from backend.core.config import settings
 from backend.api.v1.routers.auth import router as auth_router
 from backend.api.v1.routers.teams import router as teams_router
 from backend.api.v1.routers.users import router as users_router
-from backend.core.database import load_all_models
 from backend.core.logger import setup_logger
 
 
@@ -16,7 +15,6 @@ async def lifespan(app: FastAPI):
     Управляет жизненным циклом приложения
     """
     setup_logger()
-    load_all_models()
     logger.info("API запущено, логгер сконфигурирован")
     logger.info(f"Подключение к БД: {settings.db.database_url.split('@')[-1]}")
 
