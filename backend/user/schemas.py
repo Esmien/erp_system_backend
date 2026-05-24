@@ -57,3 +57,26 @@ class UserUpdate(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+
+
+class RoleDTO(RoleBase):
+    id: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class UserBaseDTO(UserBase):
+    hashed_password: str
+    is_active: bool
+    role_id: int
+
+
+class UserCreateDTO(UserBaseDTO):
+    pass
+
+
+class UserDTO(UserBaseDTO):
+    id: int
+    role: RoleDTO | None = None
+
+    model_config = ConfigDict(from_attributes=True)

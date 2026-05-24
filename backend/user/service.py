@@ -1,9 +1,8 @@
 from loguru import logger
 
 from backend.core.constants import RoleName
-from backend.user.models import User
 from backend.user.repository import RegisterRepository, AuthRepository, UserRepository
-from backend.user.schemas import Token, UserRegister, UserUpdate
+from backend.user.schemas import Token, UserRegister, UserUpdate, UserCreateDTO, UserDTO
 from backend.exceptions import (
     UserExistsError,
     UserNotActiveError,
@@ -24,7 +23,7 @@ class RegisterService:
 
     async def register_user(
         self, user_in: UserRegister, role_name: RoleName = RoleName.USER
-    ) -> User:
+    ) -> UserDTO:
         """
         Регистрирует пользователя, присваивая ему роль
 
@@ -53,12 +52,9 @@ class RegisterService:
             raise RoleDoesNotExistsError
 
         # Собираем модель пользователя со всеми полями
-        new_user = User(
-            email=str(user_in.email),
+        new_user = UserCreateDTO(
+            **user_in.model_dump(exclude={"password", "repeat_password"}),
             hashed_password=await get_password_hash(user_in.password),
-            name=user_in.name,
-            surname=user_in.surname,
-            last_name=user_in.last_name,
             role_id=role_id,
             is_active=True,
         )
@@ -72,11 +68,11 @@ class AuthService:
         self.repo = repo
 
     @staticmethod
-    def _check_user_active(user: User) -> bool:
+    def _check_user_active(user: UserDTO) -> bool:
         """Возвращает True если пользователь активен (is_active=True)"""
         return user.is_active
 
-    async def check_users_creds(self, email: str, password: str) -> User:
+    async def check_users_creds(self, email: str, password: str) -> UserDTO:
         """
         Проверка учетных данных пользователя.
         Используется при аутентификации и восстановлении пользователя
@@ -85,12 +81,12 @@ class AuthService:
             email - Электронная почта пользователя
             password - Пароль пользователя
 
+        Returns:
+            Объект пользователя, если учетные данные верны
+
         Raises:
             UserDoesNotExistsError - если пользователь с этим email не найден
             InvalidPasswordError - если пароль неверный (приходит от verify_password)
-
-        Returns:
-            Объект пользователя, если учетные данные верны
         """
         user = await self.repo.get_user(email=email)
 
@@ -103,7 +99,7 @@ class AuthService:
 
         return user
 
-    async def activate_user(self, user: User) -> User:
+    async def activate_user(self, user: UserDTO) -> UserDTO:
         """
         Активирует аккаунт пользователя
 
@@ -120,11 +116,11 @@ class AuthService:
             logger.warning(f"Пользователь {user.name} уже активен")
             raise UserAlreadyActiveError
 
-        return await self.repo.activate_user(user=user)
+        return await self.repo.activate_user(user_email=user.email)
 
-    async def get_auth_token(self, user: User) -> Token:
+    async def get_auth_token(self, user: UserDTO) -> Token:
         """
-        Получает сырой JWT-токен для пользователя
+        Получает JWT-токен для пользователя
 
         Args:
             user - запрашивающий токен пользователь
@@ -145,7 +141,7 @@ class AuthService:
 
         return Token(access_token=access_token, token_type="bearer")
 
-    async def get_active_user_by_id(self, user_id: int) -> User:
+    async def get_active_user_by_id(self, user_id: int) -> UserDTO:
         """
         Получает активного пользователя по ID
 
@@ -173,7 +169,7 @@ class UserService:
     def __init__(self, repo: UserRepository):
         self.repo = repo
 
-    async def update_profile(self, user: User, update_data: UserUpdate) -> User:
+    async def update_profile(self, user: UserDTO, update_data: UserUpdate) -> UserDTO:
         """
         Обновляет данные пользователя (ФИО)
 
@@ -183,6 +179,9 @@ class UserService:
 
         Returns:
             Обновленная модель пользователя (или исходная, если данных для обновления нет)
+
+        Raises:
+            UserDoesNotExistsError - если репозиторий не нашел пользователя
         """
         # Сериализуем данные для дальнейшей обработки в репозитории, исключая не заданные поля
         update_dict = update_data.model_dump(exclude_unset=True)
@@ -190,8 +189,15 @@ class UserService:
         if not update_dict:
             return user
 
-        return await self.repo.update_user(user=user, update_dict=update_dict)
+        updated_user = await self.repo.update_user(
+            user_id=user.id, update_dict=update_dict
+        )
 
-    async def soft_delete_profile(self, user: User) -> None:
+        if not updated_user:
+            raise UserDoesNotExistsError
+
+        return updated_user
+
+    async def soft_delete_profile(self, user: UserDTO) -> None:
         """Мягко удаляет пользователя (деактивирует)"""
-        await self.repo.soft_delete_user(user=user)
+        await self.repo.soft_delete_user(user_id=user.id)
