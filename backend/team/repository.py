@@ -1,17 +1,47 @@
+from typing import TypeVar, Protocol
+
+from loguru import logger
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, Mapped
 
 from backend.team.models import Team
-from backend.team.schemas import TeamCreate
+from backend.team.schemas import TeamCreate, TeamRead, TeamWithMembersRead
 from backend.user.models import User
+
+
+class HasId(Protocol):
+    id: Mapped[int]
+
+
+ModelT = TypeVar("ModelT", bound=HasId)
 
 
 class TeamRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get_team_by_id(self, team_id: int) -> Team | None:
+    async def _get_obj_model_by_id(
+        self, obj: type[ModelT], obj_id: int
+    ) -> ModelT | None:
+        stmt = select(obj).where(obj.id == obj_id)
+        result = await self.session.execute(stmt)
+
+        return result.scalar_one_or_none()
+
+    async def _get_team_model_by_name(self, team_name: str) -> Team | None:
+        stmt = select(Team).where(Team.name == team_name)
+        result = await self.session.execute(stmt)
+
+        return result.scalar_one_or_none()
+
+    async def _get_team_model_by_invite_code(self, invite_code: str) -> Team | None:
+        stmt = select(Team).where(Team.invite_code == invite_code)
+        result = await self.session.execute(stmt)
+
+        return result.scalar_one_or_none()
+
+    async def get_team_by_id(self, team_id: int) -> TeamWithMembersRead | None:
         """
         Получает модель команды по ее ID
 
@@ -25,7 +55,10 @@ class TeamRepository:
             select(Team).where(Team.id == team_id).options(selectinload(Team.members))
         )
         result = await self.session.execute(statement=stmt)
-        return result.scalar_one_or_none()
+
+        team = result.scalar_one_or_none()
+
+        return TeamWithMembersRead.model_validate(team) if team else None
 
     async def check_team_name_exists(self, team_name: str) -> bool:
         """
@@ -37,9 +70,7 @@ class TeamRepository:
         Returns:
             True - если существует, False - если нет
         """
-        stmt = select(Team).where(Team.name == team_name)
-        result = await self.session.execute(statement=stmt)
-        return result.scalar_one_or_none() is not None
+        return await self._get_team_model_by_name(team_name=team_name) is not None
 
     async def check_invite_code_exists(self, code: str) -> bool:
         """
@@ -52,11 +83,9 @@ class TeamRepository:
         Returns:
             True - если существует, False - если нет
         """
-        stmt = select(Team).where(Team.invite_code == code)
-        result = await self.session.execute(statement=stmt)
-        return result.scalar_one_or_none() is not None
+        return await self._get_team_model_by_invite_code(invite_code=code) is not None
 
-    async def get_team_by_invite_code(self, code: str) -> Team | None:
+    async def get_team_by_invite_code(self, code: str) -> TeamRead | None:
         """
         Находит команду по инвайт коду
 
@@ -66,11 +95,11 @@ class TeamRepository:
         Returns:
             Модель соответствующей команды или None, если код неправильный
         """
-        stmt = select(Team).where(Team.invite_code == code)
-        result = await self.session.execute(statement=stmt)
-        return result.scalar_one_or_none()
+        team = await self._get_team_model_by_invite_code(invite_code=code)
 
-    async def create_team(self, team_in: TeamCreate, invite_code: str) -> Team:
+        return TeamRead.model_validate(team) if team else None
+
+    async def create_team(self, team_in: TeamCreate, invite_code: str) -> TeamRead:
         """
         Создает команду
 
@@ -88,9 +117,10 @@ class TeamRepository:
         self.session.add(instance=new_team)
         await self.session.commit()
         await self.session.refresh(instance=new_team)
-        return new_team
 
-    async def add_user_to_team(self, user: User, team_id: int) -> None:
+        return TeamRead.model_validate(new_team)
+
+    async def add_user_to_team(self, user_id: int, team_id: int) -> bool:
         """
         Добавляет пользователя в команду
 
@@ -98,6 +128,21 @@ class TeamRepository:
             user - модель пользователя для добавления в команду
             team_id - ID целевой команды
         """
+        user = await self._get_obj_model_by_id(obj=User, obj_id=user_id)
+        team = await self._get_obj_model_by_id(obj=Team, obj_id=team_id)
+
+        if not user:
+            logger.warning(f"Пользователь с ID: {user_id} не найден.")
+            return False
+
+        if not team:
+            logger.warning(f"Команда с ID: {team_id} не найдена.")
+            return False
+
         user.team_id = team_id
         self.session.add(instance=user)
         await self.session.commit()
+
+        logger.success(f"Пользователь {user.name} добавлен в команду {team.name}.")
+
+        return True

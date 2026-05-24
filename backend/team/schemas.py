@@ -17,7 +17,7 @@ class TeamRead(TeamBase):
 
 
 class TeamWithMembersRead(TeamRead):
-    members: List[UserRead] = []
+    members: List[UserRead] = Field(default_factory=list)
 
 
 class TeamCreate(TeamBase):
