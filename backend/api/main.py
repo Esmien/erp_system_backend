@@ -30,6 +30,6 @@ app = FastAPI(
 )
 
 # Подключаем роутеры
-app.include_router(auth_router, prefix="/v1")
-app.include_router(teams_router, prefix="/v1")
-app.include_router(users_router, prefix="/v1")
+app.include_router(auth_router, prefix="/api/v1")
+app.include_router(teams_router, prefix="/api/v1")
+app.include_router(users_router, prefix="/api/v1")

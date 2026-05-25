@@ -13,7 +13,7 @@ from backend.api.dependencies.rbac import RbacServiceDepends
 from backend.user.schemas import UserDTO
 
 # Извлекает Bearer-токен из заголовка Authorization
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 
 async def get_current_user(
