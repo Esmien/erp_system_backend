@@ -21,7 +21,7 @@ router = APIRouter(
 
 
 @router.get(
-    path="/all",
+    path="/",
     response_model=list[TaskRead],
     status_code=status.HTTP_200_OK,
     summary="Получить все задачи",
