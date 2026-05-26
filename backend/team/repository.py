@@ -1,6 +1,5 @@
 from typing import TypeVar, Protocol
 
-from loguru import logger
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload, Mapped
@@ -25,19 +24,19 @@ class TeamRepository:
         self, obj: type[ModelT], obj_id: int
     ) -> ModelT | None:
         stmt = select(obj).where(obj.id == obj_id)
-        result = await self.session.execute(stmt)
+        result = await self.session.execute(statement=stmt)
 
         return result.scalar_one_or_none()
 
     async def _get_team_model_by_name(self, team_name: str) -> Team | None:
         stmt = select(Team).where(Team.name == team_name)
-        result = await self.session.execute(stmt)
+        result = await self.session.execute(statement=stmt)
 
         return result.scalar_one_or_none()
 
     async def _get_team_model_by_invite_code(self, invite_code: str) -> Team | None:
         stmt = select(Team).where(Team.invite_code == invite_code)
-        result = await self.session.execute(stmt)
+        result = await self.session.execute(statement=stmt)
 
         return result.scalar_one_or_none()
 
@@ -58,7 +57,7 @@ class TeamRepository:
 
         team = result.scalar_one_or_none()
 
-        return TeamWithMembersRead.model_validate(team) if team else None
+        return TeamWithMembersRead.model_validate(obj=team) if team else None
 
     async def check_team_name_exists(self, team_name: str) -> bool:
         """
@@ -97,7 +96,7 @@ class TeamRepository:
         """
         team = await self._get_team_model_by_invite_code(invite_code=code)
 
-        return TeamRead.model_validate(team) if team else None
+        return TeamRead.model_validate(obj=team) if team else None
 
     async def create_team(self, team_in: TeamCreate, invite_code: str) -> TeamRead:
         """
@@ -115,10 +114,9 @@ class TeamRepository:
         )
 
         self.session.add(instance=new_team)
-        await self.session.commit()
-        await self.session.refresh(instance=new_team)
+        await self.session.flush()
 
-        return TeamRead.model_validate(new_team)
+        return TeamRead.model_validate(obj=new_team)
 
     async def add_user_to_team(self, user_id: int, team_id: int) -> bool:
         """
@@ -132,17 +130,13 @@ class TeamRepository:
         team = await self._get_obj_model_by_id(obj=Team, obj_id=team_id)
 
         if not user:
-            logger.warning(f"Пользователь с ID: {user_id} не найден.")
             return False
 
         if not team:
-            logger.warning(f"Команда с ID: {team_id} не найдена.")
             return False
 
         user.team_id = team_id
         self.session.add(instance=user)
-        await self.session.commit()
-
-        logger.success(f"Пользователь {user.name} добавлен в команду {team.name}.")
+        await self.session.flush()
 
         return True
