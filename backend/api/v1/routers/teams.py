@@ -1,6 +1,10 @@
 from fastapi import APIRouter, HTTPException, status, Depends
 
-from backend.api.dependencies.permissions import PermissionChecker, CurrentUserDepends
+from backend.api.dependencies.permissions import (
+    PermissionChecker,
+    CurrentUserDepends,
+    get_current_user,
+)
 from backend.api.dependencies.teams import (
     TeamServiceDepends,
     TeamCreateBody,
@@ -22,6 +26,7 @@ router = APIRouter(prefix="/teams", tags=["Команды"])
     response_model=TeamWithMembersRead,
     status_code=status.HTTP_200_OK,
     summary="Получить информацию о команде",
+    dependencies=[Depends(get_current_user)],
 )
 async def get_team(
     team_id: int,

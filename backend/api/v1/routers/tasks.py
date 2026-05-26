@@ -1,10 +1,11 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
 
-from backend.api.dependencies.permissions import CurrentUserDepends
+from backend.api.dependencies.permissions import CurrentUserDepends, get_current_user
 from backend.api.dependencies.tasks import (
     TaskServiceDepends,
     TaskCreateBody,
     TaskUpdateBody,
+    TaskChangeStatusBody,
 )
 from backend.exceptions import (
     TaskDoesNotExistsError,
@@ -13,7 +14,19 @@ from backend.exceptions import (
 )
 from backend.task.schemas import TaskRead
 
+
 router = APIRouter(prefix="/tasks", tags=["Задачи"])
+
+
+@router.get(
+    path="/all",
+    response_model=list[TaskRead],
+    status_code=status.HTTP_200_OK,
+    summary="Получить все задачи",
+    dependencies=[Depends(get_current_user)],
+)
+async def get_all_tasks(service: TaskServiceDepends):
+    return await service.get_all_tasks()
 
 
 @router.get(
@@ -21,6 +34,7 @@ router = APIRouter(prefix="/tasks", tags=["Задачи"])
     response_model=TaskRead,
     status_code=status.HTTP_200_OK,
     summary="Получить информацию о задаче",
+    dependencies=[Depends(get_current_user)],
 )
 async def get_task(task_id: int, service: TaskServiceDepends):
     """
@@ -69,7 +83,7 @@ async def update_task(
     Обновляет задачу.
 
     Если задачи не существует - 404 Not Found
-    Если нет доступа - 403 Forbidden
+    Если нет доступа (не руководитель или автор) - 403 Forbidden
     Попытка назначить исполнителем несуществующего пользователя - 400 Bad Request
     """
     try:
@@ -94,6 +108,41 @@ async def update_task(
         )
 
 
+@router.patch(
+    path="/{task_id}/status",
+    response_model=TaskRead,
+    status_code=status.HTTP_200_OK,
+    summary="Обновить статус задачи",
+)
+async def change_status(
+    task_id: int,
+    service: TaskServiceDepends,
+    new_status: TaskChangeStatusBody,
+    user: CurrentUserDepends,
+):
+    """
+    Обновляет статус задачи
+
+    Если задача не найдена - 404 Not Found
+    Если нет прав (необходимо быть руководителем или автором/исполнителем) - 403 Forbidden
+    """
+    try:
+        updated_task = await service.change_status(
+            task_id=task_id, new_status=new_status, user=user
+        )
+        return updated_task
+    except TaskDoesNotExistsError:  # pragma: no cover
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Задача не найдена",
+        )
+    except AccessDeniedError as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(e),
+        )
+
+
 @router.delete(
     path="/{task_id}",
     status_code=status.HTTP_204_NO_CONTENT,
@@ -106,7 +155,7 @@ async def delete_task(
     Полностью удаляет задачу
 
     Если задача не существует - 404 Not Found
-    Если нет доступа - 403 Forbidden
+    Если нет доступа (не руководитель или автор) - 403 Forbidden
     """
     try:
         await service.delete_task(task_id=task_id, user=user)

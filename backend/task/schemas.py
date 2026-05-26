@@ -1,6 +1,5 @@
 from datetime import date, datetime
 from pydantic import BaseModel, ConfigDict, Field
-
 from backend.core.constants import TaskStatus
 
 
@@ -15,15 +14,6 @@ class TaskCreate(TaskBase):
     pass
 
 
-class TaskUpdate(TaskBase):
-    title: str | None = Field(
-        default=None, max_length=50, description="Название задачи"
-    )
-    executor_id: int | None = Field(default=None, description="ID исполнителя")
-
-    model_config = ConfigDict(extra="forbid")
-
-
 class TaskRead(TaskBase):
     id: int
     author_id: int | None
@@ -31,3 +21,22 @@ class TaskRead(TaskBase):
     executor_id: int | None = Field(default=None, description="ID исполнителя")
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class TaskUpdate(BaseModel):
+    """Схема для редактирования текста/дедлайна/исполнителя задачи"""
+
+    title: str | None = Field(default=None, max_length=50)
+    description: str | None = None
+    expire: date | None = None
+    executor_id: int | None = None
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class TaskChangeStatus(BaseModel):
+    """Схема ИСКЛЮЧИТЕЛЬНО для смены статуса"""
+
+    status: TaskStatus = Field(..., description="Новый статус задачи")
+
+    model_config = ConfigDict(extra="forbid")

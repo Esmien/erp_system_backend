@@ -2,7 +2,7 @@ from loguru import logger
 
 from backend.core.uow import IUnitOfWork
 from backend.core.constants import RoleName
-from backend.task.schemas import TaskCreate, TaskUpdate, TaskRead
+from backend.task.schemas import TaskCreate, TaskUpdate, TaskRead, TaskChangeStatus
 from backend.user.schemas import UserDTO
 from backend.exceptions import (
     AccessDeniedError,
@@ -55,6 +55,15 @@ class TaskService:
             raise TaskDoesNotExistsError
 
         return task
+
+    async def get_all_tasks(self) -> list[TaskRead]:
+        async with self.uow:
+            tasks = await self.uow.tasks.get_all_tasks()
+
+        if not tasks:
+            logger.info("Задачи не найдены.")
+
+        return tasks
 
     async def create_task(self, task_in: TaskCreate, author: UserDTO) -> TaskRead:
         """
@@ -126,6 +135,40 @@ class TaskService:
             await self.uow.commit()
 
         logger.success(f"Задача ID {task_id} обновлена пользователем {user.email}")
+        return updated_task
+
+    async def change_status(
+        self, task_id: int, new_status: TaskChangeStatus, user: UserDTO
+    ) -> TaskRead:
+        async with self.uow:
+            task = await self.uow.tasks.get_task_by_id(task_id)
+            if not task:
+                raise TaskDoesNotExistsError
+
+            is_manager_or_admin = user.role.name in (RoleName.ADMIN, RoleName.MANAGER)
+            is_allowed = (
+                (task.executor_id == user.id)
+                or (task.author_id == user.id)
+                or is_manager_or_admin
+            )
+
+            if not is_allowed:
+                logger.warning(
+                    f"Попытка изменить статус задачи {task.title} без прав (User: {user.email})"
+                )
+                raise AccessDeniedError("Недостаточно прав для изменения статуса")
+
+            updated_task = await self.uow.tasks.update_task(
+                task_id=task_id, update_data=new_status.model_dump()
+            )
+
+            # Если что-то пошло не так на стороне репозитория
+            if not updated_task:
+                raise TaskDoesNotExistsError
+
+            await self.uow.commit()
+
+        logger.success(f"Задаче ID {task_id} присвоен статус {updated_task.status}")
         return updated_task
 
     async def delete_task(self, task_id: int, user: UserDTO) -> None:

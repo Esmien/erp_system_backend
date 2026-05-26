@@ -18,6 +18,12 @@ class TaskRepository:
 
         return task
 
+    async def get_all_tasks(self) -> list[TaskRead]:
+        stmt = select(Task)
+        result = await self.session.execute(statement=stmt)
+
+        return [TaskRead.model_validate(task) for task in result.scalars().all()]
+
     async def get_task_by_id(self, task_id: int) -> TaskRead | None:
         """
         Получает модель задачи по её ID
