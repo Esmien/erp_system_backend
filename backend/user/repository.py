@@ -54,9 +54,9 @@ class RegisterRepository:
         """
         stmt = select(Role).where(Role.name == role_name)
         result_role = await self.session.execute(statement=stmt)
-        role_obj: Role | None = result_role.scalar_one_or_none()
+        role_model = result_role.scalar_one_or_none()
 
-        return role_obj.id if role_obj else None
+        return role_model.id if role_model else None
 
 
 class AuthRepository:
@@ -118,7 +118,7 @@ class AuthRepository:
             user_email - Email существующего неактивного пользователя для активации
 
         Returns:
-            Обновленная модель пользователя с is_active=True
+            Обновленная модель пользователя с is_active=True или None, если пользователь не существует
         """
         user = await self._get_user_model_by_email(user_email=user_email)
 
@@ -128,7 +128,7 @@ class AuthRepository:
         user.is_active = True
         await self.session.flush()
 
-        return UserDTO.model_validate(user)
+        return UserDTO.model_validate(obj=user)
 
 
 class UserRepository:
@@ -167,6 +167,8 @@ class UserRepository:
 
         if not user_model:
             return None
+
+        # Модифицируем модель обновленными данными
         for key, value in update_dict.items():
             setattr(user_model, key, value)
 

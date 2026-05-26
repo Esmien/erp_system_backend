@@ -129,6 +129,7 @@ class AuthService:
             UserAlreadyActiveError - если пользователь активен
             UserDoesNotExistsError - если пользователь не найден
         """
+        # Проверяем флаг активности пользователя
         if self._check_user_active(user=user):
             logger.info(f"Пользователь {user.name} уже активен.")
             raise UserAlreadyActiveError
