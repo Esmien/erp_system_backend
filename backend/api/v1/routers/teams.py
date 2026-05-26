@@ -18,7 +18,9 @@ from backend.exceptions import (
     UserAlreadyInTeamError,
 )
 
-router = APIRouter(prefix="/teams", tags=["Команды"])
+router = APIRouter(
+    prefix="/teams", tags=["Команды"], dependencies=[Depends(get_current_user)]
+)
 
 
 @router.get(
@@ -26,7 +28,6 @@ router = APIRouter(prefix="/teams", tags=["Команды"])
     response_model=TeamWithMembersRead,
     status_code=status.HTTP_200_OK,
     summary="Получить информацию о команде",
-    dependencies=[Depends(get_current_user)],
 )
 async def get_team(
     team_id: int,
