@@ -15,7 +15,9 @@ from backend.exceptions import (
 from backend.task.schemas import TaskRead
 
 
-router = APIRouter(prefix="/tasks", tags=["Задачи"])
+router = APIRouter(
+    prefix="/tasks", tags=["Задачи"], dependencies=[Depends(get_current_user)]
+)
 
 
 @router.get(
@@ -23,7 +25,6 @@ router = APIRouter(prefix="/tasks", tags=["Задачи"])
     response_model=list[TaskRead],
     status_code=status.HTTP_200_OK,
     summary="Получить все задачи",
-    dependencies=[Depends(get_current_user)],
 )
 async def get_all_tasks(service: TaskServiceDepends):
     return await service.get_all_tasks()
@@ -34,7 +35,6 @@ async def get_all_tasks(service: TaskServiceDepends):
     response_model=TaskRead,
     status_code=status.HTTP_200_OK,
     summary="Получить информацию о задаче",
-    dependencies=[Depends(get_current_user)],
 )
 async def get_task(task_id: int, service: TaskServiceDepends):
     """
