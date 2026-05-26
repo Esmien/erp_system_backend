@@ -1,10 +1,11 @@
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.task.models import Task
 from backend.task.schemas import TaskCreate, TaskRead
+from backend.user.models import User
 
 
 class TaskRepository:
@@ -18,8 +19,26 @@ class TaskRepository:
 
         return task
 
-    async def get_all_tasks(self) -> list[TaskRead]:
+    async def get_tasks_with_filters(
+        self,
+        user_id: int | None = None,
+        team_id: int | None = None,
+        task_status: str | None = None,
+    ) -> list[TaskRead]:
         stmt = select(Task)
+
+        if task_status:
+            stmt = stmt.where(Task.status == task_status)
+
+        if user_id:
+            stmt = stmt.where(
+                or_(Task.author_id == user_id, Task.executor_id == user_id)
+            )
+        elif team_id:
+            stmt = stmt.join(User, Task.executor_id == User.id).where(
+                User.team_id == team_id
+            )
+
         result = await self.session.execute(statement=stmt)
 
         return [TaskRead.model_validate(task) for task in result.scalars().all()]

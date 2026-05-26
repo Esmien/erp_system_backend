@@ -1,13 +1,14 @@
 from loguru import logger
 
 from backend.core.uow import IUnitOfWork
-from backend.core.constants import RoleName
+from backend.core.constants import RoleName, TaskStatus
 from backend.task.schemas import TaskCreate, TaskUpdate, TaskRead, TaskChangeStatus
 from backend.user.schemas import UserDTO
 from backend.exceptions import (
     AccessDeniedError,
     TaskDoesNotExistsError,
     UserDoesNotExistsError,
+    TeamDoesNotExistsError,
 )
 
 
@@ -56,9 +57,29 @@ class TaskService:
 
         return task
 
-    async def get_all_tasks(self) -> list[TaskRead]:
+    async def get_filtered_tasks(
+        self, user: UserDTO, scope: str, task_status: TaskStatus | None
+    ) -> list[TaskRead]:
+        user_id_filter = None
+        team_id_filter = None
+
+        if scope == "my":
+            user_id_filter = user.id
+        elif scope == "team":
+            if not user.team_id:
+                raise TeamDoesNotExistsError(
+                    f"Пользователь {user.email} не состоит в команде"
+                )
+
+            team_id_filter = user.team_id
+        elif scope == "all":
+            if user.role.name not in (RoleName.ADMIN, RoleName.MANAGER):
+                raise AccessDeniedError("Недостаточно прав для просмотра всех задач")
+
         async with self.uow:
-            tasks = await self.uow.tasks.get_all_tasks()
+            tasks = await self.uow.tasks.get_tasks_with_filters(
+                user_id=user_id_filter, team_id=team_id_filter, task_status=task_status
+            )
 
         if not tasks:
             logger.info("Задачи не найдены.")
