@@ -42,7 +42,7 @@ class TaskRepository:
         Returns:
             Модель созданной задачи
         """
-        new_task = Task(**task_in.model_dump(), author_id=author_id)
+        new_task = Task(**task_in.model_dump(exclude_none=True), author_id=author_id)
         self.session.add(instance=new_task)
         await self.session.flush()
 

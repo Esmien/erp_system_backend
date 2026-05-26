@@ -9,6 +9,7 @@ class RoleName(StrEnum):
 
 class BusinessElementName(StrEnum):
     TEAMS = "teams"
+    TASKS = "tasks"
 
 
 class PermissionName(StrEnum):

@@ -4,7 +4,11 @@ from backend.core.uow import IUnitOfWork
 from backend.core.constants import RoleName
 from backend.task.schemas import TaskCreate, TaskUpdate, TaskRead
 from backend.user.schemas import UserDTO
-from backend.exceptions import AccessDeniedError, TaskDoesNotExistsError
+from backend.exceptions import (
+    AccessDeniedError,
+    TaskDoesNotExistsError,
+    UserDoesNotExistsError,
+)
 
 
 class TaskService:
@@ -26,7 +30,9 @@ class TaskService:
             logger.warning(
                 f"Отказ в доступе. Пользователь {user.email} пытался изменить задачу ID {task.id}"
             )
-            raise AccessDeniedError("У вас нет прав на редактирование/удаление этой задачи")
+            raise AccessDeniedError(
+                "У вас нет прав на редактирование/удаление этой задачи"
+            )
 
     async def get_task(self, task_id: int) -> TaskRead:
         """
@@ -62,10 +68,14 @@ class TaskService:
             Модель созданной задачи
         """
         async with self.uow:
-            new_task = await self.uow.tasks.create_task(task_in=task_in, author_id=author.id)
+            new_task = await self.uow.tasks.create_task(
+                task_in=task_in, author_id=author.id
+            )
             await self.uow.commit()
 
-        logger.success(f"Задача '{new_task.title}' успешно создана пользователем {author.email}")
+        logger.success(
+            f"Задача '{new_task.title}' успешно создана пользователем {author.email}"
+        )
         return new_task
 
     async def update_task(
@@ -83,7 +93,7 @@ class TaskService:
             Обновленная модель задачи
 
         Raises:
-            TaskDoesNotExists - если задача ен нашлась
+            TaskDoesNotExists - если задача не нашлась
 
         """
         update_dict = update_data.model_dump(exclude_unset=True)
@@ -99,6 +109,12 @@ class TaskService:
 
             # Проверка прав: руководитель или автор
             self._check_user_is_manager_or_author(task=task, user=user)
+
+            executor_id = update_dict.get("executor_id")
+            if executor_id is not None:
+                executor = await self.uow.auth.get_user_and_role_by_user_id(executor_id)
+                if not executor:
+                    raise UserDoesNotExistsError("Указанный исполнитель не найден")
 
             updated_task = await self.uow.tasks.update_task(
                 task_id=task_id, update_data=update_dict

@@ -1,7 +1,6 @@
 from loguru import logger
 
 from backend.core.uow import IUnitOfWork
-from backend.rbac.repository import RbacRepository
 
 
 class RbacService:
@@ -26,7 +25,9 @@ class RbacService:
             rule = await self.uow.rbac.get_access_rule(role_id, element_name)
 
         if not rule:
-            logger.info(f"Не найдено правило доступа к {element_name} для роли ID {role_id}.")
+            logger.info(
+                f"Не найдено правило доступа к {element_name} для роли ID {role_id}."
+            )
             return False
 
         # Если передано несуществующее правило

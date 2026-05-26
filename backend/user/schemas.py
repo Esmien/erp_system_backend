@@ -78,5 +78,6 @@ class UserCreateDTO(UserBaseDTO):
 class UserDTO(UserBaseDTO):
     id: int
     role: RoleDTO | None = None
+    team_id: int | None = None
 
     model_config = ConfigDict(from_attributes=True)

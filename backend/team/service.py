@@ -11,7 +11,7 @@ from backend.exceptions import (
     TeamAlreadyExistsError,
     UserAlreadyInTeamError,
 )
-from backend.user.schemas import UserRead
+from backend.user.schemas import UserDTO
 
 
 class TeamService:
@@ -52,7 +52,9 @@ class TeamService:
             logger.info(f"Команда ID {team_id} не найдена.")
             raise TeamDoesNotExistsError
 
-        logger.success(f"Успешно получены данные команды ID: {team.id}, Название: {team.name}.")
+        logger.success(
+            f"Успешно получены данные команды ID: {team.id}, Название: {team.name}."
+        )
         return team
 
     async def create_team(self, team_in: TeamCreate) -> TeamRead:
@@ -70,7 +72,9 @@ class TeamService:
         """
         # Проверяем существование команды, чтобы избежать дубликатов
         async with self.uow:
-            is_exists = await self.uow.teams.check_team_name_exists(team_name=team_in.name)
+            is_exists = await self.uow.teams.check_team_name_exists(
+                team_name=team_in.name
+            )
 
             if is_exists:
                 logger.info(f"Команда с названием {team_in.name} уже существует.")
@@ -80,20 +84,26 @@ class TeamService:
             # Если совпадений в Бд не найдено, то цикл завершается
             while True:
                 code = self.generate_invite_code()
-                is_code_exists = await self.uow.teams.check_invite_code_exists(code=code)
+                is_code_exists = await self.uow.teams.check_invite_code_exists(
+                    code=code
+                )
 
                 if not is_code_exists:
-                    logger.info(f"Инвайт код для команды {team_in.name} успешно сгенерирован.")
+                    logger.info(
+                        f"Инвайт код для команды {team_in.name} успешно сгенерирован."
+                    )
                     break
 
-            created_team = await self.uow.teams.create_team(team_in=team_in, invite_code=code)
+            created_team = await self.uow.teams.create_team(
+                team_in=team_in, invite_code=code
+            )
 
             await self.uow.commit()
 
         logger.success(f"Команда {created_team.name} успешно создана.")
         return created_team
 
-    async def join_team(self, user: UserRead, invite_code: str) -> TeamRead:
+    async def join_team(self, user: UserDTO, invite_code: str) -> TeamRead:
         """
         Регистрирует пользователя в команде
 
@@ -109,7 +119,9 @@ class TeamService:
             TeamDoesNotExistsError - если инвайт код не подошел ни к одной команде
         """
         if user.team_id is not None:
-            logger.info(f"Пользователь ID: {user.id}, Email: {user.email} уже состоит в команде ID: {user.team_id}.")
+            logger.info(
+                f"Пользователь ID: {user.id}, Email: {user.email} уже состоит в команде ID: {user.team_id}."
+            )
             raise UserAlreadyInTeamError
 
         async with self.uow:
