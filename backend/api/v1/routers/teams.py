@@ -1,6 +1,10 @@
 from fastapi import APIRouter, HTTPException, status, Depends
 
-from backend.api.dependencies.permissions import PermissionChecker, CurrentUserDepends
+from backend.api.dependencies.permissions import (
+    PermissionChecker,
+    CurrentUserDepends,
+    get_current_user,
+)
 from backend.api.dependencies.teams import (
     TeamServiceDepends,
     TeamCreateBody,
@@ -14,7 +18,9 @@ from backend.exceptions import (
     UserAlreadyInTeamError,
 )
 
-router = APIRouter(prefix="/teams", tags=["Команды"])
+router = APIRouter(
+    prefix="/teams", tags=["Команды"], dependencies=[Depends(get_current_user)]
+)
 
 
 @router.get(

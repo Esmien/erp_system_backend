@@ -36,3 +36,7 @@ class UserAlreadyInTeamError(Exception):
 
 class UserAlreadyActiveError(Exception):
     pass
+
+
+class TaskDoesNotExistsError(Exception):
+    pass

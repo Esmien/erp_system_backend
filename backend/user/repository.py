@@ -18,17 +18,23 @@ class RegisterRepository:
         Регистрирует пользователя после всех проверок
 
         Args:
-            new_user - SQLAlchemy-модель пользователя для регистрации со всеми нужными полями
+            user_to_register - DTO-модель пользователя для регистрации со всеми нужными полями
 
         Returns:
-            Модель зарегистрированного пользователя
+            Модель зарегистрированного пользователя с подгруженной ролью
         """
         new_user = User(**user_to_register.model_dump(exclude_none=True))
         self.session.add(instance=new_user)
-        await self.session.commit()
-        await self.session.refresh(instance=new_user)
+        await self.session.flush()
 
-        return UserDTO.model_validate(new_user)
+        # Подгружаем роль пользователя
+        stmt = (
+            select(User).where(User.id == new_user.id).options(selectinload(User.role))
+        )
+        result = await self.session.execute(statement=stmt)
+        user_with_role = result.scalar_one()
+
+        return UserDTO.model_validate(user_with_role)
 
     async def check_user_exists(self, user_in: UserRegister) -> bool:
         """
@@ -55,9 +61,9 @@ class RegisterRepository:
         """
         stmt = select(Role).where(Role.name == role_name)
         result_role = await self.session.execute(statement=stmt)
-        role_obj: Role | None = result_role.scalar_one_or_none()
+        role_model = result_role.scalar_one_or_none()
 
-        return role_obj.id if role_obj else None
+        return role_model.id if role_model else None
 
 
 class AuthRepository:
@@ -111,7 +117,7 @@ class AuthRepository:
 
         return UserDTO.model_validate(obj=user) if user else None
 
-    async def activate_user(self, user_email: str) -> UserDTO:
+    async def activate_user(self, user_email: str) -> UserDTO | None:
         """
         Активирует пользователя
 
@@ -119,16 +125,17 @@ class AuthRepository:
             user_email - Email существующего неактивного пользователя для активации
 
         Returns:
-            Обновленная модель пользователя с is_active=True
+            Обновленная модель пользователя с is_active=True или None, если пользователь не существует
         """
         user = await self._get_user_model_by_email(user_email=user_email)
 
+        if not user:
+            return None
+
         user.is_active = True
+        await self.session.flush()
 
-        await self.session.commit()
-        await self.session.refresh(instance=user)
-
-        return UserDTO.model_validate(user)
+        return UserDTO.model_validate(obj=user)
 
 
 class UserRepository:
@@ -167,16 +174,17 @@ class UserRepository:
 
         if not user_model:
             return None
+
+        # Модифицируем модель обновленными данными
         for key, value in update_dict.items():
             setattr(user_model, key, value)
 
         self.session.add(instance=user_model)
-        await self.session.commit()
-        await self.session.refresh(instance=user_model)
+        await self.session.flush()
 
         return UserDTO.model_validate(obj=user_model)
 
-    async def soft_delete_user(self, user_id: int) -> None:
+    async def soft_delete_user(self, user_id: int) -> UserDTO | None:
         """
         Выполняет мягкое удаление пользователя (деактивацию)
 
@@ -185,7 +193,11 @@ class UserRepository:
         """
         user_model = await self._get_user_for_update(user_id=user_id)
 
-        if user_model:
-            user_model.is_active = False
-            self.session.add(instance=user_model)
-            await self.session.commit()
+        if not user_model:
+            return None
+
+        user_model.is_active = False
+        self.session.add(instance=user_model)
+        await self.session.flush()
+
+        return UserDTO.model_validate(obj=user_model)

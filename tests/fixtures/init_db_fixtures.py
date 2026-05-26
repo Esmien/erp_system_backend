@@ -3,11 +3,13 @@ from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.pool import NullPool
 
+from backend.api.dependencies.uow import get_uow
 from backend.core.database import load_all_models
 
 from backend.api.dependencies.permissions import get_current_user
 from backend.api.main import app
-from backend.core.database.engine import get_session, Base
+from backend.core.database.engine import Base
+from backend.core.uow import UnitOfWork
 from backend.rbac.models import AccessRule, BusinessElement
 from backend.rbac.schemas import RBACPermissions
 from backend.core.security import get_password_hash
@@ -37,7 +39,17 @@ async def override_get_current_user():
         return result.scalar_one_or_none()
 
 
-app.dependency_overrides[get_session] = override_get_session
+class TestUnitOfWork(UnitOfWork):
+    def __init__(self):
+        super().__init__()
+        self.session_factory = test_async_session_maker
+
+
+async def override_get_uow():
+    return TestUnitOfWork()
+
+
+app.dependency_overrides[get_uow] = override_get_uow
 app.dependency_overrides[get_current_user] = override_get_current_user
 
 TEAM_NAME = "Dummy name"

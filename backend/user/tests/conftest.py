@@ -60,23 +60,44 @@ def user_to_update():
 
 
 @pytest.fixture
-def mock_repo():
-    return AsyncMock()
+def mock_uow():
+    """
+    Создаем глобальный мок для Unit of Work.
+    Он должен уметь работать в async with и содержать вложенные моки репозиториев.
+    """
+    uow = AsyncMock()
+
+    # Настраиваем асинхронный контекстный менеджер (async with self.uow)
+    uow.__aenter__.return_value = uow
+    uow.__aexit__.return_value = None
+
+    # Мокаем вложенные репозитории
+    uow.users = AsyncMock()
+    uow.auth = AsyncMock()
+    uow.register = AsyncMock()
+    uow.tasks = AsyncMock()
+    uow.teams = AsyncMock()
+
+    # Мокаем методы самого UoW
+    uow.commit = AsyncMock()
+    uow.rollback = AsyncMock()
+
+    return uow
 
 
 @pytest.fixture
-def register_service(mock_repo):
-    return RegisterService(repo=mock_repo)
+def register_service(mock_uow):
+    return RegisterService(uow=mock_uow)
 
 
 @pytest.fixture
-def auth_service(mock_repo):
-    return AuthService(repo=mock_repo)
+def auth_service(mock_uow):
+    return AuthService(uow=mock_uow)
 
 
 @pytest.fixture
-def user_service(mock_repo):
-    return UserService(repo=mock_repo)
+def user_service(mock_uow):
+    return UserService(uow=mock_uow)
 
 
 @pytest_asyncio.fixture

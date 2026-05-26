@@ -1,41 +1,14 @@
 from typing import Annotated
 
 from fastapi import Depends
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.core.database.engine import get_session
-from backend.rbac.repository import RbacRepository
+from backend.api.dependencies.uow import UowDepends
 from backend.rbac.service import RbacService
 
 
-async def get_rbac_repo(
-    session: AsyncSession = Depends(get_session),
-) -> RbacRepository:
-    """
-    Провайдер репозитория RBAC для инъекции в другие зависимости
-
-    Args:
-        session - сессия подключения к БД из пула
-
-    Returns:
-        Инстанс репозитория RBAC с проброшенной сессией
-    """
-    return RbacRepository(session=session)
-
-
-async def get_rbac_service(
-    repo: RbacRepository = Depends(get_rbac_repo),
-) -> RbacService:
-    """
-    Провайдер сервиса RBAC для инъекции в Annotated
-
-    Args:
-        repo - репозиторий RBAC с проброшенной сессией
-
-    Returns:
-        Инстанс сервиса RBAC с проброшенным репозиторием
-    """
-    return RbacService(repo=repo)
+async def get_rbac_service(uow: UowDepends) -> RbacService:
+    """Провайдер сервиса RBAC для инъекции в Annotated"""
+    return RbacService(uow=uow)
 
 
 # Готовая DI для использования в роутерах

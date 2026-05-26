@@ -218,5 +218,6 @@ __marimo__/
 /check_db.py
 
 project_context.txt
+project_context_new.txt
 /.coverage
 /.coveragerc

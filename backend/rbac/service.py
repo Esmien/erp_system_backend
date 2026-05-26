@@ -1,11 +1,11 @@
 from loguru import logger
 
-from backend.rbac.repository import RbacRepository
+from backend.core.uow import IUnitOfWork
 
 
 class RbacService:
-    def __init__(self, repo: RbacRepository):
-        self.repo = repo
+    def __init__(self, uow: IUnitOfWork):
+        self.uow = uow
 
     async def check_permission(
         self, role_id: int, element_name: str, permission: str
@@ -21,9 +21,13 @@ class RbacService:
         Returns:
             True - если доступ разрешен, иначе False
         """
-        rule = await self.repo.get_access_rule(role_id, element_name)
+        async with self.uow:
+            rule = await self.uow.rbac.get_access_rule(role_id, element_name)
 
         if not rule:
+            logger.info(
+                f"Не найдено правило доступа к {element_name} для роли ID {role_id}."
+            )
             return False
 
         # Если передано несуществующее правило

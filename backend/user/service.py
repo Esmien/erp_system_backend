@@ -1,7 +1,7 @@
 from loguru import logger
 
 from backend.core.constants import RoleName
-from backend.user.repository import RegisterRepository, AuthRepository, UserRepository
+from backend.core.uow import IUnitOfWork
 from backend.user.schemas import Token, UserRegister, UserUpdate, UserCreateDTO, UserDTO
 from backend.exceptions import (
     UserExistsError,
@@ -9,6 +9,7 @@ from backend.exceptions import (
     UserDoesNotExistsError,
     RoleDoesNotExistsError,
     UserAlreadyActiveError,
+    InvalidPasswordError,
 )
 from backend.core.security import (
     verify_password,
@@ -18,8 +19,8 @@ from backend.core.security import (
 
 
 class RegisterService:
-    def __init__(self, repo: RegisterRepository):
-        self.repo = repo
+    def __init__(self, uow: IUnitOfWork):
+        self.uow = uow
 
     async def register_user(
         self, user_in: UserRegister, role_name: RoleName = RoleName.USER
@@ -38,34 +39,43 @@ class RegisterService:
             UserExistsError - если пользователь существует
             RoleDoesNotExistsError - присваиваемая роль не найдена
         """
-        # Проверка на существование пользователя с переданным email
-        is_user_exists = await self.repo.check_user_exists(user_in=user_in)
+        async with self.uow:
+            # Проверка на существование пользователя с переданным email
+            is_user_exists = await self.uow.register.check_user_exists(user_in=user_in)
+            if is_user_exists:
+                logger.info(f"Пользователь {user_in.email} уже зарегистрирован.")
+                raise UserExistsError
 
-        if is_user_exists:
-            raise UserExistsError
+            # Защита от присвоения несуществующей роли
+            role_id = await self.uow.register.get_role_id(role_name=role_name)
+            # Проблема на стороне сервера, роль не найдена
+            if not role_id:
+                logger.error(f"Ошибка! Роль {role_name} не найдена.")
+                raise RoleDoesNotExistsError
 
-        # Защита от присвоения несуществующей роли
-        role_id = await self.repo.get_role_id(role_name=role_name)
+            # Собираем модель пользователя со всеми полями
+            new_user_dto = UserCreateDTO(
+                **user_in.model_dump(exclude={"password", "repeat_password"}),
+                hashed_password=await get_password_hash(user_in.password),
+                role_id=role_id,
+                is_active=True,
+            )
 
-        # Проблема на стороне сервера, роль не найдена
-        if not role_id:
-            raise RoleDoesNotExistsError
+            registered_user: UserDTO = await self.uow.register.register_user(
+                new_user_dto
+            )
 
-        # Собираем модель пользователя со всеми полями
-        new_user = UserCreateDTO(
-            **user_in.model_dump(exclude={"password", "repeat_password"}),
-            hashed_password=await get_password_hash(user_in.password),
-            role_id=role_id,
-            is_active=True,
-        )
-
-        # Регистрируем
-        return await self.repo.register_user(new_user)
+            # Регистрируем
+            await self.uow.commit()
+            logger.success(
+                f"Пользователь ID: {registered_user.id}, Email: {registered_user.email} зарегистрирован"
+            )
+            return registered_user
 
 
 class AuthService:
-    def __init__(self, repo: AuthRepository):
-        self.repo = repo
+    def __init__(self, uow: IUnitOfWork):
+        self.uow = uow
 
     @staticmethod
     def _check_user_active(user: UserDTO) -> bool:
@@ -86,16 +96,22 @@ class AuthService:
 
         Raises:
             UserDoesNotExistsError - если пользователь с этим email не найден
-            InvalidPasswordError - если пароль неверный (приходит от verify_password)
+            InvalidPasswordError - если пароль неверный
         """
-        user = await self.repo.get_user(email=email)
+        async with self.uow:
+            user = await self.uow.auth.get_user(email=email)
 
         if not user:
+            logger.info(f"Пользователь с Email {email} не найден.")
             raise UserDoesNotExistsError
 
-        await verify_password(
-            plain_password=password, hashed_password=user.hashed_password
-        )
+        try:
+            await verify_password(
+                plain_password=password, hashed_password=user.hashed_password
+            )
+        except InvalidPasswordError:
+            logger.info(f"Введен неверный пароль для пользователя {email}.")
+            raise
 
         return user
 
@@ -111,12 +127,24 @@ class AuthService:
 
         Raises:
             UserAlreadyActiveError - если пользователь активен
+            UserDoesNotExistsError - если пользователь не найден
         """
+        # Проверяем флаг активности пользователя
         if self._check_user_active(user=user):
-            logger.warning(f"Пользователь {user.name} уже активен")
+            logger.info(f"Пользователь {user.name} уже активен.")
             raise UserAlreadyActiveError
 
-        return await self.repo.activate_user(user_email=user.email)
+        async with self.uow:
+            activated_user = await self.uow.auth.activate_user(user_email=user.email)
+
+            if not activated_user:
+                logger.info(f"Пользователь с {user.email} не существует.")
+                raise UserDoesNotExistsError
+
+            await self.uow.commit()
+            logger.success(f"Пользователь {user.name} успешно активирован.")
+
+        return activated_user
 
     async def get_auth_token(self, user: UserDTO) -> Token:
         """
@@ -133,7 +161,7 @@ class AuthService:
         """
         # Если пользователь неактивен, токен ему не положен
         if not self._check_user_active(user=user):
-            logger.warning(f"Пользователь {user.name} не активен")
+            logger.info(f"Пользователь {user.name} не активен")
             raise UserNotActiveError
 
         # Генерируем токен
@@ -155,19 +183,23 @@ class AuthService:
             UserDoesNotExistsError - если пользователь не найден
             UserNotActiveError - если найден, но неактивен
         """
-        user = await self.repo.get_user_and_role_by_user_id(user_id)
+        async with self.uow:
+            user = await self.uow.auth.get_user_and_role_by_user_id(user_id)
 
         if not user:
+            logger.info(f"Пользователь с ID {user_id} не найден.")
             raise UserDoesNotExistsError
         if not self._check_user_active(user):
+            logger.info(f"Пользователь с ID {user_id} не активен.")
             raise UserNotActiveError
 
+        logger.success(f"Пользователь с ID {user_id} успешно получен. ({user.email})")
         return user
 
 
 class UserService:
-    def __init__(self, repo: UserRepository):
-        self.repo = repo
+    def __init__(self, uow: IUnitOfWork):
+        self.uow = uow
 
     async def update_profile(self, user: UserDTO, update_data: UserUpdate) -> UserDTO:
         """
@@ -187,17 +219,49 @@ class UserService:
         update_dict = update_data.model_dump(exclude_unset=True)
 
         if not update_dict:
+            logger.info(
+                f"Нет данных для обновления пользователя ID: {user.id}, Email: {user.email}."
+            )
             return user
 
-        updated_user = await self.repo.update_user(
-            user_id=user.id, update_dict=update_dict
+        async with self.uow:
+            updated_user = await self.uow.users.update_user(
+                user_id=user.id, update_dict=update_dict
+            )
+
+            if not updated_user:
+                logger.info(
+                    f"Не найден пользователь для обновления, ID: {user.id}, Email: {user.email}."
+                )
+                raise UserDoesNotExistsError
+
+            await self.uow.commit()
+
+        logger.success(
+            f"Пользователь ID: {user.id}, Email: {user.email} успешно обновлен."
         )
-
-        if not updated_user:
-            raise UserDoesNotExistsError
-
         return updated_user
 
     async def soft_delete_profile(self, user: UserDTO) -> None:
-        """Мягко удаляет пользователя (деактивирует)"""
-        await self.repo.soft_delete_user(user_id=user.id)
+        """
+        Мягко удаляет пользователя (деактивирует)
+
+        Args:
+            user - модель пользователя для удаления
+
+        Raises:
+            UserDoesNotExists - если пользователь не найден
+        """
+        async with self.uow:
+            deactivated_user = await self.uow.users.soft_delete_user(user_id=user.id)
+
+            if not deactivated_user:
+                logger.info(
+                    f"Не найден пользователь для удаления, ID: {user.id}, Email: {user.email}."
+                )
+                raise UserDoesNotExistsError
+
+            await self.uow.commit()
+            logger.success(
+                f"Пользователь ID: {deactivated_user.id}, Email: {deactivated_user.email} успешно удален (деактивирован)."
+            )

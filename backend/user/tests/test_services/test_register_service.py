@@ -4,19 +4,19 @@ from backend.exceptions import UserExistsError, RoleDoesNotExistsError
 
 
 @pytest.mark.parametrize("exc", [None, UserExistsError, RoleDoesNotExistsError])
-async def test_register_cases(user_in, user_out, mock_repo, register_service, exc):
+async def test_register_cases(user_in, user_out, mock_uow, register_service, exc):
 
     if exc == UserExistsError:
-        mock_repo.check_user_exists.return_value = True
+        mock_uow.register.check_user_exists.return_value = True
     else:
-        mock_repo.check_user_exists.return_value = False
+        mock_uow.register.check_user_exists.return_value = False
 
     if exc == RoleDoesNotExistsError:
-        mock_repo.get_role_id.return_value = None
+        mock_uow.register.get_role_id.return_value = None
     else:
-        mock_repo.get_role_id.return_value = 1
+        mock_uow.register.get_role_id.return_value = 1
 
-    mock_repo.register_user.return_value = user_out
+    mock_uow.register.register_user.return_value = user_out
 
     if exc:
         with pytest.raises(exc):

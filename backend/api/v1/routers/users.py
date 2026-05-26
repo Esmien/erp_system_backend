@@ -45,7 +45,7 @@ async def update_my_info(
 
 
 @router.delete(
-    "/me",
+    path="/me",
     status_code=status.HTTP_200_OK,
     summary="'Мягкое' удаление текущего пользователя",
 )
