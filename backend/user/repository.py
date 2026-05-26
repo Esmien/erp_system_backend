@@ -18,15 +18,14 @@ class RegisterRepository:
         Регистрирует пользователя после всех проверок
 
         Args:
-            new_user - SQLAlchemy-модель пользователя для регистрации со всеми нужными полями
+            user_to_register - DTO-модель пользователя для регистрации со всеми нужными полями
 
         Returns:
             Модель зарегистрированного пользователя
         """
         new_user = User(**user_to_register.model_dump(exclude_none=True))
         self.session.add(instance=new_user)
-        await self.session.commit()
-        await self.session.refresh(instance=new_user)
+        await self.session.flush()
 
         return UserDTO.model_validate(new_user)
 
@@ -111,7 +110,7 @@ class AuthRepository:
 
         return UserDTO.model_validate(obj=user) if user else None
 
-    async def activate_user(self, user_email: str) -> UserDTO:
+    async def activate_user(self, user_email: str) -> UserDTO | None:
         """
         Активирует пользователя
 
@@ -123,10 +122,11 @@ class AuthRepository:
         """
         user = await self._get_user_model_by_email(user_email=user_email)
 
-        user.is_active = True
+        if not user:
+            return None
 
-        await self.session.commit()
-        await self.session.refresh(instance=user)
+        user.is_active = True
+        await self.session.flush()
 
         return UserDTO.model_validate(user)
 
@@ -171,12 +171,11 @@ class UserRepository:
             setattr(user_model, key, value)
 
         self.session.add(instance=user_model)
-        await self.session.commit()
-        await self.session.refresh(instance=user_model)
+        await self.session.flush()
 
         return UserDTO.model_validate(obj=user_model)
 
-    async def soft_delete_user(self, user_id: int) -> None:
+    async def soft_delete_user(self, user_id: int) -> UserDTO | None:
         """
         Выполняет мягкое удаление пользователя (деактивацию)
 
@@ -185,7 +184,11 @@ class UserRepository:
         """
         user_model = await self._get_user_for_update(user_id=user_id)
 
-        if user_model:
-            user_model.is_active = False
-            self.session.add(instance=user_model)
-            await self.session.commit()
+        if not user_model:
+            return None
+
+        user_model.is_active = False
+        self.session.add(instance=user_model)
+        await self.session.flush()
+
+        return UserDTO.model_validate(obj=user_model)
