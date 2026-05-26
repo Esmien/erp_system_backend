@@ -1,4 +1,6 @@
-from fastapi import APIRouter, HTTPException, status, Depends
+from typing import Literal
+
+from fastapi import APIRouter, HTTPException, status, Depends, Query
 
 from backend.api.dependencies.permissions import CurrentUserDepends, get_current_user
 from backend.api.dependencies.tasks import (
@@ -7,6 +9,7 @@ from backend.api.dependencies.tasks import (
     TaskUpdateBody,
     TaskChangeStatusBody,
 )
+from backend.core.constants import TaskStatus
 from backend.exceptions import (
     TaskDoesNotExistsError,
     AccessDeniedError,
@@ -18,16 +21,6 @@ from backend.task.schemas import TaskRead
 router = APIRouter(
     prefix="/tasks", tags=["Задачи"], dependencies=[Depends(get_current_user)]
 )
-
-
-@router.get(
-    path="/",
-    response_model=list[TaskRead],
-    status_code=status.HTTP_200_OK,
-    summary="Получить все задачи",
-)
-async def get_all_tasks(service: TaskServiceDepends):
-    return await service.get_all_tasks()
 
 
 @router.get(
@@ -163,6 +156,37 @@ async def delete_task(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Задача не найдена",
+        )
+    except AccessDeniedError as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(e),
+        )
+
+
+@router.get(
+    path="/",
+    response_model=list[TaskRead],
+    status_code=status.HTTP_200_OK,
+    summary="Получить список задач по фильтрам",
+)
+async def get_tasks(
+    service: TaskServiceDepends,
+    user: CurrentUserDepends,
+    scope: Literal["my", "team", "all"] = Query(
+        default="my",
+        description="Область видимости: my - мои задачи, team - задачи команды, all - все",
+    ),
+    task_status: TaskStatus | None = Query(
+        default=None, description="Фильтр по статусу задачи"
+    ),
+):
+    """
+    Возвращает список задач с учетом фильтров.
+    """
+    try:
+        return await service.get_filtered_tasks(
+            user=user, scope=scope, task_status=task_status
         )
     except AccessDeniedError as e:
         raise HTTPException(
