@@ -1,47 +1,18 @@
 from typing import Annotated
 
 from fastapi import Depends, Body
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.core.database.engine import get_session
-from backend.team.repository import TeamRepository
+from backend.api.dependencies.uow import UowDepends
 from backend.team.schemas import TeamCreate, TeamJoin
 from backend.team.service import TeamService
 
 
-async def get_team_repo(
-    session: AsyncSession = Depends(get_session),
-) -> TeamRepository:
-    """
-    Провайдер репозитория для работы с командами для инъекции в другие зависимости
-
-    Args:
-        session - сессия подключения к БД из пула
-
-    Returns:
-        Инстанс репозитория команд с проброшенной сессией
-    """
-    return TeamRepository(session=session)
-
-
-async def get_team_service(
-    repo: TeamRepository = Depends(get_team_repo),
-) -> TeamService:
-    """
-    Провайдер сервиса для работы с командами для инъекции в Annotated
-
-    Args:
-        repo - репозиторий команд с проброшенной сессией
-
-    Returns:
-        Инстанс сервиса команд проброшенным репозиторием
-    """
-    return TeamService(repo=repo)
+async def get_team_service(uow: UowDepends) -> TeamService:
+    """Провайдер сервиса для работы с командами для инъекции в Annotated"""
+    return TeamService(uow=uow)
 
 
 # Готовые DI для использования в роутерах
 TeamServiceDepends = Annotated[TeamService, Depends(get_team_service)]
-
 TeamCreateBody = Annotated[TeamCreate, Body()]
-
 TeamJoinBody = Annotated[TeamJoin, Body()]
