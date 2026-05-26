@@ -21,20 +21,48 @@ class TeamRepository:
         self.session = session
 
     async def _get_obj_model_by_id(
-        self, obj: type[ModelT], obj_id: int
+        self, class_: type[ModelT], obj_id: int
     ) -> ModelT | None:
-        stmt = select(obj).where(obj.id == obj_id)
+        """
+        Получает из БД инстанс алхимии по ID и переданному классу модели
+
+        Args:
+            class_ - название класса модели, чей инстанс нужно получить из БД
+            obj_id - ID для поиска
+
+        Returns:
+            Готовая искомая модель алхимии или None, если ничего не нашлось
+        """
+        stmt = select(class_).where(class_.id == obj_id)
         result = await self.session.execute(statement=stmt)
 
         return result.scalar_one_or_none()
 
     async def _get_team_model_by_name(self, team_name: str) -> Team | None:
+        """
+        Получает инстанс модели команды по названию команды
+
+        Args:
+            team_name - название команды
+
+        Returns:
+            Готовая модель команды или None, если не нашлась
+        """
         stmt = select(Team).where(Team.name == team_name)
         result = await self.session.execute(statement=stmt)
 
         return result.scalar_one_or_none()
 
     async def _get_team_model_by_invite_code(self, invite_code: str) -> Team | None:
+        """
+        Получает инстанс модели команды по инвайт-коду
+
+        Args:
+            invite_code - код для поиска
+
+        Returns:
+            Готовая модель команды или None, если не нашлась
+        """
         stmt = select(Team).where(Team.invite_code == invite_code)
         result = await self.session.execute(statement=stmt)
 
@@ -126,8 +154,8 @@ class TeamRepository:
             user - модель пользователя для добавления в команду
             team_id - ID целевой команды
         """
-        user = await self._get_obj_model_by_id(obj=User, obj_id=user_id)
-        team = await self._get_obj_model_by_id(obj=Team, obj_id=team_id)
+        user = await self._get_obj_model_by_id(class_=User, obj_id=user_id)
+        team = await self._get_obj_model_by_id(class_=Team, obj_id=team_id)
 
         if not user:
             return False
