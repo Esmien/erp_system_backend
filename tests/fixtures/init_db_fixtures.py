@@ -6,7 +6,7 @@ from backend.core.database.engine import Base
 from backend.core.database.init_db import init_basic_data
 from backend.core.security import get_password_hash
 from backend.team.models import Team
-from tests.fixtures.environment import (
+from tests.fixtures.environment_setup import (
     fixture_engine,
     fixture_async_session_maker,
 )

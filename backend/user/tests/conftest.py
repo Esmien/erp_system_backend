@@ -2,13 +2,12 @@ import asyncio
 from unittest.mock import AsyncMock
 
 import pytest
-import pytest_asyncio
 
 from backend.core.security import get_password_hash
 from backend.user.repository import RegisterRepository, AuthRepository, UserRepository
 from backend.user.schemas import UserRegister, UserDTO
 from backend.user.service import RegisterService, AuthService, UserService
-from tests.fixtures.environment import fixture_async_session_maker
+from tests.fixtures.environment_setup import fixture_async_session_maker
 
 HASHED_PASSWORD = asyncio.run(get_password_hash("test"))
 
@@ -92,12 +91,6 @@ def auth_service(mock_uow):
 @pytest.fixture
 def user_service(mock_uow):
     return UserService(uow=mock_uow)
-
-
-@pytest_asyncio.fixture
-async def db_session():
-    async with fixture_async_session_maker() as session:
-        yield session
 
 
 @pytest.fixture

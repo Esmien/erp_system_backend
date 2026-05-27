@@ -6,7 +6,7 @@ from backend.api.main import app
 from backend.core.constants import TaskStatus
 from backend.user.models import User
 from backend.user.schemas import UserDTO
-from tests.fixtures.environment import fixture_async_session_maker
+from tests.fixtures.environment_setup import fixture_async_session_maker
 
 
 async def override_get_regular_user():
