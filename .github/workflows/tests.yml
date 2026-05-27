@@ -66,5 +66,6 @@ jobs:
           DB_USER: postgres
           DB_PASSWORD: postgres
           DB_NAME: business_management
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
         run: |
           poetry run pytest --asyncio-mode=auto -v
