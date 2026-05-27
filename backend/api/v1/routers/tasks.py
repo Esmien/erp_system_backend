@@ -8,8 +8,8 @@ from backend.api.dependencies.tasks import (
     TaskCreateBody,
     TaskUpdateBody,
     TaskChangeStatusBody,
+    TaskStatusQuery,
 )
-from backend.core.constants import TaskStatus
 from backend.exceptions import (
     TaskDoesNotExistsError,
     AccessDeniedError,
@@ -173,12 +173,10 @@ async def delete_task(
 async def get_tasks(
     service: TaskServiceDepends,
     user: CurrentUserDepends,
+    task_status: TaskStatusQuery | None = None,
     scope: Literal["my", "team", "all"] = Query(
         default="my",
         description="Область видимости: my - мои задачи, team - задачи команды, all - все",
-    ),
-    task_status: TaskStatus | None = Query(
-        default=None, description="Фильтр по статусу задачи"
     ),
 ):
     """
