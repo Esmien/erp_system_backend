@@ -21,8 +21,15 @@ async def db_session():
 @pytest.fixture
 def mock_session_factory():
     """Создает мок для сессии и фабрики сессий"""
-    session_mock = AsyncMock()
-    factory_mock = MagicMock(return_value=session_mock)
+    session_mock = MagicMock()
+    session_mock.close = AsyncMock()
+    session_mock.commit = AsyncMock()
+    session_mock.rollback = AsyncMock()
+
+    factory_mock = MagicMock()
+    factory_mock.return_value.__aenter__ = AsyncMock(return_value=session_mock)
+    factory_mock.return_value.__aexit__ = AsyncMock(return_value=False)
+
     return factory_mock, session_mock
 
 

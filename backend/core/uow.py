@@ -41,7 +41,8 @@ class UnitOfWork(IUnitOfWork):
         self.session_factory = async_session_maker
 
     async def __aenter__(self):
-        self.session = self.session_factory()
+        self._session_cm = self.session_factory()
+        self.session = await self._session_cm.__aenter__()
 
         self.users = UserRepository(self.session)
         self.auth = AuthRepository(self.session)
