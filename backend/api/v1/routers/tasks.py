@@ -169,7 +169,7 @@ async def delete_task(
     status_code=status.HTTP_200_OK,
     summary="Получить список задач по фильтрам",
 )
-async def get_tasks(
+async def get_tasks_by_filter(
     service: TaskServiceDepends,
     user: CurrentUserDepends,
     task_status: TaskStatusFilterQuery | None = None,
