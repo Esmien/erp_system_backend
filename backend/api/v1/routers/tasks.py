@@ -8,6 +8,7 @@ from backend.api.dependencies.tasks import (
     TaskChangeStatusBody,
     TaskStatusFilterQuery,
     TaskScopeFilterQuery,
+    CommentCreateBody,
 )
 from backend.exceptions import (
     TaskDoesNotExistsError,
@@ -15,8 +16,7 @@ from backend.exceptions import (
     UserDoesNotExistsError,
     TeamDoesNotExistsError,
 )
-from backend.task.schemas import TaskRead
-
+from backend.task.schemas import TaskRead, CommentRead
 
 router = APIRouter(
     prefix="/tasks", tags=["Задачи"], dependencies=[Depends(get_current_user)]
@@ -193,5 +193,40 @@ async def get_tasks_by_filter(
     except TeamDoesNotExistsError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
+
+@router.post(
+    path="/{task_id}/comments",
+    response_model=CommentRead,
+    status_code=status.HTTP_201_CREATED,
+    summary="Добавить комментарий к задаче",
+)
+async def add_comment(
+    task_id: int,
+    comment_in: CommentCreateBody,
+    service: TaskServiceDepends,
+    user: CurrentUserDepends,
+):
+    """
+    Добавляет комментарий к задаче.
+
+    Если задача не найдена - 404 Not Found
+    Если нет прав (не автор, не исполнитель и не руководитель) - 403 Forbidden
+    """
+    try:
+        new_comment = await service.add_comment(
+            task_id=task_id, user=user, comment_in=comment_in
+        )
+        return new_comment
+    except TaskDoesNotExistsError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
+        )
+    except AccessDeniedError as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
             detail=str(e),
         )

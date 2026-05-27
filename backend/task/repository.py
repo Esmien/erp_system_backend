@@ -3,8 +3,8 @@ from typing import Any
 from sqlalchemy import select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.task.models import Task
-from backend.task.schemas import TaskCreate, TaskRead
+from backend.task.models import Task, Comment
+from backend.task.schemas import TaskCreate, TaskRead, CommentRead
 from backend.user.models import User
 
 
@@ -115,3 +115,23 @@ class TaskRepository:
 
         await self.session.delete(task)
         await self.session.flush()
+
+    async def create_comment(
+        self, task_id: int, author_id: int, text: str
+    ) -> CommentRead:
+        """
+        Создает комментарий к задаче
+
+        Args:
+            task_id - ID задачи к которой пишется комментарий
+            author_id - ID автора
+            text - содержание комментария
+
+        Returns:
+            Модель комментария со всеми метаданными
+        """
+        new_comment = Comment(task_id=task_id, author_id=author_id, text=text)
+        self.session.add(instance=new_comment)
+        await self.session.flush()
+
+        return CommentRead.model_validate(new_comment)
