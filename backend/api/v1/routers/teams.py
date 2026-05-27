@@ -24,7 +24,7 @@ router = APIRouter(
 
 
 @router.get(
-    path="/{team_id}",
+    path="/{team_id}/",
     response_model=TeamWithMembersRead,
     status_code=status.HTTP_200_OK,
     summary="Получить информацию о команде",
@@ -81,7 +81,7 @@ async def create_team(
 
 
 @router.post(
-    path="/join",
+    path="/join/",
     response_model=TeamRead,
     status_code=status.HTTP_200_OK,
     summary="Присоединиться к команде по коду",

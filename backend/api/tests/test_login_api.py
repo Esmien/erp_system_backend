@@ -13,7 +13,7 @@ import pytest
 async def test_get_token_success(client, username, password, status):
     creds = {"username": username, "password": password}
 
-    response = await client.post(url="/api/v1/auth/login", data=creds)
+    response = await client.post(url="/api/v1/auth/login/", data=creds)
 
     assert response.status_code == status
 

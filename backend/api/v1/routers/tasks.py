@@ -13,6 +13,7 @@ from backend.exceptions import (
     TaskDoesNotExistsError,
     AccessDeniedError,
     UserDoesNotExistsError,
+    TeamDoesNotExistsError,
 )
 from backend.task.schemas import TaskRead
 
@@ -23,7 +24,7 @@ router = APIRouter(
 
 
 @router.get(
-    path="/{task_id}",
+    path="/{task_id}/",
     response_model=TaskRead,
     status_code=status.HTTP_200_OK,
     summary="Получить информацию о задаче",
@@ -60,7 +61,7 @@ async def create_task(
 
 
 @router.patch(
-    path="/{task_id}",
+    path="/{task_id}/",
     response_model=TaskRead,
     status_code=status.HTTP_200_OK,
     summary="Обновить задачу",
@@ -101,7 +102,7 @@ async def update_task(
 
 
 @router.patch(
-    path="/{task_id}/status",
+    path="/{task_id}/status/",
     response_model=TaskRead,
     status_code=status.HTTP_200_OK,
     summary="Обновить статус задачи",
@@ -136,7 +137,7 @@ async def change_status(
 
 
 @router.delete(
-    path="/{task_id}",
+    path="/{task_id}/",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Удалить задачу",
 )
@@ -189,31 +190,8 @@ async def get_tasks_by_filter(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=str(e),
         )
-
-
-@router.get(
-    path="/",
-    response_model=list[TaskRead],
-    status_code=status.HTTP_200_OK,
-    summary="Получить список задач по фильтрам",
-)
-async def get_tasks(
-    service: TaskServiceDepends,
-    user: CurrentUserDepends,
-    task_status: TaskStatusFilterQuery | None = None,
-    scope: TaskScopeFilterQuery = "my",
-):
-    """
-    Возвращает список задач с учетом фильтров.
-
-    Если нет доступа - 403 Forbidden
-    """
-    try:
-        return await service.get_filtered_tasks(
-            user=user, scope=scope, task_status=task_status
-        )
-    except AccessDeniedError as e:
+    except TeamDoesNotExistsError as e:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )
