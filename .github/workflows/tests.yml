@@ -54,17 +54,17 @@ jobs:
           pip install poetry
           poetry install --no-root 
 
-      - name: Create test database      # <-- то что делал init-test-db.sh
+      - name: Create test database
         run: |
-          PGPASSWORD=postgres psql -h localhost -U postgres -d business_db \
+          PGPASSWORD=postgres psql -h localhost -U postgres -d business_management \
             -c "CREATE DATABASE test_business_db;"
 
       - name: Run tests
         env:
-          DB_HOST: localhost
+          DB_HOST: db
           DB_PORT: 5432
           DB_USER: postgres
           DB_PASSWORD: postgres
-          DB_NAME: business_db
+          DB_NAME: business_management
         run: |
           poetry run pytest --asyncio-mode=auto -v
