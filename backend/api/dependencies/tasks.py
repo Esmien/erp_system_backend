@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import Depends, Body, Query
 
@@ -21,4 +21,12 @@ TaskServiceDepends = Annotated[TaskService, Depends(get_task_service)]
 TaskCreateBody = Annotated[TaskCreate, Body()]
 TaskUpdateBody = Annotated[TaskUpdate, Body()]
 TaskChangeStatusBody = Annotated[TaskChangeStatus, Body()]
-TaskStatusQuery = Annotated[TaskStatus, Query(description="Фильтр по статусу задачи")]
+TaskStatusFilterQuery = Annotated[
+    TaskStatus, Query(description="Фильтр по статусу задачи")
+]
+TaskScopeFilterQuery = Annotated[
+    Literal["my", "team", "all"],
+    Query(
+        description="Область видимости: my - мои задачи, team - задачи команды, all - все"
+    ),
+]

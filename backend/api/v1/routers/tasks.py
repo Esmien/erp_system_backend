@@ -1,6 +1,5 @@
-from typing import Literal
 
-from fastapi import APIRouter, HTTPException, status, Depends, Query
+from fastapi import APIRouter, HTTPException, status, Depends
 
 from backend.api.dependencies.permissions import CurrentUserDepends, get_current_user
 from backend.api.dependencies.tasks import (
@@ -8,7 +7,8 @@ from backend.api.dependencies.tasks import (
     TaskCreateBody,
     TaskUpdateBody,
     TaskChangeStatusBody,
-    TaskStatusQuery,
+    TaskStatusFilterQuery,
+    TaskScopeFilterQuery,
 )
 from backend.exceptions import (
     TaskDoesNotExistsError,
@@ -173,14 +173,13 @@ async def delete_task(
 async def get_tasks(
     service: TaskServiceDepends,
     user: CurrentUserDepends,
-    task_status: TaskStatusQuery | None = None,
-    scope: Literal["my", "team", "all"] = Query(
-        default="my",
-        description="Область видимости: my - мои задачи, team - задачи команды, all - все",
-    ),
+    task_status: TaskStatusFilterQuery | None = None,
+    scope: TaskScopeFilterQuery = "my",
 ):
     """
     Возвращает список задач с учетом фильтров.
+
+    Если нет доступа - 403 Forbidden
     """
     try:
         return await service.get_filtered_tasks(
