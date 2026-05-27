@@ -11,7 +11,7 @@ router = APIRouter(prefix="/users", tags=["Пользователи"])
 
 
 @router.get(
-    path="/me",
+    path="/me/",
     response_model=UserRead,
     status_code=status.HTTP_200_OK,
     summary="Получить инфо о себе",
@@ -24,7 +24,7 @@ async def get_my_info(current_user: CurrentUserDepends):
 
 
 @router.patch(
-    path="/me",
+    path="/me/",
     response_model=UserRead,
     status_code=status.HTTP_200_OK,
     summary="Обновить данные профиля",
@@ -45,7 +45,7 @@ async def update_my_info(
 
 
 @router.delete(
-    path="/me",
+    path="/me/",
     status_code=status.HTTP_200_OK,
     summary="'Мягкое' удаление текущего пользователя",
 )

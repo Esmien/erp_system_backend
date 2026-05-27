@@ -115,7 +115,7 @@ async def init_basic_data(
             element_id=teams_element.id,
             permissions=permissions_map[key],
         )
-        logger.success("Права администратора на команды успешно выданы.")
+        logger.success(f"Права для {key} на команды успешно выданы.")
 
     await session.commit()
     logger.info("Инициализация данных успешно завершена!")

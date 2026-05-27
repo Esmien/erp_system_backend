@@ -24,7 +24,7 @@ router = APIRouter(prefix="/auth", tags=["Аутентификация"])
 
 
 @router.post(
-    path="/register",
+    path="/register/",
     response_model=UserRead,
     status_code=status.HTTP_201_CREATED,
     summary="Регистрация пользователя",
@@ -68,7 +68,7 @@ async def register_user(
 
 
 @router.patch(
-    path="/restore",
+    path="/restore/",
     response_model=UserChangeStatus,
     status_code=status.HTTP_200_OK,
     summary="Восстановление пользователя",
@@ -103,7 +103,7 @@ async def restore_user(
 
 
 @router.post(
-    path="/login",
+    path="/login/",
     response_model=Token,
     status_code=status.HTTP_200_OK,
     summary="Вход в систему",
@@ -136,7 +136,7 @@ async def login(
 
 
 @router.post(
-    path="/logout",
+    path="/logout/",
     status_code=status.HTTP_200_OK,
     summary="Выход из системы",
 )
