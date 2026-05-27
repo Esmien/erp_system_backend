@@ -1,5 +1,6 @@
 import pytest
 
+from backend.exceptions import UserDoesNotExistsError
 from backend.user.schemas import UserUpdate
 
 
@@ -45,3 +46,20 @@ async def test_soft_delete_profile(user_service, mock_uow, user_to_update):
     mock_uow.users.soft_delete_user.assert_called_once_with(user_id=user_to_update.id)
 
     assert result is None
+
+
+async def test_update_profile_not_found(user_service, mock_uow, user_to_update):
+    update_schema = UserUpdate(name="New Name")
+    mock_uow.users.update_user.return_value = None  # Имитируем, что юзер пропал из БД
+
+    with pytest.raises(UserDoesNotExistsError):
+        await user_service.update_profile(
+            user=user_to_update, update_data=update_schema
+        )
+
+
+async def test_soft_delete_profile_not_found(user_service, mock_uow, user_to_update):
+    mock_uow.users.soft_delete_user.return_value = None
+
+    with pytest.raises(UserDoesNotExistsError):
+        await user_service.soft_delete_profile(user=user_to_update)
