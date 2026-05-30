@@ -44,3 +44,11 @@ async def test_soft_delete_user(user_repo, db_session):
     await db_session.refresh(user)
 
     assert user.is_active is False
+
+
+async def test_got_none_user(user_repo):
+    none_user_from_update = await user_repo.update_user(user_id=9999, update_dict={})
+    none_user_from_soft_delete = await user_repo.soft_delete_user(user_id=9999)
+
+    assert none_user_from_update is None
+    assert none_user_from_soft_delete is None

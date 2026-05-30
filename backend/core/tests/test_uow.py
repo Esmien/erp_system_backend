@@ -1,6 +1,13 @@
 from unittest.mock import patch
 
+from backend.api.dependencies.uow import get_uow
 from backend.core.uow import UnitOfWork
+
+
+def test_uow_provider():
+    result = get_uow()
+
+    assert type(result) is UnitOfWork
 
 
 async def test_uow_aenter_aexit_success(mock_session_factory):
