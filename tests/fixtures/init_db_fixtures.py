@@ -1,10 +1,11 @@
 import pytest
 from sqlalchemy import text
 
-
+from backend.core.constants import TaskStatus
 from backend.core.database.engine import Base
 from backend.core.database.init_db import init_basic_data
 from backend.core.security import get_password_hash
+from backend.task.models import Task
 from backend.team.models import Team
 from tests.fixtures.environment_setup import (
     fixture_engine,
@@ -60,5 +61,13 @@ async def prepare_data():
             session=session, password_hasher=_get_cached_password_hash
         )
         team = Team(name=TEAM_NAME, invite_code=TEAM_CODE)
+        task = Task(
+            title="Дефолтная тестовая задача",
+            description="Создана автоматически при подготовке БД",
+            status=TaskStatus.OPEN,
+            author_id=1,
+        )
+
+        session.add(task)
         session.add(team)
         await session.commit()

@@ -40,20 +40,3 @@ class TaskChangeStatus(BaseModel):
     status: TaskStatus = Field(..., description="Новый статус задачи")
 
     model_config = ConfigDict(extra="forbid")
-
-
-class CommentBase(BaseModel):
-    text: str = Field(..., min_length=1, description="Текст комментария")
-
-
-class CommentCreate(CommentBase):
-    pass
-
-
-class CommentRead(CommentBase):
-    id: int
-    task_id: int
-    author_id: int | None
-    created_at: datetime
-
-    model_config = ConfigDict(from_attributes=True)

@@ -5,7 +5,6 @@ from backend.task.schemas import (
     TaskRead,
     TaskCreate,
     TaskUpdate,
-    CommentCreate,
     TaskChangeStatus,
 )
 from backend.exceptions import (
@@ -86,55 +85,6 @@ async def test_delete_task_success(
 
     mock_uow.tasks.delete_task.assert_called_once_with(task_id=1)
     mock_uow.commit.assert_called_once()
-
-
-async def test_add_comment_success(
-    task_service, mock_uow, mock_user_author, sample_task, sample_comment
-):
-    # Имитируем найденную задачу
-    mock_uow.tasks.get_task_by_id.return_value = sample_task
-    # Имитируем успешное создание комментария в БД
-    mock_uow.tasks.create_comment.return_value = sample_comment
-
-    comment_in = CommentCreate(text="Тестовый комментарий")
-
-    # Автор задачи оставляет комментарий
-    result = await task_service.add_comment(
-        task_id=1, user=mock_user_author, comment_in=comment_in
-    )
-
-    assert result.text == "Тестовый комментарий"
-    mock_uow.tasks.create_comment.assert_called_once_with(
-        task_id=1, author_id=mock_user_author.id, text="Тестовый комментарий"
-    )
-    mock_uow.commit.assert_called_once()
-
-
-async def test_add_comment_access_denied(
-    task_service, mock_uow, mock_user_stranger, sample_task
-):
-    # Имитируем найденную задачу
-    mock_uow.tasks.get_task_by_id.return_value = sample_task
-    comment_in = CommentCreate(text="А я тут мимо проходил")
-
-    # Пользователь без прав (не автор, не исполнитель, не админ) пытается оставить коммент
-    with pytest.raises(AccessDeniedError):
-        await task_service.add_comment(
-            task_id=1, user=mock_user_stranger, comment_in=comment_in
-        )
-
-    mock_uow.tasks.create_comment.assert_not_called()
-
-
-async def test_add_comment_task_not_found(task_service, mock_uow, mock_user_author):
-    # Задачи не существует
-    mock_uow.tasks.get_task_by_id.return_value = None
-    comment_in = CommentCreate(text="Коммент в пустоту")
-
-    with pytest.raises(TaskDoesNotExistsError):
-        await task_service.add_comment(
-            task_id=999, user=mock_user_author, comment_in=comment_in
-        )
 
 
 async def test_get_filtered_tasks_team_scope(task_service, mock_uow, mock_user_author):
@@ -282,50 +232,6 @@ async def test_change_status_repo_fails(
         await task_service.change_status(
             task_id=1, new_status=new_status, user=mock_user_author
         )
-
-
-async def test_permissions_as_executor_and_manager(
-    task_service, mock_uow, mock_user_stranger, sample_task, sample_comment
-):
-    """
-    Пробиваем short-circuit логику в проверке прав:
-    (executor_id == user.id) or is_manager_or_admin
-    """
-    # === Сценарий 1: Запрос от Исполнителя ===
-    sample_task.executor_id = mock_user_stranger.id
-    mock_uow.tasks.get_task_by_id.return_value = sample_task
-    mock_uow.tasks.update_task.return_value = sample_task
-    mock_uow.tasks.create_comment.return_value = sample_comment
-
-    # Меняем статус как исполнитель
-    await task_service.change_status(
-        task_id=1,
-        new_status=TaskChangeStatus(status=TaskStatus.DONE),
-        user=mock_user_stranger,
-    )
-    # Оставляем коммент как исполнитель
-    await task_service.add_comment(
-        task_id=1,
-        user=mock_user_stranger,
-        comment_in=CommentCreate(text="Коммент исполнителя"),
-    )
-
-    # === Сценарий 2: Запрос от Менеджера (не автор и не исполнитель) ===
-    sample_task.executor_id = None
-    mock_user_stranger.role.name = RoleName.MANAGER
-
-    # Меняем статус как менеджер
-    await task_service.change_status(
-        task_id=1,
-        new_status=TaskChangeStatus(status=TaskStatus.DONE),
-        user=mock_user_stranger,
-    )
-    # Оставляем коммент как менеджер
-    await task_service.add_comment(
-        task_id=1,
-        user=mock_user_stranger,
-        comment_in=CommentCreate(text="Коммент менеджера"),
-    )
 
 
 async def test_update_task_not_found_initially(

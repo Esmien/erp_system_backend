@@ -44,20 +44,6 @@ async def test_delete_task(task_repo, task_in):
     assert deleted_task is None
 
 
-async def test_create_comment(task_repo, task_in):
-    task = await task_repo.create_task(task_in=task_in, author_id=1)
-
-    comment_text = "Test comment"
-    comment = await task_repo.create_comment(
-        task_id=task.id, author_id=1, text=comment_text
-    )
-
-    assert comment.id is not None
-    assert comment.task_id == task.id
-    assert comment.author_id == 1
-    assert comment.text == comment_text
-
-
 async def test_get_tasks_with_filters_status_and_user(task_repo, task_in):
     """Покрываем строки фильтрации по status и user_id"""
     task_in = TaskCreate(title="Фильтр", status=TaskStatus.IN_PROGRESS)

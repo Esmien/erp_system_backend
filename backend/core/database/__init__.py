@@ -10,8 +10,9 @@ def load_all_models() -> tuple:
     """
     from backend.user.models import User, Role
     from backend.team.models import Team
-    from backend.task.models import Task, Comment
+    from backend.task.models import Task
     from backend.rbac.models import AccessRule, BusinessElement
+    from backend.comment.models import Comment
 
     logger.info("Реестр моделей SQLAlchemy успешно инициализирован")
 

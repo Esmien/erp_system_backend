@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from types import TracebackType
 
+from backend.comment.repository import CommentRepository
 from backend.core.database.engine import async_session_maker
 from backend.user.repository import UserRepository, AuthRepository, RegisterRepository
 from backend.team.repository import TeamRepository
@@ -16,6 +17,7 @@ class IUnitOfWork(ABC):
     register: RegisterRepository
     teams: TeamRepository
     tasks: TaskRepository
+    comments: CommentRepository
     rbac: RbacRepository
 
     @abstractmethod
@@ -49,6 +51,7 @@ class UnitOfWork(IUnitOfWork):
         self.register = RegisterRepository(self.session)
         self.teams = TeamRepository(self.session)
         self.tasks = TaskRepository(self.session)
+        self.comments = CommentRepository(self.session)
         self.rbac = RbacRepository(self.session)
 
         return self
