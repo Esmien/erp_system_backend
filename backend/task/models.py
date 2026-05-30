@@ -14,6 +14,7 @@ from backend.core.database.engine import Base
 # Для аннотаций во избежание циклических импортов
 if TYPE_CHECKING:
     from backend.user.models import User
+    from backend.comment.models import Comment
 
 # Собираем статусы в строку для кастомных констрейтов на уровне БД.
 # Без них повторные миграции падают
@@ -27,7 +28,7 @@ class Task(Base):
     title: Mapped[str] = mapped_column(String(50), comment="Название задачи")
     description: Mapped[str | None] = mapped_column(Text, comment="Подробности задачи")
     expire: Mapped[datetime.date | None] = mapped_column(Date, comment="Дедлайн")
-    comments: Mapped[list["Comment"]] = relationship(back_populates="task")
+    comments: Mapped[list[Comment]] = relationship(back_populates="task")
     status: Mapped[str] = mapped_column(
         SQLEnum(
             TaskStatus,
@@ -60,23 +61,4 @@ class Task(Base):
         CheckConstraint(
             f"status IN ({ALLOWED_STATUSES})", name="check_valid_status_name"
         ),
-    )
-
-
-class Comment(Base):
-    __tablename__ = "comments"
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    text: Mapped[str | None] = mapped_column(Text, comment="Комментарий к задаче")
-    task_id: Mapped[int] = mapped_column(
-        ForeignKey(column="tasks.id", ondelete="CASCADE")
-    )
-    author_id: Mapped[int | None] = mapped_column(
-        ForeignKey(column="users.id", ondelete="SET NULL")
-    )
-    task: Mapped[Task] = relationship(back_populates="comments")
-    author: Mapped[User | None] = relationship(back_populates="comments")
-
-    created_at: Mapped[datetime.datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
     )

@@ -3,14 +3,6 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 import pytest_asyncio
 
-from backend.rbac.repository import RbacRepository
-from backend.rbac.service import RbacService
-from backend.task.repository import TaskRepository
-from backend.task.service import TaskService
-from backend.team.repository import TeamRepository
-from backend.team.service import TeamService
-from backend.user.repository import RegisterRepository, AuthRepository, UserRepository
-from backend.user.service import RegisterService, AuthService, UserService
 from tests.fixtures.environment_setup import fixture_async_session_maker
 
 
@@ -52,6 +44,7 @@ def mock_uow():
     uow.auth = AsyncMock()
     uow.register = AsyncMock()
     uow.tasks = AsyncMock()
+    uow.comments = AsyncMock()
     uow.teams = AsyncMock()
 
     # Мокаем методы самого UoW
@@ -59,63 +52,3 @@ def mock_uow():
     uow.rollback = AsyncMock()
 
     return uow
-
-
-@pytest.fixture
-def rbac_service(mock_uow):
-    return RbacService(uow=mock_uow)
-
-
-@pytest.fixture
-def team_service(mock_uow):
-    return TeamService(uow=mock_uow)
-
-
-@pytest.fixture
-def register_service(mock_uow):
-    return RegisterService(uow=mock_uow)
-
-
-@pytest.fixture
-def auth_service(mock_uow):
-    return AuthService(uow=mock_uow)
-
-
-@pytest.fixture
-def user_service(mock_uow):
-    return UserService(uow=mock_uow)
-
-
-@pytest.fixture
-def rbac_repo(db_session):
-    return RbacRepository(session=db_session)
-
-
-@pytest.fixture
-def team_repo(db_session):
-    return TeamRepository(session=db_session)
-
-
-@pytest.fixture
-def register_repo(db_session):
-    return RegisterRepository(session=db_session)
-
-
-@pytest.fixture
-def auth_repo(db_session):
-    return AuthRepository(session=db_session)
-
-
-@pytest.fixture
-def user_repo(db_session):
-    return UserRepository(session=db_session)
-
-
-@pytest.fixture
-def task_repo(db_session):
-    return TaskRepository(session=db_session)
-
-
-@pytest.fixture
-def task_service(mock_uow):
-    return TaskService(uow=mock_uow)
