@@ -63,3 +63,9 @@ async def test_activate_user(auth_repo, db_session, initial_active_status):
 
     assert activated_user.is_active is True
     assert user.is_active is True
+
+
+async def test_goy_none_user(auth_repo):
+    user = await auth_repo.activate_user(user_email="fake_user@fake.com")
+
+    assert user is None

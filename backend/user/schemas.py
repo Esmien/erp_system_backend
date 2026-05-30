@@ -1,5 +1,7 @@
 from pydantic import BaseModel, EmailStr, Field, model_validator, ConfigDict
 
+from backend.exceptions import PasswordsMismatchError
+
 
 class RoleBase(BaseModel):
     name: str
@@ -37,7 +39,7 @@ class UserRegister(UserBase):
     @model_validator(mode="after")
     def check_passwords_match(self):
         if self.password != self.repeat_password:
-            raise ValueError("Пароли не совпадают!")
+            raise PasswordsMismatchError("Пароли не совпадают!")
         return self
 
 

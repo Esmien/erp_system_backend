@@ -44,3 +44,7 @@ class TaskDoesNotExistsError(Exception):
 
 class BadCredentialsError(Exception):
     pass
+
+
+class PasswordsMismatchError(Exception):
+    pass
