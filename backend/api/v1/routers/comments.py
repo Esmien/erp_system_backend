@@ -11,6 +11,25 @@ router = APIRouter(
 )
 
 
+@router.get(
+    path="/",
+    response_model=list[CommentRead],
+    summary="Получить список комментариев к задаче",
+)
+async def get_comments(
+    task_id: int,
+    service: CommentServiceDepends,
+    user: CurrentUserDepends,
+):
+    """
+    Возвращает все комментарии к выбранной задаче.
+
+    Если задача не найдена - 404 Not Found
+    Если нет прав для просмотра - 403 Forbidden
+    """
+    return await service.get_task_comments(task_id=task_id, user=user)
+
+
 @router.post(
     path="/",
     response_model=CommentRead,
