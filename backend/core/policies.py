@@ -1,55 +1,26 @@
 from backend.core.constants import RoleName, BusinessElementName, AccessLevel
 from backend.rbac.schemas import AccessRules
 
+
+FULL_ACCESS = AccessRules(
+    create=AccessLevel.ALL,
+    read=AccessLevel.ALL,
+    update=AccessLevel.ALL,
+    delete=AccessLevel.ALL,
+).model_dump(exclude_none=True)
+
 # Структура: { Роль: { Бизнес-сущность: { действие: уровень_доступа } } }
 DEFAULT_POLICIES = {
     RoleName.ADMIN: {
-        BusinessElementName.TASKS: AccessRules(
-            create=AccessLevel.ALL,
-            read=AccessLevel.ALL,
-            update=AccessLevel.ALL,
-            delete=AccessLevel.ALL,
-            change_status=AccessLevel.ALL,
-        ).model_dump(exclude_none=True),
-        BusinessElementName.COMMENTS: AccessRules(
-            create=AccessLevel.ALL,
-            read=AccessLevel.ALL,
-            update=AccessLevel.ALL,
-            delete=AccessLevel.ALL,
-        ).model_dump(exclude_none=True),
-        BusinessElementName.TEAMS: AccessRules(
-            create=AccessLevel.ALL,
-            read=AccessLevel.ALL,
-            update=AccessLevel.ALL,
-            delete=AccessLevel.ALL,
-        ).model_dump(exclude_none=True),
-        BusinessElementName.USERS: AccessRules(
-            create=AccessLevel.ALL,
-            read=AccessLevel.ALL,
-            update=AccessLevel.ALL,
-            delete=AccessLevel.ALL,
-        ).model_dump(exclude_none=True),
+        BusinessElementName.TASKS: FULL_ACCESS | {"change_status": AccessLevel.ALL},
+        BusinessElementName.COMMENTS: FULL_ACCESS,
+        BusinessElementName.TEAMS: FULL_ACCESS,
+        BusinessElementName.USERS: FULL_ACCESS,
     },
     RoleName.MANAGER: {
-        BusinessElementName.TASKS: AccessRules(
-            create=AccessLevel.ALL,
-            read=AccessLevel.ALL,
-            update=AccessLevel.ALL,
-            delete=AccessLevel.ALL,
-            change_status=AccessLevel.ALL,
-        ).model_dump(exclude_none=True),
-        BusinessElementName.COMMENTS: AccessRules(
-            create=AccessLevel.ALL,
-            read=AccessLevel.ALL,
-            update=AccessLevel.ALL,
-            delete=AccessLevel.ALL,
-        ).model_dump(exclude_none=True),
-        BusinessElementName.TEAMS: AccessRules(
-            create=AccessLevel.ALL,
-            read=AccessLevel.ALL,
-            update=AccessLevel.ALL,
-            delete=AccessLevel.ALL,
-        ).model_dump(exclude_none=True),
+        BusinessElementName.TASKS: FULL_ACCESS | {"change_status": AccessLevel.ALL},
+        BusinessElementName.COMMENTS: FULL_ACCESS,
+        BusinessElementName.TEAMS: FULL_ACCESS,
         BusinessElementName.USERS: AccessRules(read=AccessLevel.ALL).model_dump(
             exclude_none=True
         ),
