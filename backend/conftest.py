@@ -11,6 +11,8 @@ pytest_plugins = [
     "backend.comment.tests.fixtures.comment_fixtures",
     "backend.rbac.tests.fixtures.rbac_fixtures",
     "backend.evaluation.tests.fixtures.evaluation_fixtures",
+    "backend.team.tests.fixtures.team_fixtures",
+    "backend.user.tests.fixtures.user_fixtures",
     "tests.fixtures.init_db_fixtures",
     "tests.fixtures.environment_fixtures",
 ]
