@@ -22,7 +22,7 @@ def sample_comment():
     return CommentRead(
         id=1,
         task_id=1,
-        author_id=1,
+        author_id=2,
         text="Тестовый комментарий",
         created_at=datetime.now(timezone.utc),
     )

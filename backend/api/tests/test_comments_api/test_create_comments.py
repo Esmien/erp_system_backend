@@ -3,7 +3,7 @@ from backend.api.main import app
 from backend.api.tests.test_tasks_api.get_user_override import override_get_regular_user
 
 
-async def test_add_comment_success(client, sample_comment):
+async def test_add_comment_success(client):
     comment_data = {"text": "Это важный комментарий к задаче"}
     response = await client.post("/api/v1/tasks/1/comments/", json=comment_data)
 
