@@ -3,6 +3,7 @@ from fastapi import status, APIRouter, Depends
 from backend.api.dependencies.permissions import CurrentUserDepends, get_current_user
 from backend.api.dependencies.comments import CommentCreateBody, CommentServiceDepends
 from backend.comment.schemas import CommentRead
+from backend.core.utils.error_schemas import ErrorResponseSchema
 
 router = APIRouter(
     prefix="/tasks/{task_id}/comments",
@@ -15,6 +16,13 @@ router = APIRouter(
     path="/",
     response_model=list[CommentRead],
     summary="Получить список комментариев к задаче",
+    responses={
+        403: {
+            "model": ErrorResponseSchema,
+            "description": "Недостаточно прав для просмотра комментариев",
+        },
+        404: {"model": ErrorResponseSchema, "description": "Задача не найдена"},
+    },
 )
 async def get_comments(
     task_id: int,
@@ -35,6 +43,13 @@ async def get_comments(
     response_model=CommentRead,
     status_code=status.HTTP_201_CREATED,
     summary="Добавить комментарий к задаче",
+    responses={
+        403: {
+            "model": ErrorResponseSchema,
+            "description": "Недостаточно прав для комментирования задачи",
+        },
+        404: {"model": ErrorResponseSchema, "description": "Задача не найдена"},
+    },
 )
 async def add_comment(
     task_id: int,

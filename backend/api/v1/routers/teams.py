@@ -11,6 +11,7 @@ from backend.api.dependencies.teams import (
     TeamJoinBody,
 )
 from backend.core.constants import BusinessElementName, PermissionName
+from backend.core.utils.error_schemas import ErrorResponseSchema
 from backend.team.schemas import TeamWithMembersRead, TeamRead
 
 router = APIRouter(
@@ -23,6 +24,9 @@ router = APIRouter(
     response_model=TeamWithMembersRead,
     status_code=status.HTTP_200_OK,
     summary="Получить информацию о команде",
+    responses={
+        404: {"model": ErrorResponseSchema, "description": "Команда не найдена"},
+    },
 )
 async def get_team(
     team_id: int,
@@ -50,6 +54,12 @@ async def get_team(
             )
         )
     ],
+    responses={
+        400: {
+            "model": ErrorResponseSchema,
+            "description": "Команда с таким названием уже существует",
+        },
+    },
 )
 async def create_team(
     service: TeamServiceDepends,
@@ -68,6 +78,16 @@ async def create_team(
     response_model=TeamRead,
     status_code=status.HTTP_200_OK,
     summary="Присоединиться к команде по коду",
+    responses={
+        400: {
+            "model": ErrorResponseSchema,
+            "description": "Попытка повторно вступить в команду",
+        },
+        404: {
+            "model": ErrorResponseSchema,
+            "description": "Команда не найдена по инвайт-коду",
+        },
+    },
 )
 async def join_team(
     join_data: TeamJoinBody,

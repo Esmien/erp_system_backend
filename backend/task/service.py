@@ -131,7 +131,7 @@ class TaskService:
 
         Raises:
             TaskDoesNotExists - если задача не нашлась
-
+            UserDoesNotExistsError - если назначаемый исполнитель не существует
         """
         update_dict = update_data.model_dump(exclude_unset=True)
 
@@ -142,7 +142,7 @@ class TaskService:
         async with self.uow:
             task = await self.uow.tasks.get_task_by_id(task_id)
             if not task:
-                raise TaskDoesNotExistsError
+                raise TaskDoesNotExistsError(self.TASK_NOT_FOUND)
 
             # Проверка прав: руководитель или автор
             self._check_user_is_manager_or_author(task=task, user=user)

@@ -53,6 +53,13 @@ async def register_user(
     response_model=UserChangeStatus,
     status_code=status.HTTP_200_OK,
     summary="Восстановление пользователя",
+    responses={
+        401: {
+            "model": ErrorResponseSchema,
+            "description": "Неверные данные учетной записи или пользователь не существует",
+        },
+        409: {"model": ErrorResponseSchema, "description": "Пользователь уже активен"},
+    },
 )
 async def restore_user(
     form_data: AuthFormDepends,
@@ -81,6 +88,13 @@ async def restore_user(
     response_model=Token,
     status_code=status.HTTP_200_OK,
     summary="Вход в систему",
+    responses={
+        401: {
+            "model": ErrorResponseSchema,
+            "description": "Неверные данные учетной записи или пользователь не существует",
+        },
+        403: {"model": ErrorResponseSchema, "description": "Пользователь не активен"},
+    },
 )
 async def login(
     form_data: AuthFormDepends,

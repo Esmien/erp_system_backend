@@ -5,6 +5,7 @@ from backend.api.dependencies.users import (
     UserServiceDepends,
     UserUpdateBody,
 )
+from backend.core.utils.error_schemas import ErrorResponseSchema
 from backend.user.schemas import UserRead
 
 router = APIRouter(prefix="/users", tags=["Пользователи"])
@@ -28,6 +29,12 @@ async def get_my_info(current_user: CurrentUserDepends):
     response_model=UserRead,
     status_code=status.HTTP_200_OK,
     summary="Обновить данные профиля",
+    responses={
+        400: {
+            "model": ErrorResponseSchema,
+            "description": "Пользователь не существует",
+        },
+    },
 )
 async def update_my_info(
     update_data: UserUpdateBody,
@@ -37,6 +44,8 @@ async def update_my_info(
     """
     Обновляет личные данные пользователя.
     Можно передать только те поля, которые нужно изменить (например, только name).
+
+    Если пользователь не найден - 400 Bad Request
     """
     updated_user = await service.update_profile(
         user=current_user, update_data=update_data
@@ -48,6 +57,12 @@ async def update_my_info(
     path="/me/",
     status_code=status.HTTP_200_OK,
     summary="'Мягкое' удаление текущего пользователя",
+    responses={
+        400: {
+            "model": ErrorResponseSchema,
+            "description": "Пользователь не существует",
+        },
+    },
 )
 async def delete_me(
     current_user: CurrentUserDepends,
@@ -56,6 +71,8 @@ async def delete_me(
     """
     'Мягкое' удаление пользователя (is_active=False)
     Аккаунт восстановить можно через /auth/restore
+
+    Если пользователь не найден - 400 Bad Request
     """
 
     # Удаляем пользователя, делая его неактивным
