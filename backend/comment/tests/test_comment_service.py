@@ -83,3 +83,46 @@ async def test_permissions_as_executor_and_manager(
         user=mock_user_stranger,
         comment_in=CommentCreate(text="Коммент менеджера"),
     )
+
+
+async def test_get_task_comments_success(
+    comment_service, mock_uow, sample_task, sample_comment, mock_user_author
+):
+    mock_uow.tasks.get_task_by_id.return_value = sample_task
+    mock_uow.comments.get_comments_by_task_id.return_value = [sample_comment]
+    sample_task.executor_id = mock_user_author.id
+
+    comments = await comment_service.get_task_comments(
+        task_id=sample_task.id,
+        user=mock_user_author,
+    )
+
+    assert comments == [sample_comment]
+    mock_uow.tasks.get_task_by_id.assert_awaited_once_with(sample_task.id)
+    mock_uow.comments.get_comments_by_task_id.assert_awaited_once_with(sample_task.id)
+
+
+@pytest.mark.parametrize(
+    "is_task, exc", [(True, AccessDeniedError), (False, TaskDoesNotExistsError)]
+)
+async def test_get_task_comments_access_denied(
+    comment_service, mock_uow, sample_task, mock_user_stranger, is_task, exc
+):
+    if is_task:
+        mock_uow.tasks.get_task_by_id.return_value = sample_task
+    else:
+        mock_uow.tasks.get_task_by_id.return_value = None
+
+    sample_task.author_id = 111
+    sample_task.executor_id = 222
+
+    mock_user_stranger.id = 999
+    mock_user_stranger.role.name = RoleName.USER
+
+    with pytest.raises(exc):
+        await comment_service.get_task_comments(
+            task_id=sample_task.id,
+            user=mock_user_stranger,
+        )
+
+    mock_uow.comments.get_comments_by_task_id.assert_not_awaited()
