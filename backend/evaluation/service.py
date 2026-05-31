@@ -15,6 +15,7 @@ from backend.evaluation.schemas import (
     EvaluationCreate,
     EvaluationRead,
     EvaluationCreateDTO,
+    UserStatisticsRead,
 )
 from backend.rbac.service import RbacService
 from backend.user.schemas import UserDTO
@@ -107,7 +108,7 @@ class EvaluationService:
             )
             context = {"is_participant": is_participant}
 
-            # Проверяем права на чтение с учетом контекста
+        # Проверяем права на чтение с учетом контекста
         has_access = await self.rbac.check_permission(
             role_id=user.role_id,
             business_element_name=BusinessElementName.EVALUATIONS,
@@ -122,3 +123,16 @@ class EvaluationService:
             evaluation = await self.uow.evaluations.get_by_task_id(task_id)
 
             return evaluation
+
+    async def get_my_statistics(self, user: UserDTO) -> UserStatisticsRead:
+        """
+        Возвращает статистику оценок текущего пользователя
+
+        Args:
+            user - текущий пользователь
+
+        Returns:
+            Статистика текущего пользователя
+        """
+        async with self.uow:
+            return await self.uow.evaluations.get_user_statistics(user_id=user.id)

@@ -27,3 +27,8 @@ class EvaluationRead(EvaluationBase):
     evaluator_id: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class UserStatisticsRead(BaseModel):
+    average_evaluation: float | None
+    tasks_evaluated_count: int

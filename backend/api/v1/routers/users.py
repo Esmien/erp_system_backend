@@ -1,11 +1,13 @@
 from fastapi import APIRouter, status
 
+from backend.api.dependencies.evaluations import EvaluationServiceDepends
 from backend.api.dependencies.permissions import CurrentUserDepends
 from backend.api.dependencies.users import (
     UserServiceDepends,
     UserUpdateBody,
 )
 from backend.core.utils.error_schemas import ErrorResponseSchema
+from backend.evaluation.schemas import UserStatisticsRead
 from backend.user.schemas import UserRead
 
 router = APIRouter(prefix="/users", tags=["Пользователи"])
@@ -22,6 +24,22 @@ async def get_my_info(current_user: CurrentUserDepends):
     Возвращает информацию о пользователе
     """
     return current_user
+
+
+@router.get(
+    path="/me/statistics/",
+    response_model=UserStatisticsRead,
+    status_code=status.HTTP_200_OK,
+    summary="Получить свою статистику оценок",
+)
+async def get_my_statistics(
+    user: CurrentUserDepends,
+    service: EvaluationServiceDepends,
+):
+    """
+    Возвращает среднюю оценку и количество оцененных задач для текущего пользователя.
+    """
+    return await service.get_my_statistics(user=user)
 
 
 @router.patch(

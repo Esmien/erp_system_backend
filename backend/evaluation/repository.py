@@ -1,8 +1,13 @@
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.evaluation.models import Evaluation
-from backend.evaluation.schemas import EvaluationRead, EvaluationCreateDTO
+from backend.evaluation.schemas import (
+    EvaluationRead,
+    EvaluationCreateDTO,
+    UserStatisticsRead,
+)
+from backend.task.models import Task
 
 
 class EvaluationRepository:
@@ -42,3 +47,32 @@ class EvaluationRepository:
         eval_model = result.scalar_one_or_none()
 
         return EvaluationRead.model_validate(obj=eval_model) if eval_model else None
+
+    async def get_user_statistics(self, user_id: int) -> UserStatisticsRead:
+        """
+        Считает среднюю оценку и количество оцененных задач для пользователя
+
+        Args:
+            user_id - ID пользователя для подсчета статистики
+
+        Returns:
+            Статистика пользователя
+        """
+        stmt = (
+            select(
+                func.avg(Evaluation.value).label("avg_value"),
+                func.count(Evaluation.id).label("count_evals"),
+            )
+            .join(Task, Task.id == Evaluation.task_id)
+            .where(Task.executor_id == user_id)
+        )
+
+        result = await self.session.execute(stmt)
+        row = result.one()
+
+        avg_val = row.avg_value
+
+        return UserStatisticsRead(
+            average_evaluation=round(float(avg_val), 2) if avg_val else None,
+            tasks_evaluated_count=row.count_evals,
+        )
