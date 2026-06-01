@@ -22,7 +22,7 @@ async def test_get_task_success(task_service, mock_uow, sample_task, mock_user_a
 
     assert result.id == 1
     mock_uow.tasks.get_task_by_id.assert_called_once_with(task_id=1)
-    task_service.rbac.check_permission.assert_called_once()
+    task_service.rbac.enforce_permission.assert_called_once()
 
 
 async def test_get_task_not_found(task_service, mock_uow, mock_user_author):
@@ -36,7 +36,7 @@ async def test_get_task_access_denied(
     task_service, mock_uow, sample_task, mock_user_stranger
 ):
     mock_uow.tasks.get_task_by_id.return_value = sample_task
-    task_service.rbac.check_permission.return_value = False
+    task_service.rbac.enforce_permission.side_effect = AccessDeniedError
 
     with pytest.raises(AccessDeniedError):
         await task_service.get_task(task_id=1, user=mock_user_stranger)
@@ -57,7 +57,7 @@ async def test_create_task(task_service, mock_uow, mock_user_author, sample_task
 
 async def test_create_task_access_denied(task_service, mock_user_author):
     task_in = TaskCreate(title="Тест")
-    task_service.rbac.check_permission.return_value = False
+    task_service.rbac.enforce_permission.side_effect = AccessDeniedError
 
     with pytest.raises(AccessDeniedError):
         await task_service.create_task(task_in=task_in, author=mock_user_author)
@@ -68,7 +68,7 @@ async def test_update_task_access_denied(
 ):
     mock_uow.tasks.get_task_by_id.return_value = sample_task
     update_data = TaskUpdate(title="Взлом")
-    task_service.rbac.check_permission.return_value = False
+    task_service.rbac.enforce_permission.side_effect = AccessDeniedError
 
     with pytest.raises(AccessDeniedError):
         await task_service.update_task(
@@ -142,7 +142,7 @@ async def test_get_filtered_tasks_all_scope_success(
 async def test_get_filtered_tasks_all_scope_access_denied(
     task_service, mock_uow, mock_user_author
 ):
-    task_service.rbac.check_permission.return_value = False
+    task_service.rbac.enforce_permission.side_effect = AccessDeniedError
     with pytest.raises(AccessDeniedError):
         await task_service.get_filtered_tasks(
             user=mock_user_author, scope="all", task_status=None
@@ -206,7 +206,7 @@ async def test_change_status_access_denied(
     task_service, mock_uow, mock_user_stranger, sample_task
 ):
     mock_uow.tasks.get_task_by_id.return_value = sample_task
-    task_service.rbac.check_permission.return_value = False
+    task_service.rbac.enforce_permission.side_effect = AccessDeniedError
     new_status = TaskChangeStatus(status=TaskStatus.DONE)
 
     with pytest.raises(AccessDeniedError):

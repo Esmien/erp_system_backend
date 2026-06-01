@@ -16,9 +16,17 @@ def eval_repo(db_session):
 
 
 @pytest.fixture
-def eval_service(mock_uow, rbac_service):
-    rbac_service.check_permission = AsyncMock(return_value=True)
-    return EvaluationService(uow=mock_uow, rbac_service=rbac_service)
+def mock_rbac_service():
+    service = AsyncMock()
+    service.enforce_permission.return_value = None
+    service.check_permission.return_value = True
+    return service
+
+
+@pytest.fixture
+def eval_service(mock_uow, mock_rbac_service):
+    mock_rbac_service.check_permission = AsyncMock(return_value=True)
+    return EvaluationService(uow=mock_uow, rbac_service=mock_rbac_service)
 
 
 @pytest.fixture

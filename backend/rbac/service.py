@@ -1,7 +1,9 @@
 from backend.core.constants import BusinessElementName
 from backend.core.policies import AccessLevel
 from backend.core.uow import IUnitOfWork
+from backend.exceptions import AccessDeniedError
 from backend.rbac.schemas import AccessContextDTO
+from backend.user.schemas import UserDTO
 
 
 class RbacService:
@@ -44,3 +46,25 @@ class RbacService:
             return context.is_author
 
         return False
+
+    async def enforce_permission(
+        self,
+        user: UserDTO,
+        business_element_name: BusinessElementName,
+        action: str,
+        context: AccessContextDTO | None = None,
+        error_msg: str = "Недостаточно прав для выполнения операции",
+    ) -> None:
+        """
+        Обертка над check_permission.
+        Сразу выбрасывает исключение, если прав нет.
+        """
+        has_access = await self.check_permission(
+            role_id=user.role_id,
+            business_element_name=business_element_name,
+            action=action,
+            context=context,
+        )
+
+        if not has_access:
+            raise AccessDeniedError(error_msg)

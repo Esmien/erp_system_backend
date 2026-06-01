@@ -19,15 +19,16 @@ from backend.exceptions import (
     TaskDoesNotExistsError,
     TaskAlreadyEvaluatedError,
 )
+from backend.rbac.schemas import AccessContextDTO
 
 
 async def test_evaluate_task_access_denied(eval_service, test_user):
     # Принудительно забираем права для этого теста
-    eval_service.rbac.check_permission.return_value = False
+    eval_service.rbac.enforce_permission.side_effect = AccessDeniedError
 
     evaluation_in = EvaluationCreate(value=5, comment="Test")
 
-    with pytest.raises(AccessDeniedError, match="Недостаточно прав"):
+    with pytest.raises(AccessDeniedError):
         await eval_service.evaluate_task(
             task_id=1, evaluation_in=evaluation_in, user=test_user
         )
@@ -128,11 +129,9 @@ async def test_get_evaluation_access_denied(eval_service, mock_uow, test_user):
     mock_uow.tasks.get_task_by_id.return_value = mock_task
 
     # RBAC жестко режет права (например, обычный юзер лезет в чужую задачу)
-    eval_service.rbac.check_permission.return_value = False
+    eval_service.rbac.enforce_permission.side_effect = AccessDeniedError
 
-    with pytest.raises(
-        AccessDeniedError, match="У вас нет прав для просмотра этой оценки"
-    ):
+    with pytest.raises(AccessDeniedError):
         await eval_service.get_evaluation(task_id=1, user=test_user)
 
 
@@ -142,9 +141,6 @@ async def test_get_evaluation_success(eval_service, mock_uow, test_user):
     mock_task.author_id = test_user.id  # Совпадает с ID текущего пользователя
     mock_task.executor_id = 99
     mock_uow.tasks.get_task_by_id.return_value = mock_task
-
-    # RBAC пропускает
-    eval_service.rbac.check_permission.return_value = True
 
     # Репозиторий возвращает оценку
     expected_eval = MagicMock()
@@ -156,9 +152,10 @@ async def test_get_evaluation_success(eval_service, mock_uow, test_user):
     assert result == expected_eval
 
     # Проверяем, что в RBAC улетел правильный контекст
-    eval_service.rbac.check_permission.assert_awaited_once_with(
-        role_id=test_user.role_id,
+    eval_service.rbac.enforce_permission.assert_awaited_once_with(
+        user=test_user,
         business_element_name=BusinessElementName.EVALUATIONS,
         action=Action.READ,
-        context={"is_participant": True},
+        context=AccessContextDTO(is_participant=True),
+        error_msg="У вас нет прав для просмотра этой оценки",
     )

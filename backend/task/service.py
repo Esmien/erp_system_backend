@@ -17,7 +17,6 @@ from backend.task.schemas import (
 )
 from backend.user.schemas import UserDTO
 from backend.exceptions import (
-    AccessDeniedError,
     TaskDoesNotExistsError,
     UserDoesNotExistsError,
     TeamDoesNotExistsError,
@@ -76,15 +75,13 @@ class TaskService:
             )  # Raises TaskDoesNotExists
 
             context = self._build_task_context(task=task, user=user)
-            has_access = await self.rbac.check_permission(
-                role_id=user.role_id,
+            await self.rbac.enforce_permission(
+                user=user,
                 business_element_name=BusinessElementName.TASKS,
                 action=Action.READ,
                 context=context,
+                error_msg="Нет прав на просмотр этой задачи",
             )
-
-            if not has_access:
-                raise AccessDeniedError("Нет прав на просмотр этой задачи")
 
             return task
 
@@ -119,15 +116,13 @@ class TaskService:
             team_id_filter = user.team_id
 
         async with self.uow:
-            has_access = await self.rbac.check_permission(
-                role_id=user.role_id,
+            await self.rbac.enforce_permission(
+                user=user,
                 business_element_name=BusinessElementName.TASKS,
                 action=Action.READ,
                 context=context,
+                error_msg="Недостаточно прав для просмотра всех задач",
             )
-
-            if not has_access and scope == "all":
-                raise AccessDeniedError("Недостаточно прав для просмотра всех задач")
 
             tasks = await self.uow.tasks.get_tasks_with_filters(
                 user_id=user_id_filter, team_id=team_id_filter, task_status=task_status
@@ -153,14 +148,12 @@ class TaskService:
             AccessDeniedError - если нет прав для создания задачи
         """
         async with self.uow:
-            has_access = await self.rbac.check_permission(
-                role_id=author.role_id,
+            await self.rbac.enforce_permission(
+                user=author,
                 business_element_name=BusinessElementName.TASKS,
                 action=Action.CREATE,
+                error_msg="Недостаточно прав для создания задачи",
             )
-
-            if not has_access:
-                raise AccessDeniedError("Недостаточно прав для создания задачи")
 
             new_task = await self.uow.tasks.create_task(
                 task_in=task_in, author_id=author.id
@@ -201,15 +194,13 @@ class TaskService:
             task = await self._get_task_by_id(task_id=task_id)
 
             context = self._build_task_context(user=user, task=task)
-            has_access = await self.rbac.check_permission(
-                role_id=user.role_id,
+            await self.rbac.enforce_permission(
+                user=user,
                 business_element_name=BusinessElementName.TASKS,
                 action=Action.UPDATE,
                 context=context,
+                error_msg="У вас нет прав для редактирования этой задачи",
             )
-
-            if not has_access:
-                raise AccessDeniedError("У вас нет прав для редактирования этой задачи")
 
             executor_id = update_dict.get("executor_id")
             if executor_id is not None:
@@ -253,18 +244,13 @@ class TaskService:
             task = await self._get_task_by_id(task_id=task_id)
 
             context = self._build_task_context(user=user, task=task)
-            has_access = await self.rbac.check_permission(
-                role_id=user.role_id,
+            await self.rbac.enforce_permission(
+                user=user,
                 business_element_name=BusinessElementName.TASKS,
                 action=Action.CHANGE_STATUS,
                 context=context,
+                error_msg="Недостаточно прав для изменения статуса",
             )
-
-            if not has_access:
-                logger.warning(
-                    f"Попытка изменить статус задачи {task.title} без прав (User: {user.email})"
-                )
-                raise AccessDeniedError("Недостаточно прав для изменения статуса")
 
             updated_task = await self.uow.tasks.update_task(
                 task_id=task_id, update_data=new_status.model_dump()
@@ -295,15 +281,13 @@ class TaskService:
             task = await self._get_task_by_id(task_id=task_id)
 
             context = self._build_task_context(user=user, task=task)
-            has_access = await self.rbac.check_permission(
-                role_id=user.role_id,
+            await self.rbac.enforce_permission(
+                user=user,
                 business_element_name=BusinessElementName.TASKS,
                 action=Action.DELETE,
                 context=context,
+                error_msg="Недостаточно прав для удаления этой задачи",
             )
-
-            if not has_access:
-                raise AccessDeniedError("Недостаточно прав для удаления этой задачи")
 
             await self.uow.tasks.delete_task(task_id=task_id)
             await self.uow.commit()
