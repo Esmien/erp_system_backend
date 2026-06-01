@@ -1,7 +1,6 @@
 from fastapi import APIRouter, status, Depends
 
 from backend.api.dependencies.permissions import (
-    PermissionChecker,
     CurrentUserDepends,
     get_current_user,
 )
@@ -10,7 +9,6 @@ from backend.api.dependencies.teams import (
     TeamCreateBody,
     TeamJoinBody,
 )
-from backend.core.constants import BusinessElementName, Action
 from backend.core.utils.error_schemas import ErrorResponseSchema
 from backend.team.schemas import TeamWithMembersRead, TeamRead
 
@@ -25,18 +23,20 @@ router = APIRouter(
     status_code=status.HTTP_200_OK,
     summary="Получить информацию о команде",
     responses={
+        403: {
+            "model": ErrorResponseSchema,
+            "description": "Недостаточно прав для просмотра этой команды",
+        },
         404: {"model": ErrorResponseSchema, "description": "Команда не найдена"},
     },
 )
 async def get_team(
-    team_id: int,
-    service: TeamServiceDepends,
+    team_id: int, service: TeamServiceDepends, current_user: CurrentUserDepends
 ):
     """
-    Возвращает данные команды и список её участников.
-    Если команда не существует - 404 Not Found
+    Возвращает данные команды и список её участников
     """
-    team = await service.get_team(team_id=team_id)
+    team = await service.get_team(team_id=team_id, user=current_user)
     return team
 
 
@@ -45,31 +45,26 @@ async def get_team(
     response_model=TeamRead,
     status_code=status.HTTP_201_CREATED,
     summary="Создать новую команду",
-    dependencies=[
-        Depends(
-            # Проверяет права на создание команды
-            PermissionChecker(
-                business_element=BusinessElementName.TEAMS,
-                permission=Action.CREATE,
-            )
-        )
-    ],
     responses={
         400: {
             "model": ErrorResponseSchema,
             "description": "Команда с таким названием уже существует",
+        },
+        403: {
+            "model": ErrorResponseSchema,
+            "description": "Недостаточно прав для создания команды",
         },
     },
 )
 async def create_team(
     service: TeamServiceDepends,
     team_in: TeamCreateBody,
+    current_user: CurrentUserDepends,
 ):
     """
-    Создает новую пустую команду.
-    Если такая уже есть - 400 Bad Request
+    Создает новую пустую команду
     """
-    team = await service.create_team(team_in)
+    team = await service.create_team(team_in=team_in, user=current_user)
     return team
 
 
@@ -96,8 +91,6 @@ async def join_team(
 ):
     """
     Привязывает пользователя к команде по 6-значному коду приглашения.
-    Код неправильный - 404 Not Found
-    Попытка вступить повторно в свою текущую команду - 400 Bad Request
     """
     team = await service.join_team(user=current_user, invite_code=join_data.invite_code)
     return team

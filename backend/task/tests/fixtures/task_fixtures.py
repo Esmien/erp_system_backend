@@ -1,15 +1,12 @@
 from datetime import datetime, timezone
-from unittest.mock import AsyncMock
 
 import pytest
 
 from backend.core.constants import TaskStatus, RoleName
-from backend.exceptions import AccessDeniedError
 from backend.task.repository import TaskRepository
 from backend.task.schemas import TaskCreate, TaskRead
 from backend.task.service import TaskService
 from backend.user.schemas import UserDTO, RoleDTO
-from backend.rbac.service import RbacService
 
 
 @pytest.fixture
