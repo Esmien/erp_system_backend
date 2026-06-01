@@ -40,16 +40,17 @@ async def test_register_role_not_exists(
 ):
     old_dep = app.dependency_overrides.get(get_register_service)
     app.dependency_overrides[get_register_service] = override_register_service
-
-    response = await client.post("/api/v1/auth/register/", json=valid_data_for_register)
-
-    if old_dep is not None:
-        app.dependency_overrides[get_register_service] = old_dep
-    else:
-        del app.dependency_overrides[get_register_service]
-
-    assert response.status_code == 503
-    assert response.json() == reg_role_not_exists_response
+    try:
+        response = await client.post(
+            "/api/v1/auth/register/", json=valid_data_for_register
+        )
+        assert response.status_code == 503
+        assert response.json() == reg_role_not_exists_response
+    finally:
+        if old_dep is not None:
+            app.dependency_overrides[get_register_service] = old_dep
+        else:
+            del app.dependency_overrides[get_register_service]
 
 
 async def test_register_with_mismatch_passwords(

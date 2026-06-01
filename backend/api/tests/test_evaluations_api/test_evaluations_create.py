@@ -45,15 +45,15 @@ async def test_evaluate_task_forbidden(client, closed_task_id, evaluation_data):
     old_dep = app.dependency_overrides.get(get_current_user)
     app.dependency_overrides[get_current_user] = override_get_regular_user
 
-    response = await client.post(
-        f"/api/v1/tasks/{closed_task_id}/evaluation/", json=evaluation_data
-    )
-
-    # Возвращаем зависимости обратно
-    if old_dep is not None:
-        app.dependency_overrides[get_current_user] = old_dep
-    else:
-        del app.dependency_overrides[get_current_user]
-
-    assert response.status_code == 403
-    assert response.json()["detail"] == "Недостаточно прав для оценки задачи"
+    try:
+        response = await client.post(
+            f"/api/v1/tasks/{closed_task_id}/evaluation/", json=evaluation_data
+        )
+        assert response.status_code == 403
+        assert response.json()["detail"] == "Недостаточно прав для оценки задачи"
+    finally:
+        # Возвращаем зависимость на место
+        if old_dep:
+            app.dependency_overrides[get_current_user] = old_dep
+        else:
+            app.dependency_overrides.pop(get_current_user, None)

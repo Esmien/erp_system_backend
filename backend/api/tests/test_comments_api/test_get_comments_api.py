@@ -41,12 +41,16 @@ async def test_get_comments_forbidden(client):
     old_dep = app.dependency_overrides.get(get_current_user)
     app.dependency_overrides[get_current_user] = override_get_regular_user
 
-    response = await client.get(url="/api/v1/tasks/1/comments/")
-
-    if old_dep:
-        app.dependency_overrides[get_current_user] = old_dep
-
-    assert response.status_code == 403
-    assert (
-        response.json().get("detail") == "Недостаточно прав для просмотра комментариев"
-    )
+    try:
+        response = await client.get(url="/api/v1/tasks/1/comments/")
+        assert response.status_code == 403
+        assert (
+            response.json().get("detail")
+            == "Недостаточно прав для просмотра комментариев"
+        )
+    finally:
+        # Возвращаем зависимость на место
+        if old_dep:
+            app.dependency_overrides[get_current_user] = old_dep
+        else:
+            app.dependency_overrides.pop(get_current_user, None)

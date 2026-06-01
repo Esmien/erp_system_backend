@@ -28,11 +28,14 @@ async def test_add_comment_forbidden(client):
     old_dep = app.dependency_overrides.get(get_current_user)
     app.dependency_overrides[get_current_user] = override_get_regular_user
 
-    comment_data = {"text": "Попытка прокомментировать чужую задачу"}
-    response = await client.post("/api/v1/tasks/1/comments/", json=comment_data)
-
-    if old_dep:
-        app.dependency_overrides[get_current_user] = old_dep
-
-    assert response.status_code == 403
-    assert "Недостаточно прав для комментирования" in response.json()["detail"]
+    try:
+        comment_data = {"text": "Попытка прокомментировать чужую задачу"}
+        response = await client.post("/api/v1/tasks/1/comments/", json=comment_data)
+        assert response.status_code == 403
+        assert "Недостаточно прав для комментирования" in response.json()["detail"]
+    finally:
+        # Возвращаем зависимость на место
+        if old_dep:
+            app.dependency_overrides[get_current_user] = old_dep
+        else:
+            app.dependency_overrides.pop(get_current_user, None)

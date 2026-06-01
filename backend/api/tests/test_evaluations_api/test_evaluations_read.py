@@ -43,14 +43,14 @@ async def test_get_evaluation_forbidden(client, closed_task_id, evaluation_data)
     old_dep = app.dependency_overrides.get(get_current_user)
     app.dependency_overrides[get_current_user] = override_get_regular_user
 
-    # Пытаемся подсмотреть чужую оценку
-    response = await client.get(f"/api/v1/tasks/{closed_task_id}/evaluation/")
-
-    # Возвращаем зависимости обратно
-    if old_dep is not None:
-        app.dependency_overrides[get_current_user] = old_dep
-    else:
-        del app.dependency_overrides[get_current_user]
-
-    assert response.status_code == 403
-    assert response.json()["detail"] == "У вас нет прав для просмотра этой оценки"
+    try:
+        # Пытаемся подсмотреть чужую оценку
+        response = await client.get(f"/api/v1/tasks/{closed_task_id}/evaluation/")
+        assert response.status_code == 403
+        assert response.json()["detail"] == "У вас нет прав для просмотра этой оценки"
+    finally:
+        # Возвращаем зависимость на место
+        if old_dep:
+            app.dependency_overrides[get_current_user] = old_dep
+        else:
+            app.dependency_overrides.pop(get_current_user, None)
