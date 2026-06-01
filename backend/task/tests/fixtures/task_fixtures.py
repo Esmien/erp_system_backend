@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from backend.core.constants import TaskStatus, RoleName
+from backend.exceptions import AccessDeniedError
 from backend.task.repository import TaskRepository
 from backend.task.schemas import TaskCreate, TaskRead
 from backend.task.service import TaskService
@@ -14,15 +15,6 @@ from backend.rbac.service import RbacService
 @pytest.fixture
 def task_repo(db_session):
     return TaskRepository(session=db_session)
-
-
-@pytest.fixture
-def mock_rbac_service():
-    """Мок для проверки динамических прав"""
-    service = AsyncMock(spec=RbacService)
-    # По умолчанию даем доступ во всех тестах
-    service.check_permission.return_value = True
-    return service
 
 
 @pytest.fixture
