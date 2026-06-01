@@ -1,7 +1,9 @@
 from loguru import logger
 
-from backend.core.constants import RoleName
+from backend.core.constants import RoleName, BusinessElementName, Action
 from backend.core.uow import IUnitOfWork
+from backend.rbac.schemas import AccessContextDTO
+from backend.rbac.service import RbacService
 from backend.user.schemas import Token, UserRegister, UserUpdate, UserCreateDTO, UserDTO
 from backend.exceptions import (
     UserExistsError,
@@ -200,8 +202,9 @@ class AuthService:
 
 
 class UserService:
-    def __init__(self, uow: IUnitOfWork):
+    def __init__(self, uow: IUnitOfWork, rbac_service: RbacService):
         self.uow = uow
+        self.rbac = rbac_service
 
     async def update_profile(self, user: UserDTO, update_data: UserUpdate) -> UserDTO:
         """
@@ -217,6 +220,7 @@ class UserService:
         Raises:
             UserDoesNotExistsError - если репозиторий не нашел пользователя
         """
+
         # Сериализуем данные для дальнейшей обработки в репозитории, исключая не заданные поля
         update_dict = update_data.model_dump(exclude_unset=True)
 
@@ -227,6 +231,14 @@ class UserService:
             return user
 
         async with self.uow:
+            await self.rbac.enforce_permission(
+                user=user,
+                business_element_name=BusinessElementName.USERS,
+                action=Action.UPDATE,
+                context=AccessContextDTO(is_author=True),
+                error_msg="Недостаточно прав для обновления профиля",
+            )
+
             updated_user = await self.uow.users.update_user(
                 user_id=user.id, update_dict=update_dict
             )
@@ -255,6 +267,14 @@ class UserService:
             UserDoesNotExists - если пользователь не найден
         """
         async with self.uow:
+            await self.rbac.enforce_permission(
+                user=user,
+                business_element_name=BusinessElementName.USERS,
+                action=Action.DELETE,
+                context=AccessContextDTO(is_author=True),
+                error_msg="Недостаточно прав для удаления профиля",
+            )
+
             deactivated_user = await self.uow.users.soft_delete_user(user_id=user.id)
 
             if not deactivated_user:

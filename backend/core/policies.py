@@ -45,9 +45,11 @@ DEFAULT_POLICIES = {
         BusinessElementName.TEAMS: AccessRules(read=AccessLevel.PARTICIPANT).model_dump(
             exclude_none=True
         ),
-        BusinessElementName.USERS: AccessRules(read=AccessLevel.ALL).model_dump(
-            exclude_none=True
-        ),
+        BusinessElementName.USERS: AccessRules(
+            read=AccessLevel.ALL,
+            update=AccessLevel.AUTHOR,
+            delete=AccessLevel.AUTHOR,
+        ).model_dump(exclude_none=True),
         BusinessElementName.EVALUATIONS: AccessRules(
             read=AccessLevel.PARTICIPANT
         ).model_dump(exclude_none=True),

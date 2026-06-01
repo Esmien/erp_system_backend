@@ -1,7 +1,7 @@
-from fastapi import APIRouter, status
+from fastapi import APIRouter, status, Depends
 
 from backend.api.dependencies.evaluations import EvaluationServiceDepends
-from backend.api.dependencies.permissions import CurrentUserDepends
+from backend.api.dependencies.permissions import CurrentUserDepends, get_current_user
 from backend.api.dependencies.users import (
     UserServiceDepends,
     UserUpdateBody,
@@ -10,7 +10,11 @@ from backend.core.utils.error_schemas import ErrorResponseSchema
 from backend.evaluation.schemas import UserStatisticsRead
 from backend.user.schemas import UserRead
 
-router = APIRouter(prefix="/users", tags=["Пользователи"])
+router = APIRouter(
+    prefix="/users",
+    tags=["Пользователи"],
+    dependencies=[Depends(get_current_user)],
+)
 
 
 @router.get(
@@ -33,13 +37,13 @@ async def get_my_info(current_user: CurrentUserDepends):
     summary="Получить свою статистику оценок",
 )
 async def get_my_statistics(
-    user: CurrentUserDepends,
+    current_user: CurrentUserDepends,
     service: EvaluationServiceDepends,
 ):
     """
     Возвращает среднюю оценку и количество оцененных задач для текущего пользователя.
     """
-    return await service.get_my_statistics(user=user)
+    return await service.get_my_statistics(user=current_user)
 
 
 @router.patch(
@@ -52,6 +56,10 @@ async def get_my_statistics(
             "model": ErrorResponseSchema,
             "description": "Пользователь не существует",
         },
+        403: {
+            "model": ErrorResponseSchema,
+            "description": "Недостаточно прав для обновления профиля",
+        },
     },
 )
 async def update_my_info(
@@ -60,10 +68,8 @@ async def update_my_info(
     service: UserServiceDepends,
 ):
     """
-    Обновляет личные данные пользователя.
-    Можно передать только те поля, которые нужно изменить (например, только name).
-
-    Если пользователь не найден - 400 Bad Request
+    Обновляет личные данные пользователя
+    Можно передать только те поля, которые нужно изменить (например, только name)
     """
     updated_user = await service.update_profile(
         user=current_user, update_data=update_data
@@ -80,6 +86,10 @@ async def update_my_info(
             "model": ErrorResponseSchema,
             "description": "Пользователь не существует",
         },
+        403: {
+            "model": ErrorResponseSchema,
+            "description": "Недостаточно прав для удаления профиля",
+        },
     },
 )
 async def delete_me(
@@ -89,8 +99,6 @@ async def delete_me(
     """
     'Мягкое' удаление пользователя (is_active=False)
     Аккаунт восстановить можно через /auth/restore
-
-    Если пользователь не найден - 400 Bad Request
     """
 
     # Удаляем пользователя, делая его неактивным

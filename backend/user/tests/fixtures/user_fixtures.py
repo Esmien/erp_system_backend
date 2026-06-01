@@ -36,8 +36,8 @@ def auth_service(mock_uow):
 
 
 @pytest.fixture
-def user_service(mock_uow):
-    return UserService(uow=mock_uow)
+def user_service(mock_uow, mock_rbac_service):
+    return UserService(uow=mock_uow, rbac_service=mock_rbac_service)
 
 
 @pytest.fixture
