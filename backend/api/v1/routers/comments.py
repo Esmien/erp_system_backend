@@ -31,9 +31,6 @@ async def get_comments(
 ):
     """
     Возвращает все комментарии к выбранной задаче.
-
-    Если задача не найдена - 404 Not Found
-    Если нет прав для просмотра - 403 Forbidden
     """
     return await service.get_task_comments(task_id=task_id, user=user)
 
@@ -59,9 +56,6 @@ async def add_comment(
 ):
     """
     Добавляет комментарий к задаче.
-
-    Если задача не найдена - 404 Not Found
-    Если нет прав (не автор, не исполнитель и не руководитель) - 403 Forbidden
     """
     new_comment = await service.add_comment(
         task_id=task_id, user=user, comment_in=comment_in

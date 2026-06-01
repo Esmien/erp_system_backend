@@ -32,7 +32,7 @@ async def test_add_comment_forbidden(client):
         comment_data = {"text": "Попытка прокомментировать чужую задачу"}
         response = await client.post("/api/v1/tasks/1/comments/", json=comment_data)
         assert response.status_code == 403
-        assert "Недостаточно прав для комментирования" in response.json()["detail"]
+        assert "не ваша задача" in response.json()["detail"]
     finally:
         # Возвращаем зависимость на место
         if old_dep:

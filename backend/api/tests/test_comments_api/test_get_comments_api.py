@@ -46,7 +46,7 @@ async def test_get_comments_forbidden(client):
         assert response.status_code == 403
         assert (
             response.json().get("detail")
-            == "Недостаточно прав для просмотра комментариев"
+            == "Вы не являетесь участником задачи, комментарии недоступны."
         )
     finally:
         # Возвращаем зависимость на место

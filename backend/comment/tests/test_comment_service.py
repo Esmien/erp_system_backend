@@ -32,6 +32,7 @@ async def test_add_comment_access_denied(
 ):
     # Имитируем найденную задачу
     mock_uow.tasks.get_task_by_id.return_value = sample_task
+    comment_service.rbac.enforce_permission.side_effect = AccessDeniedError
     comment_in = CommentCreate(text="А я тут мимо проходил")
 
     # Пользователь без прав (не автор, не исполнитель, не админ) пытается оставить коммент
@@ -105,11 +106,12 @@ async def test_get_task_comments_success(
 @pytest.mark.parametrize(
     "is_task, exc", [(True, AccessDeniedError), (False, TaskDoesNotExistsError)]
 )
-async def test_get_task_comments_access_denied(
+async def test_get_task_comments_with_exc(
     comment_service, mock_uow, sample_task, mock_user_stranger, is_task, exc
 ):
     if is_task:
         mock_uow.tasks.get_task_by_id.return_value = sample_task
+        comment_service.rbac.enforce_permission.side_effect = AccessDeniedError
     else:
         mock_uow.tasks.get_task_by_id.return_value = None
 

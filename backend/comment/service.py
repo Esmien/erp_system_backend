@@ -1,36 +1,37 @@
 from loguru import logger
 
 from backend.comment.schemas import CommentCreate, CommentRead
-from backend.core.constants import RoleName
+from backend.core.constants import BusinessElementName, Action
 from backend.core.uow import IUnitOfWork
-from backend.exceptions import TaskDoesNotExistsError, AccessDeniedError
+from backend.exceptions import TaskDoesNotExistsError
+from backend.rbac.schemas import AccessContextDTO
+from backend.rbac.service import RbacService
 from backend.task.schemas import TaskRead
 from backend.user.schemas import UserDTO
 
 
 class CommentService:
-    def __init__(self, uow: IUnitOfWork):
+    def __init__(self, uow: IUnitOfWork, rbac_service: RbacService):
         self.uow = uow
+        self.rbac = rbac_service
 
-    # ToDo вынести все подобные проверки на уровень БД
-    @staticmethod
-    async def _check_access(user: UserDTO, task: TaskRead) -> bool:
+    async def _get_task_by_id(self, task_id) -> TaskRead:
         """
-        Вспомогательный метод для проверки прав на написание комментариев
+        Вспомогательный метод для поиска задачи по ID
 
         Args:
-            user - модель пользователя для проверки
-            task - задача, доступ к которой проверяется
+            task_id - ID искомой задачи
 
         Returns:
-            True, если доступ разрешен, False - если нет
+            Модель задачи
+
+        Raises:
+            TaskDoesNotExistsError - если задача не найдена
         """
-        is_manager_or_admin = user.role.name in (RoleName.ADMIN, RoleName.MANAGER)
-        return (
-            task.executor_id == user.id
-            or task.author_id == user.id
-            or is_manager_or_admin
-        )
+        task = await self.uow.tasks.get_task_by_id(task_id)
+        if not task:
+            raise TaskDoesNotExistsError("Задача не найдена.")
+        return task
 
     async def add_comment(
         self, task_id: int, user: UserDTO, comment_in: CommentCreate
@@ -47,18 +48,19 @@ class CommentService:
             Модель готового комментария
         """
         async with self.uow:
-            task = await self.uow.tasks.get_task_by_id(task_id)
-            if not task:
-                raise TaskDoesNotExistsError("Задача не найдена.")
+            task = await self._get_task_by_id(task_id=task_id)
 
-            # Проверка прав: админ, менеджер, автор или исполнитель
-            is_allowed = await self._check_access(user=user, task=task)
-
-            if not is_allowed:
-                logger.warning(
-                    f"Попытка комментирования задачи {task_id} без прав (User: {user.email})"
-                )
-                raise AccessDeniedError("Недостаточно прав для комментирования задачи")
+            is_author = task.author_id == user.id
+            is_participant = task.executor_id == user.id
+            await self.rbac.enforce_permission(
+                user=user,
+                business_element_name=BusinessElementName.COMMENTS,
+                action=Action.CREATE,
+                context=AccessContextDTO(
+                    is_participant=is_participant, is_author=is_author
+                ),
+                error_msg="Это не ваша задача, вы не можете ее комментировать",
+            )
 
             new_comment = await self.uow.comments.create_comment(
                 task_id=task_id, author_id=user.id, text=comment_in.text
@@ -72,15 +74,29 @@ class CommentService:
         return new_comment
 
     async def get_task_comments(self, task_id: int, user: UserDTO) -> list[CommentRead]:
+        """
+        Получает список всех комментариев к задаче
+
+        Args:
+            task_id - ID задачи с комментариями
+            user - запрашивающий пользователь (для проверки прав)
+
+        Returns:
+            Список комментариев
+        """
         async with self.uow:
-            task = await self.uow.tasks.get_task_by_id(task_id)
-            if not task:
-                raise TaskDoesNotExistsError("Задача не найдена.")
+            task = await self._get_task_by_id(task_id=task_id)
 
-            # Проверка прав доступа (те же, что и при создании)
-            is_allowed = await self._check_access(user=user, task=task)
-
-            if not is_allowed:
-                raise AccessDeniedError("Недостаточно прав для просмотра комментариев")
+            is_author = task.author_id == user.id
+            is_participant = task.executor_id == user.id
+            await self.rbac.enforce_permission(
+                user=user,
+                business_element_name=BusinessElementName.COMMENTS,
+                action=Action.READ,
+                context=AccessContextDTO(
+                    is_participant=is_participant, is_author=is_author
+                ),
+                error_msg="Вы не являетесь участником задачи, комментарии недоступны.",
+            )
 
             return await self.uow.comments.get_comments_by_task_id(task_id)
