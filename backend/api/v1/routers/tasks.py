@@ -13,7 +13,9 @@ from backend.core.utils.error_schemas import ErrorResponseSchema
 from backend.task.schemas import TaskRead
 
 router = APIRouter(
-    prefix="/tasks", tags=["Задачи"], dependencies=[Depends(get_current_user)]
+    prefix="/tasks",
+    tags=["Задачи"],
+    dependencies=[Depends(get_current_user)],
 )
 
 
@@ -23,15 +25,19 @@ router = APIRouter(
     status_code=status.HTTP_200_OK,
     summary="Получить информацию о задаче",
     responses={
+        403: {"model": ErrorResponseSchema, "description": "Нет прав на просмотр"},
         404: {"model": ErrorResponseSchema, "description": "Задача не найдена"},
     },
 )
-async def get_task(task_id: int, service: TaskServiceDepends):
+async def get_task(
+    task_id: int,
+    service: TaskServiceDepends,
+    current_user: CurrentUserDepends,
+):
     """
-    Возвращает данные задачи.
-    Если задача не существует - 404 Not Found
+    Возвращает данные задачи с проверкой прав на чтение
     """
-    task = await service.get_task(task_id=task_id)
+    task = await service.get_task(task_id=task_id, user=current_user)
     return task
 
 
@@ -53,18 +59,15 @@ async def get_task(task_id: int, service: TaskServiceDepends):
 )
 async def get_tasks_by_filter(
     service: TaskServiceDepends,
-    user: CurrentUserDepends,
+    current_user: CurrentUserDepends,
     task_status: TaskStatusFilterQuery | None = None,
     scope: TaskScopeFilterQuery = "my",
 ):
     """
-    Возвращает список задач с учетом фильтров.
-
-    Если нет доступа - 403 Forbidden
-    Если пользователь не состоит в команде, но ищет с командой в фильтрах - 404 Not Found
+    Возвращает список задач с учетом фильтров
     """
     return await service.get_filtered_tasks(
-        user=user, scope=scope, task_status=task_status
+        user=current_user, scope=scope, task_status=task_status
     )
 
 
@@ -73,15 +76,22 @@ async def get_tasks_by_filter(
     response_model=TaskRead,
     status_code=status.HTTP_201_CREATED,
     summary="Создать задачу",
+    responses={
+        403: {
+            "model": ErrorResponseSchema,
+            "description": "Недостаточно прав для создания задачи",
+        },
+    },
 )
 async def create_task(
-    service: TaskServiceDepends, task_in: TaskCreateBody, author: CurrentUserDepends
+    service: TaskServiceDepends,
+    task_in: TaskCreateBody,
+    current_user: CurrentUserDepends,
 ):
     """
     Создает задачу
     """
-    task = await service.create_task(task_in=task_in, author=author)
-    return task  # pragma: no cover
+    return await service.create_task(task_in=task_in, author=current_user)
 
 
 @router.patch(
@@ -105,17 +115,13 @@ async def update_task(
     task_id: int,
     service: TaskServiceDepends,
     update_data: TaskUpdateBody,
-    user: CurrentUserDepends,
+    current_user: CurrentUserDepends,
 ):
     """
-    Обновляет задачу.
-
-    Если задачи не существует - 404 Not Found
-    Если нет доступа (не руководитель или автор) - 403 Forbidden
-    Попытка назначить исполнителем несуществующего пользователя - 400 Bad Request
+    Обновляет задачу (только руководитель или автор)
     """
     updated_task = await service.update_task(
-        task_id=task_id, update_data=update_data, user=user
+        task_id=task_id, update_data=update_data, user=current_user
     )
     return updated_task
 
@@ -137,16 +143,13 @@ async def change_status(
     task_id: int,
     service: TaskServiceDepends,
     new_status: TaskChangeStatusBody,
-    user: CurrentUserDepends,
+    current_user: CurrentUserDepends,
 ):
     """
-    Обновляет статус задачи
-
-    Если задача не найдена - 404 Not Found
-    Если нет прав (необходимо быть руководителем или автором/исполнителем) - 403 Forbidden
+    Обновляет статус задачи (исполнитель, автор или руководитель)
     """
     updated_task = await service.change_status(
-        task_id=task_id, new_status=new_status, user=user
+        task_id=task_id, new_status=new_status, user=current_user
     )
     return updated_task
 
@@ -164,12 +167,11 @@ async def change_status(
     },
 )
 async def delete_task(
-    task_id: int, service: TaskServiceDepends, user: CurrentUserDepends
+    task_id: int,
+    service: TaskServiceDepends,
+    current_user: CurrentUserDepends,
 ):
     """
     Полностью удаляет задачу
-
-    Если задача не существует - 404 Not Found
-    Если нет доступа (не руководитель или автор) - 403 Forbidden
     """
-    await service.delete_task(task_id=task_id, user=user)
+    await service.delete_task(task_id=task_id, user=current_user)

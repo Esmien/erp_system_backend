@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from unittest.mock import AsyncMock
 
 import pytest
 
@@ -7,6 +8,7 @@ from backend.task.repository import TaskRepository
 from backend.task.schemas import TaskCreate, TaskRead
 from backend.task.service import TaskService
 from backend.user.schemas import UserDTO, RoleDTO
+from backend.rbac.service import RbacService
 
 
 @pytest.fixture
@@ -15,8 +17,17 @@ def task_repo(db_session):
 
 
 @pytest.fixture
-def task_service(mock_uow):
-    return TaskService(uow=mock_uow)
+def mock_rbac_service():
+    """Мок для проверки динамических прав"""
+    service = AsyncMock(spec=RbacService)
+    # По умолчанию даем доступ во всех тестах
+    service.check_permission.return_value = True
+    return service
+
+
+@pytest.fixture
+def task_service(mock_uow, mock_rbac_service):
+    return TaskService(uow=mock_uow, rbac_service=mock_rbac_service)
 
 
 @pytest.fixture
@@ -61,7 +72,7 @@ def sample_task():
         title="Тест",
         description="Описание",
         status=TaskStatus.OPEN,
-        author_id=1,  # ID совпадает с mock_user_author
+        author_id=1,
         executor_id=None,
         created_at=datetime.now(timezone.utc),
     )

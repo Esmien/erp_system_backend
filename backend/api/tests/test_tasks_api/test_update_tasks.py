@@ -24,14 +24,19 @@ async def test_update_foreign_task_forbidden(client, open_task_json):
     old_dep = app.dependency_overrides.get(get_current_user)
     app.dependency_overrides[get_current_user] = override_get_regular_user
 
-    patch_data = {"status": TaskStatus.DONE}
-    response = await client.patch(f"/api/v1/tasks/{task_id}/status/", json=patch_data)
-
-    if old_dep:
-        app.dependency_overrides[get_current_user] = old_dep
-
-    assert response.status_code == 403
-    assert response.json()["detail"] == "Недостаточно прав для изменения статуса"
+    try:
+        patch_data = {"status": TaskStatus.DONE}
+        response = await client.patch(
+            f"/api/v1/tasks/{task_id}/status/", json=patch_data
+        )
+        assert response.status_code == 403
+        assert response.json()["detail"] == "Недостаточно прав для изменения статуса"
+    finally:
+        # Возвращаем зависимость на место
+        if old_dep:
+            app.dependency_overrides[get_current_user] = old_dep
+        else:
+            app.dependency_overrides.pop(get_current_user, None)
 
 
 async def test_update_task_success(client, open_task_json):

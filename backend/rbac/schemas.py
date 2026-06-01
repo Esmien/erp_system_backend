@@ -31,3 +31,10 @@ class AccessRuleDTO(PermissionsBase):
     role_id: int
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class AccessContextDTO(BaseModel):
+    is_author: bool = False
+    is_participant: bool = False
+
+    model_config = ConfigDict(extra="forbid")

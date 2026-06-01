@@ -1,6 +1,6 @@
 import pytest
 from backend.core.constants import BusinessElementName
-from backend.rbac.schemas import AccessRuleDTO
+from backend.rbac.schemas import AccessRuleDTO, AccessContextDTO
 from backend.core.policies import AccessLevel
 
 
@@ -12,21 +12,21 @@ from backend.core.policies import AccessLevel
             True,
             "create",
             AccessLevel.PARTICIPANT,
-            {"is_participant": True},
+            AccessContextDTO(is_participant=True),
             True,
         ),  # Участник может создать
         (
             True,
             "create",
             AccessLevel.PARTICIPANT,
-            {"is_participant": False},
+            AccessContextDTO(is_participant=False),
             False,
         ),  # Не участник - отказ
         (
             True,
             "update",
             AccessLevel.AUTHOR,
-            {"is_author": True},
+            AccessContextDTO(is_author=True),
             True,
         ),  # Автор может обновить
         (True, "unknown_action", AccessLevel.ALL, None, False),  # Неизвестное действие
