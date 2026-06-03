@@ -2,7 +2,7 @@ from loguru import logger
 
 from backend.core.uow import IUnitOfWork
 
-from backend.core.constants import BusinessElementName, Action
+from backend.core.constants import BusinessElementName, Action, RoleName
 from backend.exceptions import MeetingOverlapError, MeetingDoesNotExistsError
 from backend.meeting.schemas import (
     MeetingCreate,
@@ -76,6 +76,28 @@ class MeetingService:
         )
         return new_meeting
 
+    async def get_all_meetings(
+        self, user: UserDTO
+    ) -> list[MeetingReadWithParticipants]:
+        async with self.uow:
+            await self.rbac.enforce_permission(
+                user=user,
+                business_element_name=BusinessElementName.MEETINGS,
+                action=Action.READ,
+                context=AccessContextDTO(
+                    is_participant=True
+                ),  # Ставим True, чтобы пропустить базовую проверку для обычных юзеров
+                error_msg="У вас нет прав для просмотра встреч",
+            )
+
+            # Если руководитель (ADMIN / MANAGER) - отдаем всё. Иначе - только свои.
+            is_manager = user.role.name in [RoleName.ADMIN, RoleName.MANAGER]
+
+            # Передаем None для руководителей, чтобы отключить WHERE в алхимии
+            filter_user_id = None if is_manager else user.id
+
+            return await self.uow.meetings.get_meetings(user_id=filter_user_id)
+
     async def get_meeting_with_participants(
         self, meeting_id: int, user: UserDTO
     ) -> MeetingReadWithParticipants:
@@ -127,3 +149,18 @@ class MeetingService:
             await self.uow.commit()
 
             return updated_meeting
+
+    async def delete_meeting(self, meeting_id: int, user: UserDTO) -> None:
+        async with self.uow:
+            meeting = await self._get_meeting_by_id(meeting_id=meeting_id)
+
+            await self.rbac.enforce_permission(
+                user=user,
+                business_element_name=BusinessElementName.MEETINGS,
+                action=Action.DELETE,
+                context=AccessContextDTO(is_author=user.id == meeting.author_id),
+                error_msg="Недостаточно прав для удаления задачи",
+            )
+
+            await self.uow.meetings.delete_meeting(meeting_id=meeting_id)
+            await self.uow.commit()

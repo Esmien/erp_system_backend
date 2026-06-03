@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import select, and_
+from sqlalchemy import select, and_, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -79,6 +79,29 @@ class MeetingRepository:
 
         return MeetingReadWithParticipants.model_validate(new_meeting)
 
+    async def get_meetings(
+        self, user_id: int | None = None
+    ) -> list[MeetingReadWithParticipants]:
+        # Базовый запрос с подгрузкой участников
+        stmt = select(Meeting).options(selectinload(Meeting.participants))
+
+        if user_id:
+            # Фильтр: либо автор, либо есть в списке участников
+            stmt = stmt.where(
+                or_(
+                    Meeting.author_id == user_id,
+                    Meeting.participants.any(User.id == user_id),
+                )
+            )
+
+        # Сортируем по дате начала (свежие сверху)
+        stmt = stmt.order_by(Meeting.datetime_start.desc())
+
+        result = await self.session.execute(stmt)
+        meetings = result.scalars().all()
+
+        return [MeetingReadWithParticipants.model_validate(m) for m in meetings]
+
     async def get_meeting_info(
         self, meeting_id: int
     ) -> MeetingReadWithParticipants | None:
@@ -113,3 +136,12 @@ class MeetingRepository:
         await self.session.flush()
 
         return MeetingReadWithParticipants.model_validate(obj=meeting)
+
+    async def delete_meeting(self, meeting_id: int) -> None:
+        meeting = await self._get_meeting_by_id(meeting_id=meeting_id)
+
+        if not meeting:
+            return
+
+        await self.session.delete(meeting)
+        await self.session.flush()
