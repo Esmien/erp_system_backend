@@ -1,3 +1,5 @@
+from typing import Literal
+
 from loguru import logger
 
 from backend.core.uow import IUnitOfWork
@@ -86,7 +88,10 @@ class TaskService:
             return task
 
     async def get_filtered_tasks(
-        self, user: UserDTO, scope: str, task_status: TaskStatus | None
+        self,
+        user: UserDTO,
+        scope: Literal["my", "team", "all"],
+        task_status: TaskStatus | None,
     ) -> list[TaskRead]:
         """
         Получает отфильтрованный по критериям список задач
