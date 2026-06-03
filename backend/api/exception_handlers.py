@@ -16,6 +16,9 @@ from backend.exceptions import (
     PasswordsMismatchError,
     TaskAlreadyEvaluatedError,
     TaskDoesNotCompletedError,
+    MeetingOverlapError,
+    MeetingDoesNotExistsError,
+    DatetimeCompatibleError,
 )
 
 
@@ -76,3 +79,6 @@ def setup_exception_handlers(app: FastAPI):
     app.add_exception_handler(PasswordsMismatchError, bad_request_exception_handler)
     app.add_exception_handler(TaskDoesNotCompletedError, bad_request_exception_handler)
     app.add_exception_handler(TaskAlreadyEvaluatedError, bad_request_exception_handler)
+    app.add_exception_handler(MeetingOverlapError, conflict_exception_handler)
+    app.add_exception_handler(MeetingDoesNotExistsError, not_found_exception_handler)
+    app.add_exception_handler(DatetimeCompatibleError, bad_request_exception_handler)
