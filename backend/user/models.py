@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from backend.team.models import Team
     from backend.task.models import Task
     from backend.comment.models import Comment
+    from backend.meeting.models import Meeting
 
 
 class User(Base):
@@ -40,6 +41,10 @@ class User(Base):
         foreign_keys="[Task.executor_id]", back_populates="executor"
     )
     comments: Mapped[list[Comment]] = relationship(back_populates="author")
+    created_meetings: Mapped[list[Meeting]] = relationship(back_populates="author")
+    participant_meetings: Mapped[list[Meeting]] = relationship(
+        secondary="meeting_participants", back_populates="participants"
+    )
 
 
 # Собираем роли в строку для кастомных констрейтов на уровне БД.
