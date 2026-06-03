@@ -60,6 +60,6 @@ DEFAULT_POLICIES = {
             read=AccessLevel.PARTICIPANT,
             update=AccessLevel.AUTHOR,
             delete=AccessLevel.AUTHOR,
-        ),
+        ).model_dump(exclude_none=True),
     },
 }
