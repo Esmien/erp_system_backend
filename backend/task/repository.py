@@ -1,6 +1,7 @@
+from datetime import date
 from typing import Any
 
-from sqlalchemy import select, or_
+from sqlalchemy import select, or_, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.task.models import Task
@@ -115,3 +116,16 @@ class TaskRepository:
 
         await self.session.delete(task)
         await self.session.flush()
+
+    async def get_tasks_by_date_range(
+        self, user_id: int, start_date: date, end_date: date
+    ) -> list[TaskRead]:
+        stmt = select(Task).where(
+            and_(
+                or_(Task.author_id == user_id, Task.executor_id == user_id),
+                Task.expire >= start_date,
+                Task.expire <= end_date,
+            )
+        )
+        result = await self.session.execute(stmt)
+        return [TaskRead.model_validate(t) for t in result.scalars().all()]
