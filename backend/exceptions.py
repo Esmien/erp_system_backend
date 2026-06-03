@@ -60,3 +60,15 @@ class BadCredentialsError(Exception):
 
 class PasswordsMismatchError(Exception):
     pass
+
+
+class MeetingOverlapError(Exception):
+    pass
+
+
+class MeetingDoesNotExistsError(Exception):
+    pass
+
+
+class DatetimeCompatibleError(Exception):
+    pass

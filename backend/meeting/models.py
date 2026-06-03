@@ -4,8 +4,10 @@ from typing import TYPE_CHECKING
 from datetime import datetime
 
 from sqlalchemy import String, DateTime, func, ForeignKey, Table, Column
+from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from backend.core.constants import MeetingStatus
 from backend.core.database.engine import Base
 
 
@@ -34,7 +36,16 @@ class Meeting(Base):
     datetime_end: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), comment="Окончание в ", nullable=True
     )
-
+    status: Mapped[str] = mapped_column(
+        SQLEnum(
+            MeetingStatus,
+            # Отключаем нативный Postgres Enum, чтобы миграции не падали
+            native_enum=False,
+            length=50,
+            values_callable=lambda obj: [e.value for e in obj],
+        ),
+        default=MeetingStatus.PENDING,
+    )
     author_id: Mapped[int | None] = mapped_column(
         ForeignKey(column="users.id", ondelete="SET NULL")
     )
