@@ -17,6 +17,7 @@ DEFAULT_POLICIES = {
         BusinessElementName.TEAMS: FULL_ACCESS,
         BusinessElementName.USERS: FULL_ACCESS,
         BusinessElementName.EVALUATIONS: FULL_ACCESS,
+        BusinessElementName.MEETINGS: FULL_ACCESS,
     },
     RoleName.MANAGER: {
         BusinessElementName.TASKS: FULL_ACCESS | {"change_status": AccessLevel.ALL},
@@ -26,6 +27,7 @@ DEFAULT_POLICIES = {
             exclude_none=True
         ),
         BusinessElementName.EVALUATIONS: FULL_ACCESS,
+        BusinessElementName.MEETINGS: FULL_ACCESS,
     },
     RoleName.USER: {
         # Вот тут вся магия ABAC: доступ только причастным (participant/author)
@@ -53,5 +55,11 @@ DEFAULT_POLICIES = {
         BusinessElementName.EVALUATIONS: AccessRules(
             read=AccessLevel.PARTICIPANT
         ).model_dump(exclude_none=True),
+        BusinessElementName.MEETINGS: AccessRules(
+            create=AccessLevel.ALL,
+            read=AccessLevel.PARTICIPANT,
+            update=AccessLevel.AUTHOR,
+            delete=AccessLevel.AUTHOR,
+        ),
     },
 }
