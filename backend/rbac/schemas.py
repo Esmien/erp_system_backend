@@ -4,6 +4,8 @@ from backend.core.constants import AccessLevel
 
 
 class AccessRules(BaseModel):
+    """Схема прав доступа на основе действий"""
+
     create: AccessLevel | None = None
     read: AccessLevel | None = None
     update: AccessLevel | None = None
@@ -18,13 +20,13 @@ class PermissionsBase(BaseModel):
 
 
 class RBACPermissions(PermissionsBase):
+    """Схема с правами"""
+
     model_config = ConfigDict(extra="forbid")
 
 
 class AccessRuleDTO(PermissionsBase):
-    """
-    Полный слепок правила доступа из БД для передачи в слой сервисов.
-    """
+    """Полный слепок правила доступа из БД для передачи в слой сервисов."""
 
     id: int
     business_element_id: int
@@ -34,6 +36,12 @@ class AccessRuleDTO(PermissionsBase):
 
 
 class AccessContextDTO(BaseModel):
+    """
+    DTO-схема для формирования и передачи контекста в метод проверки прав.
+    Используется там, где обычной ролевой проверки недостаточно
+    и требуется проверить пользователя на причастность
+    """
+
     is_author: bool = False
     is_participant: bool = False
 

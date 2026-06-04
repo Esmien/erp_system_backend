@@ -20,17 +20,32 @@ class RbacService:
         """
         Используется для получения списков (коллекций).
         Проверяет наличие базовых прав и возвращает уровень доступа для фильтрации в БД.
+
+        Args:
+            user - пользователь для проверки прав
+            business_element_name - название сущности, к которой требуется доступ
+            action - какое действие нужно совершить (CRUD)
+            error_msg - сообщение об ошибке для передачи наверх внутри исключения
+
+        Returns:
+            Уровень доступа пользователя по отношению к бизнес-сущности
+
+        Raises:
+            AccessDeniedError - если прав у пользователя недостаточно
         """
-        # Здесь мы достаем правило так же, как ты это делаешь в enforce_permission
+        # Получаем правило из БД
         rule = await self.uow.rbac.get_access_rule(
             role_id=user.role_id, business_element_name=business_element_name
         )
 
+        # Правило не нашлось или политики для роли пустые
         if not rule or not rule.policies:
             raise AccessDeniedError(error_msg)
 
+        # Вытаскиваем из политик уровень доступа для нужного действия
         access_level = rule.policies.get(action)
 
+        # Если для нужного действия нет прав у пользователя
         if not access_level:
             raise AccessDeniedError(error_msg)
 
@@ -40,11 +55,20 @@ class RbacService:
         self,
         role_id: int,
         business_element_name: BusinessElementName,
-        action: str,  # Например: "create", "read", "update"
+        action: str,
         context: AccessContextDTO | None = None,
     ) -> bool:
         """
-        Универсальный метод проверки прав через JSONB-политики.
+        Универсальный метод проверки прав доступа к объекту через JSONB-политики.
+
+        Args:
+            role_id - роль пользователя для проверки
+            business_element_name - бизнес-сущность, к которой требуется доступ
+            action - CRUD-действие, на которое запрашиваются права
+            context - дополнительные параметры проверки, если базовых недостаточно
+
+        Returns:
+            True, если доступ разрешен или False, если нет
         """
         context = context or AccessContextDTO()
 
@@ -84,6 +108,16 @@ class RbacService:
         """
         Обертка над check_permission.
         Сразу выбрасывает исключение, если прав нет.
+
+        Args:
+            user - проверяемый пользователь
+            business_element_name - название бизнес-сущности к которой нужен доступ
+            action - CRUD-действие
+            context - дополнительный контекст, если базовых правил недостаточно (проверка на причастность)
+            error_msg - сообщение, которое будет передано в сообщении исключения
+
+        Raises:
+            AccessDeniedError - если доступа нет
         """
         has_access = await self.check_permission(
             role_id=user.role_id,

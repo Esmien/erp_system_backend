@@ -20,7 +20,7 @@ class RbacRepository:
             element_name - название ресурса
 
         Returns:
-            AccessRuleDTO если правило найдено, иначе None
+            AccessRuleDTO  если правило найдено, иначе None
         """
         stmt = (
             select(AccessRule)
