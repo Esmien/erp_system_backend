@@ -9,16 +9,26 @@ from backend.user.models import User
 
 
 class Comment(Base):
+    """
+    ORM-модель комментариев.
+    Привязана к задаче (Task), связь Many to On,
+    к автору (User), связь Many to On
+    """
+
     __tablename__ = "comments"
 
+    # Схема таблицы БД
     id: Mapped[int] = mapped_column(primary_key=True)
     text: Mapped[str | None] = mapped_column(Text, comment="Комментарий к задаче")
     task_id: Mapped[int] = mapped_column(
-        ForeignKey(column="tasks.id", ondelete="CASCADE")
+        ForeignKey(column="tasks.id", ondelete="CASCADE"), comment="ID связанной задачи"
     )
     author_id: Mapped[int | None] = mapped_column(
-        ForeignKey(column="users.id", ondelete="SET NULL")
+        ForeignKey(column="users.id", ondelete="SET NULL"),
+        comment="ID автора комментария",
     )
+
+    # Связь таблиц бд с объектами ORM
     task: Mapped[Task] = relationship(back_populates="comments")
     author: Mapped[User | None] = relationship(back_populates="comments")
 

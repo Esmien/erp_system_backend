@@ -7,16 +7,28 @@ from backend.user.schemas import UserRead
 
 
 class MeetingBase(BaseModel):
+    """
+    Базовая схема встречи
+    """
+
     theme: str = Field(..., max_length=100, examples=["Планерка"])
     datetime_start: datetime
     datetime_end: datetime
-    status: MeetingStatus = Field(default=MeetingStatus.PENDING)
+    status: MeetingStatus = Field(
+        default=MeetingStatus.PENDING,
+        description="Статус встречи: Ожидается(PENDING), в процессе(IN_PROCESS), завершена(ENDS), отменена(CANCELED)",
+    )
     participant_ids: list[int] = Field(
         default_factory=list, description="ID участников"
     )
 
     @model_validator(mode="after")
     def validate_datetime(self):
+        """
+        Валидирует дату для защиты от ошибочных значений.
+        Нельзя выбрать дату в прошлом, а также указать дату/время завершения встречи раньше,
+        чем начало
+        """
         now = datetime.now(timezone.utc).replace(second=0, microsecond=0)
 
         # Конвертируем в UTC, если таймзона передана, иначе просто ставим метку UTC
@@ -31,6 +43,7 @@ class MeetingBase(BaseModel):
             else self.datetime_end.astimezone(timezone.utc)
         )
 
+        # Ограничиваем точность до минут
         start_tz = start_tz.replace(second=0, microsecond=0)
 
         if start_tz < now:
@@ -59,7 +72,7 @@ class MeetingCreateDTO(MeetingBase):
 
 
 class MeetingReadWithParticipants(MeetingBase):
-    """Схема отдачи данных клиенту"""
+    """Схема отдачи данных встерчи со списком участников клиенту"""
 
     id: int
     author_id: int
@@ -95,6 +108,8 @@ class MeetingUpdate(BaseModel):
                     "Встреча не может начаться раньше текущего времени"
                 )
 
+        # Проверяем, обе ли даты переданы и проверяем их на соответствие правилам:
+        # начало не может быть позже завершения
         if self.datetime_start is not None and self.datetime_end is not None:
             start_tz = (
                 self.datetime_start.replace(tzinfo=timezone.utc)

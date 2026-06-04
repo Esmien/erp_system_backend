@@ -3,7 +3,10 @@ from pydantic import BaseModel, Field, ConfigDict
 
 
 class EvaluationBase(BaseModel):
+    """Базовая схема оценки"""
+
     value: int = Field(ge=1, le=5)
+    # Комментарий к оценке
     comment: str | None = Field(default=None, max_length=1000)
 
 
@@ -21,6 +24,8 @@ class EvaluationCreateDTO(EvaluationBase):
 
 
 class EvaluationRead(EvaluationBase):
+    """Схема оценки для сериализации клиенту"""
+
     id: int
     task_id: int
     created_at: datetime
@@ -30,5 +35,7 @@ class EvaluationRead(EvaluationBase):
 
 
 class UserStatisticsRead(BaseModel):
+    """Схема для сбора статистики по оценкам для отдельных пользователей"""
+
     average_evaluation: float | None
     tasks_evaluated_count: int
