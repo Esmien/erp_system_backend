@@ -8,11 +8,15 @@ class RoleBase(BaseModel):
 
 
 class RoleRead(RoleBase):
+    """Схема для возврата модели роли клиенту"""
+
     id: int
     model_config = ConfigDict(from_attributes=True)
 
 
 class UserBase(BaseModel):
+    """Схема с базовыми параметрами пользователя"""
+
     email: EmailStr = Field(..., examples=["user@example.com"])
     name: str = Field(..., examples=["Иван"])
     surname: str | None = Field(default=None, examples=["Иванович"])
@@ -20,6 +24,8 @@ class UserBase(BaseModel):
 
 
 class UserRead(UserBase):
+    """Схема для возврата клиенту"""
+
     id: int
     is_active: bool
     role: RoleRead
@@ -28,6 +34,8 @@ class UserRead(UserBase):
 
 
 class UserRegister(UserBase):
+    """Схема с полями для регистрации и валидацией пароля"""
+
     password: str = Field(
         ..., min_length=3, max_length=72, examples=["secret_password"]
     )
@@ -44,11 +52,15 @@ class UserRegister(UserBase):
 
 
 class UserChangeStatus(BaseModel):
+    """Схема для смены статуса пользователя (is_active)"""
+
     message: str
     user: UserRead
 
 
 class UserUpdate(BaseModel):
+    """Схема для обновления данных пользователя"""
+
     name: str | None = Field(default=None, examples=["Алексей"])
     surname: str | None = Field(default=None, examples=["Алексеевич"])
     last_name: str | None = Field(default=None, examples=["Алексеев"])
@@ -57,27 +69,37 @@ class UserUpdate(BaseModel):
 
 
 class Token(BaseModel):
+    """Схема модели JWT-токена"""
+
     access_token: str
     token_type: str
 
 
 class RoleDTO(RoleBase):
+    """DTO-схема роли для передачи между слоями"""
+
     id: int
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class UserBaseDTO(UserBase):
+    """Базовая DTO-схема пользователя"""
+
     hashed_password: str
     is_active: bool
     role_id: int
 
 
 class UserCreateDTO(UserBaseDTO):
+    """DTO-схема создания пользователя для передачи между слоями"""
+
     pass
 
 
 class UserDTO(UserBaseDTO):
+    """Полная DTO-схема для передачи пользователя между слоями"""
+
     id: int
     role: RoleDTO | None = None
     team_id: int | None = None
