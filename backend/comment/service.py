@@ -50,8 +50,11 @@ class CommentService:
         async with self.uow:
             task = await self._get_task_by_id(task_id=task_id)
 
+            # Проверка на причастность пользователя к задаче
             is_author = task.author_id == user.id
             is_participant = task.executor_id == user.id
+
+            # Проверка прав доступа
             await self.rbac.enforce_permission(
                 user=user,
                 business_element_name=BusinessElementName.COMMENTS,
@@ -62,6 +65,7 @@ class CommentService:
                 error_msg="Это не ваша задача, вы не можете ее комментировать",
             )
 
+            # Если проверка выше прошла успешно - создаем комментарий
             new_comment = await self.uow.comments.create_comment(
                 task_id=task_id, author_id=user.id, text=comment_in.text
             )
@@ -85,10 +89,13 @@ class CommentService:
             Список комментариев
         """
         async with self.uow:
+            # Сначала достаем задачу
             task = await self._get_task_by_id(task_id=task_id)
 
+            # Проверяем причастность...
             is_author = task.author_id == user.id
             is_participant = task.executor_id == user.id
+            # ... и права доступа
             await self.rbac.enforce_permission(
                 user=user,
                 business_element_name=BusinessElementName.COMMENTS,
@@ -99,4 +106,5 @@ class CommentService:
                 error_msg="Вы не являетесь участником задачи, комментарии недоступны.",
             )
 
+            # Получаем комментарии
             return await self.uow.comments.get_comments_by_task_id(task_id)
