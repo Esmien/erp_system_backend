@@ -75,5 +75,5 @@ class EvaluationRepository:
 
         return UserStatisticsRead(
             average_evaluation=round(float(avg_val), 2) if avg_val else 0,
-            tasks_evaluated_count=count_val if count_val else 0
+            tasks_evaluated_count=count_val if count_val else 0,
         )

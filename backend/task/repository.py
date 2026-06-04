@@ -42,7 +42,7 @@ class TaskRepository:
 
         result = await self.session.execute(statement=stmt)
 
-        return [TaskRead.model_validate(task) for task in result.scalars().all()]
+        return [TaskRead.model_validate(obj=task) for task in result.scalars().all()]
 
     async def get_task_by_id(self, task_id: int) -> TaskRead | None:
         """
@@ -55,7 +55,7 @@ class TaskRepository:
             Найденная модель задачи или None, если ен нашлась
         """
         task = await self._get_task_model_by_id(task_id=task_id)
-        return TaskRead.model_validate(task) if task else None
+        return TaskRead.model_validate(obj=task) if task else None
 
     async def create_task(self, task_in: TaskCreate, author_id: int) -> TaskRead:
         """
@@ -71,9 +71,9 @@ class TaskRepository:
         new_task = Task(**task_in.model_dump(exclude_none=True), author_id=author_id)
         self.session.add(instance=new_task)
         await self.session.flush()
-        await self.session.refresh(new_task)
+        await self.session.refresh(instance=new_task)
 
-        return TaskRead.model_validate(new_task)
+        return TaskRead.model_validate(obj=new_task)
 
     async def update_task(
         self, task_id: int, update_data: dict[str, Any]
@@ -100,7 +100,7 @@ class TaskRepository:
         self.session.add(instance=task)
         await self.session.flush()
 
-        return TaskRead.model_validate(task)
+        return TaskRead.model_validate(obj=task)
 
     async def delete_task(self, task_id: int) -> None:
         """
@@ -114,12 +114,23 @@ class TaskRepository:
         if not task:
             return
 
-        await self.session.delete(task)
+        await self.session.delete(instance=task)
         await self.session.flush()
 
     async def get_tasks_by_date_range(
         self, user_id: int, start_date: date, end_date: date
     ) -> list[TaskRead]:
+        """
+        Возвращает все доступные пользователю задачи за выбранный период
+
+        Args:
+            user_id - ID запрашивающего пользователя
+            start_date - начало периода
+            end_date - конец периода
+
+        Returns:
+            Список отфильтрованных задач
+        """
         stmt = select(Task).where(
             and_(
                 or_(Task.author_id == user_id, Task.executor_id == user_id),
@@ -127,5 +138,5 @@ class TaskRepository:
                 Task.expire <= end_date,
             )
         )
-        result = await self.session.execute(stmt)
-        return [TaskRead.model_validate(t) for t in result.scalars().all()]
+        result = await self.session.execute(statement=stmt)
+        return [TaskRead.model_validate(obj=t) for t in result.scalars().all()]

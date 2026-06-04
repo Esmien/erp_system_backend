@@ -76,6 +76,7 @@ class TaskService:
                 task_id=task_id
             )  # Raises TaskDoesNotExists
 
+            # Собираем контекст и проверяем права с его учетом
             context = self._build_task_context(task=task, user=user)
             await self.rbac.enforce_permission(
                 user=user,
@@ -108,8 +109,11 @@ class TaskService:
             AccessDeniedError - если нет доступа к общему скоупу (нет прав на просмотр "all")
             TeamDoesNotExistsError - если пользователь не состоит в команде, но запрашивает командные задачи
         """
+        # Пользователь без прав типа ALL на чтение задач
+        # может получить только свои таски или таски группы
         context = AccessContextDTO(is_participant=scope in ["my", "team"])
 
+        # Собираем последовательно фильтры от меньшего к большему
         user_id_filter = user.id if scope == "my" else None
         team_id_filter = None
 
@@ -121,6 +125,7 @@ class TaskService:
             team_id_filter = user.team_id
 
         async with self.uow:
+            # Проверяем права
             await self.rbac.enforce_permission(
                 user=user,
                 business_element_name=BusinessElementName.TASKS,
@@ -129,6 +134,7 @@ class TaskService:
                 error_msg="Недостаточно прав для просмотра всех задач",
             )
 
+            # Собираем отфильтрованные по скоупам таски
             tasks = await self.uow.tasks.get_tasks_with_filters(
                 user_id=user_id_filter, team_id=team_id_filter, task_status=task_status
             )
@@ -207,6 +213,7 @@ class TaskService:
                 error_msg="У вас нет прав для редактирования этой задачи",
             )
 
+            # Проверяем существование пользователя для назначения исполнителем
             executor_id = update_dict.get("executor_id")
             if executor_id is not None:
                 executor = await self.uow.auth.get_user_and_role_by_user_id(executor_id)
