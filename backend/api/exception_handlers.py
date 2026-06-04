@@ -19,6 +19,7 @@ from backend.exceptions import (
     MeetingOverlapError,
     MeetingDoesNotExistsError,
     DatetimeCompatibleError,
+    UnknownAccessLevelError,
 )
 
 
@@ -82,3 +83,6 @@ def setup_exception_handlers(app: FastAPI):
     app.add_exception_handler(MeetingOverlapError, conflict_exception_handler)
     app.add_exception_handler(MeetingDoesNotExistsError, not_found_exception_handler)
     app.add_exception_handler(DatetimeCompatibleError, bad_request_exception_handler)
+    app.add_exception_handler(
+        UnknownAccessLevelError, internal_server_exception_handler
+    )

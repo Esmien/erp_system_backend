@@ -68,6 +68,10 @@ async def get_meeting_details(
             "model": ErrorResponseSchema,
             "description": "Недостаточно прав для создания встречи",
         },
+        409: {
+            "model": ErrorResponseSchema,
+            "description": "Некоторые пользователи заняты в это время",
+        },
     },
 )
 async def create_meeting(

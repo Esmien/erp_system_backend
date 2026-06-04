@@ -26,6 +26,10 @@ class AccessDeniedError(Exception):  # handled
     pass
 
 
+class UnknownAccessLevelError(Exception):
+    pass
+
+
 class TeamAlreadyExistsError(Exception):  # handled
     pass
 
