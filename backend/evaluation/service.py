@@ -59,6 +59,7 @@ class EvaluationService:
             task = await self.uow.tasks.get_task_by_id(task_id)
             if not task:
                 raise TaskDoesNotExistsError(TASK_NOT_FOUND)
+
             if task.status is not TaskStatus.DONE:
                 raise TaskDoesNotCompletedError("Задача еще не выполнена")
 
@@ -75,6 +76,7 @@ class EvaluationService:
                 evaluator_id=user.id,
             )
             saved_eval = await self.uow.evaluations.add(new_eval)
+
             await self.uow.commit()
 
             return saved_eval
