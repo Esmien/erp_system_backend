@@ -139,7 +139,9 @@ class AuthService:
             raise UserAlreadyActiveError("Пользователь уже активен")
 
         async with self.uow:
-            activated_user = await self.uow.auth.activate_user(user_email=user.email)
+            activated_user = await self.uow.auth.activate_user(
+                user_email=str(user.email)
+            )  # обернут в str чтобы IDE не ругалась
 
             if not activated_user:
                 logger.info(f"Пользователь с {user.email} не существует.")
@@ -231,6 +233,7 @@ class UserService:
             return user
 
         async with self.uow:
+            # Проверка прав - обновлять профили могут либо владельцы, либо руководители
             await self.rbac.enforce_permission(
                 user=user,
                 business_element_name=BusinessElementName.USERS,
@@ -267,6 +270,7 @@ class UserService:
             UserDoesNotExists - если пользователь не найден
         """
         async with self.uow:
+            # Проверка прав - удалить можно только свой профиль. Если руководитель, то любой
             await self.rbac.enforce_permission(
                 user=user,
                 business_element_name=BusinessElementName.USERS,
