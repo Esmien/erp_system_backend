@@ -6,6 +6,8 @@ from backend.core.database.engine import Base
 
 
 class BusinessElement(Base):
+    """ORM-модель таблицы для хранения бизнес-сущностей"""
+
     __tablename__ = "business_elements"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
@@ -13,16 +15,21 @@ class BusinessElement(Base):
 
 
 class AccessRule(Base):
-    """Правила доступа: определяет, какие права есть у роли на ресурс"""
+    """
+    ORM-модель правил доступа: определяет, какие права есть у роли на ресурс
+    Связана c ролью пользователя (Role) и элементами бизнес-логики (BusinessElement)
+    Матрица прав реализована при помощи политик в формате JSONB
+    """
 
     __tablename__ = "access_rules"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+
     business_element_id: Mapped[int] = mapped_column(
         ForeignKey("business_elements.id"), nullable=False
     )
-    business_element: Mapped[BusinessElement] = relationship(backref="access_rules")
     role_id: Mapped[int] = mapped_column(ForeignKey("roles.id"), nullable=False)
+    business_element: Mapped[BusinessElement] = relationship(backref="access_rules")
     role = relationship("Role")
 
     policies: Mapped[dict] = mapped_column(JSONB, default=dict, server_default="{}")

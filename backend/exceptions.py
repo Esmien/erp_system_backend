@@ -1,12 +1,12 @@
-class UserExistsError(Exception):
+class UserExistsError(Exception):  # handled
     pass
 
 
-class UserDoesNotExistsError(Exception):
+class UserDoesNotExistsError(Exception):  # handled
     pass
 
 
-class RoleDoesNotExistsError(Exception):
+class RoleDoesNotExistsError(Exception):  # handled
     pass
 
 
@@ -14,49 +14,61 @@ class InvalidPasswordError(Exception):
     pass
 
 
-class UserNotActiveError(Exception):
+class UserNotActiveError(Exception):  # handled
     pass
 
 
-class TeamDoesNotExistsError(Exception):
+class TeamDoesNotExistsError(Exception):  # handled
     pass
 
 
-class AccessDeniedError(Exception):
+class AccessDeniedError(Exception):  # handled
     pass
 
 
-class TeamAlreadyExistsError(Exception):
+class UnknownAccessLevelError(Exception):
     pass
 
 
-class UserAlreadyInTeamError(Exception):
+class TeamAlreadyExistsError(Exception):  # handled
     pass
 
 
-class UserAlreadyActiveError(Exception):
+class UserAlreadyInTeamError(Exception):  # handled
     pass
 
 
-class TaskDoesNotExistsError(Exception):
+class UserAlreadyActiveError(Exception):  # handled
     pass
 
 
-class TaskAlreadyEvaluatedError(Exception):
+class TaskDoesNotExistsError(Exception):  # handled
     pass
 
 
-class TaskDoesNotCompletedError(Exception):
+class TaskAlreadyEvaluatedError(Exception):  # handled
     pass
 
 
-class EvaluationDoesNotExistsError(Exception):
+class TaskDoesNotCompletedError(Exception):  # handled
     pass
 
 
-class BadCredentialsError(Exception):
+class BadCredentialsError(Exception):  # handled
     pass
 
 
-class PasswordsMismatchError(Exception):
+class PasswordsMismatchError(Exception):  # handled
+    pass
+
+
+class MeetingOverlapError(Exception):  # handled
+    pass
+
+
+class MeetingDoesNotExistsError(Exception):  # handled
+    pass
+
+
+class DatetimeCompatibleError(Exception):  # handled
     pass

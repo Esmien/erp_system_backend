@@ -26,9 +26,9 @@ class EvaluationRepository:
         """
         new_eval = Evaluation(**evaluation.model_dump(exclude_none=True))
 
-        self.session.add(new_eval)
+        self.session.add(instance=new_eval)
         await self.session.flush()
-        await self.session.refresh(new_eval)
+        await self.session.refresh(instance=new_eval)
 
         return EvaluationRead.model_validate(obj=new_eval)
 
@@ -43,7 +43,7 @@ class EvaluationRepository:
             Оценка или None, если оценка еще не стоит
         """
         stmt = select(Evaluation).where(Evaluation.task_id == task_id)
-        result = await self.session.execute(stmt)
+        result = await self.session.execute(statement=stmt)
         eval_model = result.scalar_one_or_none()
 
         return EvaluationRead.model_validate(obj=eval_model) if eval_model else None
@@ -67,12 +67,13 @@ class EvaluationRepository:
             .where(Task.executor_id == user_id)
         )
 
-        result = await self.session.execute(stmt)
+        result = await self.session.execute(statement=stmt)
         row = result.one()
 
         avg_val = row.avg_value
+        count_val = row.count_evals
 
         return UserStatisticsRead(
-            average_evaluation=round(float(avg_val), 2) if avg_val else None,
-            tasks_evaluated_count=row.count_evals,
+            average_evaluation=round(float(avg_val), 2) if avg_val else 0,
+            tasks_evaluated_count=count_val if count_val else 0,
         )

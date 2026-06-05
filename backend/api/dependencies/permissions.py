@@ -5,15 +5,12 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 
 from backend.core.config import settings
-from backend.core.constants import BusinessElementName, Action
 from backend.exceptions import (
     UserDoesNotExistsError,
     UserNotActiveError,
-    AccessDeniedError,
 )
 
 from backend.api.dependencies.reg_and_auth import AuthServiceDepends
-from backend.api.dependencies.rbac import RbacServiceDepends
 from backend.user.schemas import UserDTO
 
 # Извлекает Bearer-токен из заголовка Authorization
@@ -63,53 +60,6 @@ async def get_current_user(
         return user
     except (UserDoesNotExistsError, UserNotActiveError):
         raise credentials_exception
-
-
-class PermissionChecker:
-    """Динамический чекер прав доступа через RBAC"""
-
-    def __init__(self, business_element: BusinessElementName, permission: Action):
-        """
-        Инициализация чекера
-
-        Args:
-            business_element - ресурс, к которому проверяется доступ
-            permission - тип прав доступа (read, create, delete и т.д.)
-        """
-        self.business_element = business_element
-        self.permission = permission
-
-    async def __call__(
-        self,
-        user: "CurrentUserDepends",
-        rbac_service: RbacServiceDepends,
-    ) -> UserDTO:
-        """
-        Делает класс вызываемым.
-        Выполняет проверку прав доступа к ресурсу
-
-        Args:
-            user - текущий пользователь
-            rbac_service - сервис проверки прав
-
-        Returns:
-            Возвращает модель пользователя, если прошел проверку
-
-        Raises:
-            HTTPException(403) - если не достаточно прав для доступа к ресурсам
-        """
-        # Проверка прав доступа для роли пользователя к ресурсу
-        has_access = await rbac_service.check_permission(
-            role_id=user.role_id,
-            business_element_name=self.business_element,
-            action=self.permission,
-        )
-
-        # Доступа нет
-        if not has_access:
-            raise AccessDeniedError("Недостаточно прав для выполнения операции")
-
-        return user
 
 
 CurrentUserDepends = Annotated[UserDTO, Depends(get_current_user)]

@@ -1,9 +1,12 @@
 from datetime import date, datetime
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from backend.core.constants import TaskStatus
+from backend.exceptions import DatetimeCompatibleError
 
 
 class TaskBase(BaseModel):
+    """Базовая схема задачи"""
+
     title: str = Field(..., max_length=50, description="Название задачи")
     description: str | None = Field(default=None, description="Подробности задачи")
     expire: date | None = Field(default=None, description="Дедлайн")
@@ -11,10 +14,21 @@ class TaskBase(BaseModel):
 
 
 class TaskCreate(TaskBase):
-    pass
+    """Схема задачи для создания с валидацией даты дедлайна"""
+
+    @field_validator("expire", mode="after")
+    @classmethod
+    def check_date(cls, value: date) -> date:
+        if value < date.today():
+            raise DatetimeCompatibleError(
+                "Нельзя создать задачу с датой окончания раньше текущей"
+            )
+        return value
 
 
 class TaskRead(TaskBase):
+    """Схема задачи для возвращения клиенту"""
+
     id: int
     author_id: int | None
     created_at: datetime
@@ -35,7 +49,7 @@ class TaskUpdate(BaseModel):
 
 
 class TaskChangeStatus(BaseModel):
-    """Схема ИСКЛЮЧИТЕЛЬНО для смены статуса"""
+    """Схема для смены статуса"""
 
     status: TaskStatus = Field(..., description="Новый статус задачи")
 

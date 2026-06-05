@@ -2,7 +2,7 @@ import pytest
 
 from backend.api.dependencies.permissions import get_current_user
 from backend.api.main import app
-from backend.api.tests.test_tasks_api.get_user_override import override_get_regular_user
+from tests.fixtures.environment_setup import override_get_regular_user
 
 
 @pytest.mark.parametrize("count", [0, 10])

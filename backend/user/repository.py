@@ -34,7 +34,7 @@ class RegisterRepository:
         result = await self.session.execute(statement=stmt)
         user_with_role = result.scalar_one()
 
-        return UserDTO.model_validate(user_with_role)
+        return UserDTO.model_validate(obj=user_with_role)
 
     async def check_user_exists(self, user_in: UserRegister) -> bool:
         """

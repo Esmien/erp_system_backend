@@ -5,11 +5,15 @@ from backend.user.schemas import UserRead
 
 
 class TeamBase(BaseModel):
+    """Базовая схема команды"""
+
     name: str
     description: str | None = None
 
 
 class TeamRead(TeamBase):
+    """Схема для отправки клиенту"""
+
     id: int
     invite_code: str
 
@@ -17,14 +21,20 @@ class TeamRead(TeamBase):
 
 
 class TeamWithMembersRead(TeamRead):
+    """Схема для отправки клиенту ВМЕСТЕ с участниками команды"""
+
     members: List[UserRead] = Field(default_factory=list)
 
 
 class TeamCreate(TeamBase):
+    """Схема для создания команды"""
+
     pass
 
 
 class TeamJoin(BaseModel):
+    """Схема инвайт кода для использования при вступлении в команду"""
+
     invite_code: str = Field(
         ...,
         min_length=6,

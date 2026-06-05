@@ -23,7 +23,7 @@ async def override_get_session():
         yield session
 
 
-async def override_get_current_user():
+async def override_get_admin_user():
     async with fixture_async_session_maker() as session:
         stmt = (
             select(User)
@@ -33,6 +33,19 @@ async def override_get_current_user():
         result = await session.execute(stmt)
         user = result.scalar_one_or_none()
         return UserDTO.model_validate(user) if user else None
+
+
+async def override_get_regular_user():
+    """Вспомогательная функция для переключения на обычного пользователя без прав"""
+    async with fixture_async_session_maker() as session:
+        stmt = (
+            select(User)
+            .where(User.email == "user@user.com")
+            .options(selectinload(User.role))
+        )
+        result = await session.execute(stmt)
+        user_model = result.scalar_one_or_none()
+        return UserDTO.model_validate(user_model) if user_model else None
 
 
 class TestUnitOfWork(UnitOfWork):
@@ -46,4 +59,4 @@ def override_get_uow():
 
 
 app.dependency_overrides[get_uow] = override_get_uow
-app.dependency_overrides[get_current_user] = override_get_current_user
+app.dependency_overrides[get_current_user] = override_get_admin_user

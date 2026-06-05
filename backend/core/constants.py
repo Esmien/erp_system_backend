@@ -15,6 +15,7 @@ class BusinessElementName(StrEnum):
     COMMENTS = "comments"
     USERS = "users"
     EVALUATIONS = "evaluations"
+    MEETINGS = "meetings"
 
 
 class Action(StrEnum):
@@ -35,3 +36,10 @@ class TaskStatus(StrEnum):
     OPEN = "open"
     IN_PROGRESS = "in_progress"
     DONE = "done"
+
+
+class MeetingStatus(StrEnum):
+    PENDING = "pending"
+    IN_PROCESS = "in_process"
+    ENDS = "ends"
+    CANCELED = "canceled"

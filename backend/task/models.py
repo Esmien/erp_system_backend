@@ -22,6 +22,13 @@ ALLOWED_STATUSES = ", ".join(f"'{status}'" for status in TaskStatus)
 
 
 class Task(Base):
+    """
+    ORM-модель таблицы с задачами
+    Связана с комментариями (Comment), One to Many
+    Связана с авторами и исполнителями (User) по полям created_tasks для авторов и got_tasks для исполнителей
+    Статусы защищены от неверных значений констрейтами на стороне БД
+    """
+
     __tablename__ = "tasks"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -39,6 +46,7 @@ class Task(Base):
         ),
         default=TaskStatus.OPEN,
     )
+
     author_id: Mapped[int | None] = mapped_column(
         ForeignKey(column="users.id", ondelete="SET NULL")
     )

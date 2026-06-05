@@ -9,6 +9,7 @@ from backend.team.schemas import TeamCreate, TeamRead, TeamWithMembersRead
 from backend.user.models import User
 
 
+# Для аннотаций объектов с наличием ID
 class HasId(Protocol):
     id: Mapped[int]
 

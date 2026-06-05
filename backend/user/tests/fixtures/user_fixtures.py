@@ -1,8 +1,10 @@
 import asyncio
 
 import pytest
+from sqlalchemy import select
 
 from backend.core.security import get_password_hash
+from backend.user.models import User
 from backend.user.repository import RegisterRepository, AuthRepository, UserRepository
 from backend.user.schemas import UserRegister, UserDTO
 from backend.user.service import RegisterService, AuthService, UserService
@@ -78,3 +80,14 @@ def user_to_update():
         role_id=1,
         is_active=True,
     )
+
+
+@pytest.fixture
+async def test_users(db_session):
+    """
+    Достает дефолтных пользователей, которые уже были созданы
+    при подготовке БД через init_basic_data.
+    """
+    stmt = select(User).order_by(User.id)
+    result = await db_session.execute(stmt)
+    return list(result.scalars().all())

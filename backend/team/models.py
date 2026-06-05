@@ -14,6 +14,11 @@ if TYPE_CHECKING:
 
 
 class Team(Base):
+    """
+    ORM-модель таблицы с командами
+    Связана с участниками (список User), связь One to Many, members <-> team
+    """
+
     __tablename__ = "teams"
 
     id: Mapped[int] = mapped_column(primary_key=True)

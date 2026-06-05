@@ -52,6 +52,7 @@ class TeamService:
             TeamDoesNotExistsError - если команды с таким названием не существует
         """
         async with self.uow:
+            # Проверка прав - можно только участникам или руководителям
             await self.rbac.enforce_permission(
                 user=user,
                 business_element_name=BusinessElementName.TEAMS,
@@ -85,8 +86,8 @@ class TeamService:
             AccessDeniedError - если нет прав на создание команды
             TeamAlreadyExistsError - если команда с таким названием уже существует
         """
-        # Проверяем существование команды, чтобы избежать дубликатов
         async with self.uow:
+            # Проверка прав - можно только руководителям
             await self.rbac.enforce_permission(
                 user=user,
                 business_element_name=BusinessElementName.TEAMS,
@@ -94,6 +95,7 @@ class TeamService:
                 error_msg="Недостаточно прав для создания команды",
             )
 
+            # Проверяем существование команды, чтобы избежать дубликатов
             is_exists = await self.uow.teams.check_team_name_exists(
                 team_name=team_in.name
             )
@@ -140,6 +142,7 @@ class TeamService:
             UserAlreadyInTeamError - если пользователь уже в какой-либо команде
             TeamDoesNotExistsError - если инвайт код не подошел ни к одной команде
         """
+        # Проверка на присутствие в какой-нибудь команде
         if user.team_id is not None:
             logger.info(
                 f"Пользователь ID: {user.id}, Email: {user.email} уже состоит в команде ID: {user.team_id}."
@@ -147,6 +150,7 @@ class TeamService:
             raise UserAlreadyInTeamError("Вы уже состоите в команде")
 
         async with self.uow:
+            # Ищем команду по инвайт коду и вступаем, если все ок
             team = await self.uow.teams.get_team_by_invite_code(code=invite_code)
 
             if not team:

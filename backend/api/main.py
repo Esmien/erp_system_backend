@@ -10,6 +10,8 @@ from backend.api.v1.routers.users import router as users_router
 from backend.api.v1.routers.tasks import router as tasks_router
 from backend.api.v1.routers.comments import router as comments_router
 from backend.api.v1.routers.evaluations import router as evaluations_router
+from backend.api.v1.routers.meetings import router as meetings_router
+from backend.api.v1.routers.calendar import router as calendar_router
 from backend.core.logger import setup_logger
 
 
@@ -40,5 +42,7 @@ app.include_router(router=users_router, prefix="/api/v1")
 app.include_router(router=tasks_router, prefix="/api/v1")
 app.include_router(router=comments_router, prefix="/api/v1")
 app.include_router(router=evaluations_router, prefix="/api/v1")
+app.include_router(router=meetings_router, prefix="/api/v1")
+app.include_router(router=calendar_router, prefix="/api/v1")
 
 setup_exception_handlers(app=app)
