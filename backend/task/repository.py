@@ -9,7 +9,7 @@ from backend.task.schemas import TaskRead
 from backend.user.models import User
 
 
-class TaskRepository(BaseRepository):
+class TaskRepository(BaseRepository[Task, TaskRead]):
     def __init__(self, session: AsyncSession):
         super().__init__(session=session, model=Task, dto=TaskRead)
 
@@ -19,6 +19,17 @@ class TaskRepository(BaseRepository):
         team_id: int | None = None,
         task_status: str | None = None,
     ) -> list[TaskRead]:
+        """
+        Получает задачи по фильтрам
+
+        Args:
+            user_id - ID запрашивающего задачи пользователя
+            team_id - ID команды, чьи задачи запрашиваются
+            task_status - статус искомых задач
+
+        Returns:
+            Список отфильтрованных задач
+        """
         stmt = select(Task)
 
         if task_status:
