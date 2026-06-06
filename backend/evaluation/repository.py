@@ -1,36 +1,18 @@
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.core.base_repository import BaseRepository
 from backend.evaluation.models import Evaluation
 from backend.evaluation.schemas import (
     EvaluationRead,
-    EvaluationCreateDTO,
     UserStatisticsRead,
 )
 from backend.task.models import Task
 
 
-class EvaluationRepository:
+class EvaluationRepository(BaseRepository[Evaluation, EvaluationRead]):
     def __init__(self, session: AsyncSession):
-        self.session = session
-
-    async def add(self, evaluation: EvaluationCreateDTO) -> EvaluationRead:
-        """
-        Добавляет оценку к задаче
-
-        Args:
-            evaluation - модель оценки
-
-        Returns:
-            Оценка со всеми нужными полями
-        """
-        new_eval = Evaluation(**evaluation.model_dump(exclude_none=True))
-
-        self.session.add(instance=new_eval)
-        await self.session.flush()
-        await self.session.refresh(instance=new_eval)
-
-        return EvaluationRead.model_validate(obj=new_eval)
+        super().__init__(session=session, model=Evaluation, dto=EvaluationRead)
 
     async def get_by_task_id(self, task_id: int) -> EvaluationRead | None:
         """
