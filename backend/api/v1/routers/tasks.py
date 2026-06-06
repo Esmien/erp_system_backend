@@ -37,7 +37,7 @@ async def get_task(
     """
     Возвращает данные задачи с проверкой прав на чтение
     """
-    task = await service.get_task(task_id=task_id, user=current_user)
+    task = await service.get(obj_id=task_id, user=current_user)
     return task
 
 
@@ -174,4 +174,4 @@ async def delete_task(
     """
     Полностью удаляет задачу
     """
-    await service.delete_task(task_id=task_id, user=current_user)
+    await service.delete(obj_id=task_id, user=current_user)
