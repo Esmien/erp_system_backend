@@ -10,7 +10,6 @@ from backend.core.constants import (
 )
 from backend.evaluation.schemas import (
     EvaluationCreate,
-    EvaluationCreateDTO,
     UserStatisticsRead,
 )
 from backend.exceptions import (
@@ -50,10 +49,10 @@ async def test_evaluate_task_not_completed(eval_service, mock_uow, test_user):
 async def test_evaluate_task_success(eval_service, mock_uow, test_user):
     mock_task = MagicMock()
     mock_task.status = TaskStatus.DONE
-    mock_uow.tasks.get_task_by_id.return_value = mock_task
+    mock_uow.tasks.get_by_id.return_value = mock_task
     mock_uow.evaluations.get_by_task_id.return_value = None
 
-    mock_uow.evaluations.add.return_value = "saved_evaluation_mock"
+    mock_uow.evaluations.create.return_value = "saved_evaluation_mock"
 
     evaluation_in = EvaluationCreate(value=5, comment="Good")
 
@@ -64,10 +63,12 @@ async def test_evaluate_task_success(eval_service, mock_uow, test_user):
     mock_uow.commit.assert_awaited_once()
     assert result == "saved_evaluation_mock"
 
-    # Проверяем, что в репозиторий улетела правильная DTO
-    called_args = mock_uow.evaluations.add.call_args[0][0]
-    assert isinstance(called_args, EvaluationCreateDTO)
-    assert called_args.value == 5
+    # Проверяем, что в репозиторий улетели правильные данные
+    kwargs = mock_uow.evaluations.create.call_args.kwargs
+    assert kwargs.get("value") == 5
+    assert kwargs.get("comment") == "Good"
+    assert kwargs.get("task_id") == 1
+    assert kwargs.get("evaluator_id") == test_user.id
 
 
 async def test_get_my_statistics(eval_service, mock_uow, test_user):
@@ -88,7 +89,7 @@ async def test_get_my_statistics(eval_service, mock_uow, test_user):
 
 async def test_evaluate_task_not_found(eval_service, mock_uow, test_user):
     # Мокаем отсутствие задачи
-    mock_uow.tasks.get_task_by_id.return_value = None
+    mock_uow.tasks.get_by_id.return_value = None
     evaluation_in = EvaluationCreateBody(value=5)
 
     with pytest.raises(TaskDoesNotExistsError, match=TASK_NOT_FOUND):
@@ -101,7 +102,7 @@ async def test_evaluate_task_already_evaluated(eval_service, mock_uow, test_user
     # Задача есть и завершена
     mock_task = MagicMock()
     mock_task.status = TaskStatus.DONE
-    mock_uow.tasks.get_task_by_id.return_value = mock_task
+    mock_uow.tasks.get_by_id.return_value = mock_task
 
     # НО оценка УЖЕ существует
     mock_uow.evaluations.get_by_task_id.return_value = MagicMock()
@@ -115,7 +116,7 @@ async def test_evaluate_task_already_evaluated(eval_service, mock_uow, test_user
 
 async def test_get_evaluation_task_not_found(eval_service, mock_uow, test_user):
     # Пытаемся получить оценку несуществующей задачи
-    mock_uow.tasks.get_task_by_id.return_value = None
+    mock_uow.tasks.get_by_id.return_value = None
 
     with pytest.raises(TaskDoesNotExistsError, match=TASK_NOT_FOUND):
         await eval_service.get_evaluation(task_id=999, user=test_user)
@@ -126,7 +127,7 @@ async def test_get_evaluation_access_denied(eval_service, mock_uow, test_user):
     mock_task = MagicMock()
     mock_task.author_id = 99
     mock_task.executor_id = 100
-    mock_uow.tasks.get_task_by_id.return_value = mock_task
+    mock_uow.tasks.get_by_id.return_value = mock_task
 
     # RBAC жестко режет права (например, обычный юзер лезет в чужую задачу)
     eval_service.rbac.enforce_permission.side_effect = AccessDeniedError
@@ -140,7 +141,7 @@ async def test_get_evaluation_success(eval_service, mock_uow, test_user):
     mock_task = MagicMock()
     mock_task.author_id = test_user.id  # Совпадает с ID текущего пользователя
     mock_task.executor_id = 99
-    mock_uow.tasks.get_task_by_id.return_value = mock_task
+    mock_uow.tasks.get_by_id.return_value = mock_task
 
     # Репозиторий возвращает оценку
     expected_eval = MagicMock()

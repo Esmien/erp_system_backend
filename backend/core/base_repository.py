@@ -39,6 +39,7 @@ class BaseRepository(Generic[ModelType, DTOType]):
         instance = self.model(**kwargs)
         self.session.add(instance=instance)
         await self.session.flush()
+        await self.session.refresh(instance=instance)
 
         return self.dto.model_validate(obj=instance)
 
