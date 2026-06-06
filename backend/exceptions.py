@@ -72,3 +72,7 @@ class MeetingDoesNotExistsError(Exception):  # handled
 
 class DatetimeCompatibleError(Exception):  # handled
     pass
+
+
+class CommentDoesNotExistsError(Exception):
+    pass
