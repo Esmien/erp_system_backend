@@ -12,7 +12,7 @@ async def test_repository_add_and_get(eval_repo, test_task_db, test_user_db):
         evaluator_id=test_user_db.id,
     )
 
-    saved_eval = await eval_repo.add(dto_in)
+    saved_eval = await eval_repo.create(**dto_in.model_dump())
 
     assert saved_eval.id is not None
     assert saved_eval.value == 4

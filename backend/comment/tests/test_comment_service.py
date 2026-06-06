@@ -9,9 +9,9 @@ async def test_add_comment_success(
     comment_service, mock_uow, mock_user_author, sample_task, sample_comment
 ):
     # Имитируем найденную задачу
-    mock_uow.tasks.get_task_by_id.return_value = sample_task
+    mock_uow.tasks.get_by_id.return_value = sample_task
     # Имитируем успешное создание комментария в БД
-    mock_uow.comments.create_comment.return_value = sample_comment
+    mock_uow.comments.create.return_value = sample_comment
 
     comment_in = CommentCreate(text="Тестовый комментарий")
 
@@ -21,7 +21,7 @@ async def test_add_comment_success(
     )
 
     assert result.text == "Тестовый комментарий"
-    mock_uow.comments.create_comment.assert_called_once_with(
+    mock_uow.comments.create.assert_called_once_with(
         task_id=1, author_id=mock_user_author.id, text="Тестовый комментарий"
     )
     mock_uow.commit.assert_called_once()
@@ -46,7 +46,7 @@ async def test_add_comment_access_denied(
 
 async def test_add_comment_task_not_found(comment_service, mock_uow, mock_user_author):
     # Задачи не существует
-    mock_uow.tasks.get_task_by_id.return_value = None
+    mock_uow.tasks.get_by_id.return_value = None
     comment_in = CommentCreate(text="Коммент в пустоту")
 
     with pytest.raises(TaskDoesNotExistsError):
@@ -89,7 +89,7 @@ async def test_permissions_as_executor_and_manager(
 async def test_get_task_comments_success(
     comment_service, mock_uow, sample_task, sample_comment, mock_user_author
 ):
-    mock_uow.tasks.get_task_by_id.return_value = sample_task
+    mock_uow.tasks.get_by_id.return_value = sample_task
     mock_uow.comments.get_comments_by_task_id.return_value = [sample_comment]
     sample_task.executor_id = mock_user_author.id
 
@@ -99,7 +99,7 @@ async def test_get_task_comments_success(
     )
 
     assert comments == [sample_comment]
-    mock_uow.tasks.get_task_by_id.assert_awaited_once_with(sample_task.id)
+    mock_uow.tasks.get_by_id.assert_awaited_once_with(obj_id=sample_task.id)
     mock_uow.comments.get_comments_by_task_id.assert_awaited_once_with(sample_task.id)
 
 
@@ -110,10 +110,10 @@ async def test_get_task_comments_with_exc(
     comment_service, mock_uow, sample_task, mock_user_stranger, is_task, exc
 ):
     if is_task:
-        mock_uow.tasks.get_task_by_id.return_value = sample_task
+        mock_uow.tasks.get_by_id.return_value = sample_task
         comment_service.rbac.enforce_permission.side_effect = AccessDeniedError
     else:
-        mock_uow.tasks.get_task_by_id.return_value = None
+        mock_uow.tasks.get_by_id.return_value = None
 
     sample_task.author_id = 111
     sample_task.executor_id = 222

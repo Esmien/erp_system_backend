@@ -76,3 +76,7 @@ class DatetimeCompatibleError(Exception):  # handled
 
 class CommentDoesNotExistsError(Exception):
     pass
+
+
+class EvaluationDoesNotExistsError(Exception):
+    pass
