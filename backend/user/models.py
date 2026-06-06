@@ -69,6 +69,12 @@ class User(Base):
         secondary="meeting_participants", back_populates="participants"
     )
 
+    def __str__(self) -> str:
+        # sqladmin будет дергать этот метод для отображения
+        if self.last_name:
+            return f"{self.name} {self.last_name} ({self.email})"
+        return f"{self.name} ({self.email})"
+
 
 # Собираем роли в строку для кастомных констрейтов на уровне БД.
 # Без них повторные миграции падают
@@ -99,3 +105,6 @@ class Role(Base):
     __table_args__ = (
         CheckConstraint(f"name IN ({ALLOWED_ROLES})", name="check_valid_role_name"),
     )
+
+    def __str__(self) -> str:
+        return f"ID роли: {self.id}, название: {self.name}"

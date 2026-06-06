@@ -32,3 +32,6 @@ class Team(Base):
         DateTime(timezone=True), server_default=func.now()
     )
     members: Mapped[list[User]] = relationship(back_populates="team")
+
+    def __str__(self) -> str:
+        return f"Название: {self.name},  код приглашения: {self.invite_code}"
