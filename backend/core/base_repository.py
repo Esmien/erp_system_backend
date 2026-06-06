@@ -22,10 +22,20 @@ class BaseRepository(Generic[ModelType, DTOType]):
         return result.scalar_one_or_none()
 
     async def get_by_id(self, obj_id: int) -> DTOType | None:
+        """Возвращает найденный в БД по ID объект в виде DTO"""
         obj = await self._get_instance(obj_id=obj_id)
         return self.dto.model_validate(obj) if obj else None
 
     async def create(self, **kwargs) -> DTOType:
+        """
+        Универсальный метод для создания чего-либо в БД
+
+        Args:
+            kwargs - именованные аргументы с полями создаваемого объекта
+
+        Returns:
+            Готовый для дальнейшей обработки DTO на основе созданной в БД записи
+        """
         instance = self.model(**kwargs)
         self.session.add(instance=instance)
         await self.session.flush()
@@ -33,20 +43,38 @@ class BaseRepository(Generic[ModelType, DTOType]):
         return self.dto.model_validate(obj=instance)
 
     async def update(self, obj_id: int, update_data: dict[str, Any]) -> DTOType | None:
+        """
+        Универсальный метод для обновления записи в БД
+
+        Args:
+            obj_id - ID изменяемого объекта
+            update_data - словарь с данными для обновления
+
+        Returns:
+            DTO обновленной записи или None, если запись не существует
+        """
         instance = await self._get_instance(obj_id=obj_id)
 
         if not instance:
             return None
 
+        # Обновляем поля ORM-модели
         for key, value in update_data.items():
             setattr(instance, key, value)
 
+        # Записываем, получаем из БД обновленную ORM-модель, собираем DTO и отдаем наверх
         self.session.add(instance=instance)
         await self.session.flush()
 
         return self.dto.model_validate(obj=instance)
 
     async def delete(self, obj_id: int) -> None:
+        """
+        Универсальный метод для удаления записи из БД
+
+        Args:
+            obj_id - ID удаляемого объекта
+        """
         instance = await self._get_instance(obj_id=obj_id)
 
         if not instance:
