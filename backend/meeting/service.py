@@ -1,6 +1,6 @@
 from loguru import logger
 
-from backend.core.uow import IUnitOfWork
+from backend.core.base_service import BaseService
 
 from backend.core.constants import BusinessElementName, Action, AccessLevel
 from backend.exceptions import (
@@ -8,6 +8,7 @@ from backend.exceptions import (
     MeetingDoesNotExistsError,
     UnknownAccessLevelError,
 )
+from backend.meeting.repository import MeetingRepository
 from backend.meeting.schemas import (
     MeetingCreate,
     MeetingCreateDTO,
@@ -16,33 +17,30 @@ from backend.meeting.schemas import (
     MeetingUpdateDTO,
 )
 from backend.rbac.schemas import AccessContextDTO
-from backend.rbac.service import RbacService
 from backend.user.schemas import UserDTO
 
 
-class MeetingService:
-    def __init__(self, uow: IUnitOfWork, rbac_service: RbacService):
-        self.uow = uow
-        self.rbac = rbac_service
+class MeetingService(BaseService[MeetingReadWithParticipants]):
+    @property
+    def repository(self) -> MeetingRepository:
+        return self.uow.meetings
 
-    async def _get_meeting_by_id(self, meeting_id: int) -> MeetingReadWithParticipants:
-        """
-        Вспомогательный метод для получения модели встречи
+    @property
+    def business_element(self) -> BusinessElementName:
+        return BusinessElementName.MEETINGS
 
-        Args:
-            meeting_id - ID искомой встречи
+    @property
+    def not_found_exception(self) -> Exception:
+        return MeetingDoesNotExistsError("Встреча не найдена")
 
-        Returns:
-            Встреча со списком участников
-
-        Raises:
-            MeetingDoesNotExistsError - если такой встречи не существует
-        """
-        meeting = await self.uow.meetings.get_meeting_info(meeting_id=meeting_id)
-        if not meeting:
-            raise MeetingDoesNotExistsError("Встреча не найдена")
-
-        return meeting
+    def build_abac_context(
+        self, obj: MeetingReadWithParticipants, user: UserDTO
+    ) -> AccessContextDTO:
+        is_participant = any(p.id == user.id for p in obj.participants)
+        return AccessContextDTO(
+            is_author=obj.author_id == user.id,
+            is_participant=is_participant or (obj.author_id == user.id),
+        )
 
     async def create_meeting(
         self, meeting_in: MeetingCreate, author: UserDTO
@@ -59,28 +57,32 @@ class MeetingService:
         """
         async with self.uow:
             # Проверка прав на создание встреч
-            await self.rbac.enforce_permission(
+            await self.check_permissions(
                 user=author,
-                business_element_name=BusinessElementName.MEETINGS,
                 action=Action.CREATE,
-                error_msg="Недостаточно прав для создания встречи",
+                error_msg="Вы не можете создать встречу",
             )
 
             # Проверяем накладки по времени
-            overlapping_users = await self.uow.meetings.get_overlapping_participants(
-                participant_ids=meeting_in.participant_ids,
-                starts_on=meeting_in.datetime_start,
-                ends_on=meeting_in.datetime_end,
-            )
+            if meeting_in.participant_ids:
+                ids_to_check = list(set(meeting_in.participant_ids + [author.id]))
 
-            # Если есть конфликты, отменяем создание
-            if overlapping_users:
-                logger.info(
-                    f"Конфликт времени у пользователей с ID: {overlapping_users}"
+                overlapping_users = (
+                    await self.uow.meetings.get_overlapping_participants(
+                        participant_ids=ids_to_check,
+                        starts_on=meeting_in.datetime_start,
+                        ends_on=meeting_in.datetime_end,
+                    )
                 )
-                raise MeetingOverlapError(
-                    f"Участники с ID {overlapping_users} заняты в это время."
-                )
+
+                # Если есть конфликты, отменяем создание
+                if overlapping_users:
+                    logger.info(
+                        f"Конфликт времени у пользователей с ID: {overlapping_users}"
+                    )
+                    raise MeetingOverlapError(
+                        f"Участники с ID {overlapping_users} заняты в это время."
+                    )
 
             # Формируем полную DTO для сохранения (добавляем автора)
             new_meeting_dto = MeetingCreateDTO(
@@ -88,7 +90,7 @@ class MeetingService:
             )
 
             # Сохраняем в БД
-            new_meeting = await self.uow.meetings.create_meeting(
+            new_meeting = await self.repository.create_meeting(
                 meeting_in=new_meeting_dto
             )
 
@@ -143,22 +145,14 @@ class MeetingService:
             Данные встречи со всеми участниками
         """
         async with self.uow:
-            meeting = await self._get_meeting_by_id(meeting_id=meeting_id)
+            meeting = await self.get_or_raise(obj_id=meeting_id)
+            if not meeting:
+                raise self.not_found_exception
 
-            # Проверяем статус пользователя для контекста
-            is_author = meeting.author_id == user.id
-            is_participant = any(p.id == user.id for p in meeting.participants)
-
-            context = AccessContextDTO(
-                is_author=is_author, is_participant=is_participant
-            )
-            # Проверяем права доступа
-            await self.rbac.enforce_permission(
+            await self.check_permissions(
                 user=user,
-                business_element_name=BusinessElementName.MEETINGS,
                 action=Action.READ,
-                context=context,
-                error_msg="Данная встреча для вас недоступна",
+                error_msg="Вы не можете получить данные этой встречи",
             )
 
             return meeting
@@ -172,7 +166,7 @@ class MeetingService:
         Args:
             meeting_id - ID обновляемой встречи
             update_data - данные для обновления в формате DTO
-            user - пользовател, который обновляет встречу
+            user - пользователь, который обновляет встречу
 
         Returns:
             Обновленная встреча
@@ -181,25 +175,24 @@ class MeetingService:
         update_dict = update_data.model_dump(exclude_unset=True)
 
         async with self.uow:
-            meeting = await self._get_meeting_by_id(meeting_id=meeting_id)
+            meeting = await self.get_or_raise(obj_id=meeting_id)
 
             # Если данных для обновления нет, просто возвращаем исходную встречу
             if not update_dict:
                 return meeting
 
             # Проверяем права на обновление
-            await self.rbac.enforce_permission(
+            await self.check_permissions(
                 user=user,
-                business_element_name=BusinessElementName.MEETINGS,
                 action=Action.UPDATE,
-                context=AccessContextDTO(is_author=(user.id == meeting.author_id)),
+                obj=meeting,
                 error_msg="Данные встречи может обновить только автор или руководитель",
             )
 
             # Собираем DTO для передачи в репозиторий
             update_dto = MeetingUpdateDTO(**update_dict)
             # Обновляем встречу
-            updated_meeting = await self.uow.meetings.update_meeting(
+            updated_meeting = await self.repository.update_meeting(
                 meeting_id=meeting_id, data_for_update=update_dto
             )
 
@@ -210,26 +203,3 @@ class MeetingService:
             await self.uow.commit()
 
             return updated_meeting
-
-    async def delete_meeting(self, meeting_id: int, user: UserDTO) -> None:
-        """
-        Удаляет встречу
-
-        Args:
-            meeting_id - ID встречи для удаления
-            user - пользователь, который хочет удалить встречу
-        """
-        async with self.uow:
-            meeting = await self._get_meeting_by_id(meeting_id=meeting_id)
-
-            # Проверяем, может ли текущий пользователь удалять встречи
-            await self.rbac.enforce_permission(
-                user=user,
-                business_element_name=BusinessElementName.MEETINGS,
-                action=Action.DELETE,
-                context=AccessContextDTO(is_author=user.id == meeting.author_id),
-                error_msg="Недостаточно прав для удаления задачи",
-            )
-
-            await self.uow.meetings.delete_meeting(meeting_id=meeting_id)
-            await self.uow.commit()

@@ -109,7 +109,7 @@ class TestMeetingService:
 
         expected_meeting.id = meeting_id
 
-        mock_uow.meetings.get_meeting_info.return_value = expected_meeting
+        mock_uow.meetings.get_by_id.return_value = expected_meeting
         mock_uow.meetings.update_meeting.return_value = expected_meeting
 
         await meeting_service.update_meeting(
@@ -124,7 +124,7 @@ class TestMeetingService:
     async def test_delete_meeting_not_found(
         self, meeting_service, mock_uow, mock_user_for_meeting
     ):
-        mock_uow.meetings.get_meeting_info.return_value = None
+        mock_uow.meetings.get_by_id.return_value = None
 
         with pytest.raises(MeetingDoesNotExistsError):
-            await meeting_service.delete_meeting(999, mock_user_for_meeting)
+            await meeting_service.delete(obj_id=999, user=mock_user_for_meeting)
