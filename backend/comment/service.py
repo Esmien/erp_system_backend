@@ -1,36 +1,38 @@
 from loguru import logger
 
 from backend.comment.schemas import CommentCreate, CommentRead
+from backend.core.base_service import BaseService
 from backend.core.constants import BusinessElementName, Action
-from backend.core.uow import IUnitOfWork
-from backend.exceptions import TaskDoesNotExistsError
+from backend.exceptions import TaskDoesNotExistsError, CommentDoesNotExistsError
 from backend.rbac.schemas import AccessContextDTO
-from backend.rbac.service import RbacService
 from backend.task.schemas import TaskRead
 from backend.user.schemas import UserDTO
 
 
-class CommentService:
-    def __init__(self, uow: IUnitOfWork, rbac_service: RbacService):
-        self.uow = uow
-        self.rbac = rbac_service
+class CommentService(BaseService[CommentRead]):
+    @property
+    def repository(self):
+        return self.uow.comments
 
-    async def _get_task_by_id(self, task_id) -> TaskRead:
-        """
-        Вспомогательный метод для поиска задачи по ID
+    @property
+    def business_element(self) -> BusinessElementName:
+        return BusinessElementName.COMMENTS
 
-        Args:
-            task_id - ID искомой задачи
+    @property
+    def not_found_exception(self) -> Exception:
+        return CommentDoesNotExistsError("Комментарий не найден.")
 
-        Returns:
-            Модель задачи
+    def build_abac_context(self, obj: CommentRead, user: UserDTO) -> AccessContextDTO:
+        return AccessContextDTO(
+            is_author=obj.author_id == user.id, is_participant=False
+        )
 
-        Raises:
-            TaskDoesNotExistsError - если задача не найдена
-        """
-        task = await self.uow.tasks.get_task_by_id(task_id)
+    async def _get_task(self, task_id: int) -> TaskRead:
+        """Вспомогательный метод для получения задачи"""
+        task: TaskRead | None = await self.uow.tasks.get_by_id(obj_id=task_id)
         if not task:
             raise TaskDoesNotExistsError("Задача не найдена.")
+
         return task
 
     async def add_comment(
@@ -48,25 +50,24 @@ class CommentService:
             Модель готового комментария
         """
         async with self.uow:
-            task = await self._get_task_by_id(task_id=task_id)
+            task = await self._get_task(task_id=task_id)
 
-            # Проверка на причастность пользователя к задаче
-            is_author = task.author_id == user.id
-            is_participant = task.executor_id == user.id
-
-            # Проверка прав доступа
+            # Проверяем права на добавление комментария
+            task_context = AccessContextDTO(
+                is_author=task.author_id == user.id,
+                is_participant=(task.author_id == user.id)
+                or (task.executor_id == user.id),
+            )
             await self.rbac.enforce_permission(
                 user=user,
                 business_element_name=BusinessElementName.COMMENTS,
                 action=Action.CREATE,
-                context=AccessContextDTO(
-                    is_participant=is_participant, is_author=is_author
-                ),
-                error_msg="Это не ваша задача, вы не можете ее комментировать",
+                context=task_context,
+                error_msg="Вы не можете оставлять комментарии к этой задаче",
             )
 
             # Если проверка выше прошла успешно - создаем комментарий
-            new_comment = await self.uow.comments.create_comment(
+            new_comment = await self.repository.create(
                 task_id=task_id, author_id=user.id, text=comment_in.text
             )
 
@@ -89,20 +90,18 @@ class CommentService:
             Список комментариев
         """
         async with self.uow:
-            # Сначала достаем задачу
-            task = await self._get_task_by_id(task_id=task_id)
+            task = await self._get_task(task_id=task_id)
 
-            # Проверяем причастность...
-            is_author = task.author_id == user.id
-            is_participant = task.executor_id == user.id
-            # ... и права доступа
+            task_context = AccessContextDTO(
+                is_author=task.author_id == user.id,
+                is_participant=(task.author_id == user.id)
+                or (task.executor_id == user.id),
+            )
             await self.rbac.enforce_permission(
                 user=user,
-                business_element_name=BusinessElementName.COMMENTS,
+                business_element_name=BusinessElementName.TASKS,
                 action=Action.READ,
-                context=AccessContextDTO(
-                    is_participant=is_participant, is_author=is_author
-                ),
+                context=task_context,
                 error_msg="Вы не являетесь участником задачи, комментарии недоступны.",
             )
 
