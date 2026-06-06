@@ -4,6 +4,7 @@ from sqlalchemy import select, and_, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from backend.core.base_repository import BaseRepository
 from backend.meeting.models import Meeting, meeting_participants
 from backend.meeting.schemas import (
     MeetingCreateDTO,
@@ -13,27 +14,30 @@ from backend.meeting.schemas import (
 from backend.user.models import User
 
 
-class MeetingRepository:
+class MeetingRepository(BaseRepository[Meeting, MeetingReadWithParticipants]):
     def __init__(self, session: AsyncSession):
-        self.session = session
+        super().__init__(
+            session=session, model=Meeting, dto=MeetingReadWithParticipants
+        )
 
-    async def _get_meeting_by_id(self, meeting_id: int) -> Meeting | None:
+    async def _get_instance(self, obj_id: int) -> Meeting | None:
         """
-        Вспомогательный метод получения встречи
+        Переопределение метода базового класса.
+        Все CRUD теперь подтягивают участников через selectinload
 
         Args:
-            meeting_id - ID искомой встречи
+            obj_id - ID искомого объекта
 
         Returns:
-            ORM-модель встречи или None, если не найдена
+            ORM-модель встречи со списком участников или None, если встреча не нашлась
         """
         stmt = (
-            select(Meeting)
-            .where(Meeting.id == meeting_id)
-            .options(selectinload(Meeting.participants))
+            select(self.model)
+            .where(self.model.id == obj_id)
+            .options(selectinload(self.model.participants))
         )
-        meeting = (await self.session.execute(statement=stmt)).scalar_one_or_none()
-        return meeting
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
 
     async def get_overlapping_participants(
         self, participant_ids: list[int], starts_on: datetime, ends_on: datetime
@@ -79,7 +83,7 @@ class MeetingRepository:
         self, meeting_in: MeetingCreateDTO
     ) -> MeetingReadWithParticipants:
         """
-        СОздает новую встречу
+        Создает новую встречу
 
         Args:
             Модель встречи, полученная от клиента
@@ -120,7 +124,7 @@ class MeetingRepository:
             user_id - ID пользователя для фильтрации встреч. Если None - возвращаем ВСЕ встречи
 
         Returns:
-            Список встреч со списко участников
+            Список встреч со списком участников
         """
         # Базовый запрос с подгрузкой участников
         stmt = select(Meeting).options(selectinload(Meeting.participants))
@@ -143,29 +147,11 @@ class MeetingRepository:
         # Собираем встречи в список и возвращаем
         return [MeetingReadWithParticipants.model_validate(obj=m) for m in meetings]
 
-    async def get_meeting_info(
-        self, meeting_id: int
-    ) -> MeetingReadWithParticipants | None:
-        """
-        Возвращает полную информацию по встрече
-
-        Args:
-            meeting_id - ID встречи для чтения
-
-        Returns:
-            Данные встречи со списком участников или None, если встреча не существует
-        """
-        meeting = await self._get_meeting_by_id(meeting_id=meeting_id)
-
-        return (
-            MeetingReadWithParticipants.model_validate(obj=meeting) if meeting else None
-        )
-
     async def update_meeting(
         self, meeting_id: int, data_for_update: MeetingUpdateDTO
     ) -> MeetingReadWithParticipants | None:
         """
-        Обновлет данные встречи. Все поля опциональны
+        Обновляет данные встречи. Все поля опциональны
 
         Args:
             meeting_id - ID встречи для изменения
@@ -174,7 +160,7 @@ class MeetingRepository:
         Returns:
             Встреча с обновленными данными или None, если такой встречи не существует
         """
-        meeting = await self._get_meeting_by_id(meeting_id=meeting_id)
+        meeting = await self._get_instance(obj_id=meeting_id)
         if not meeting:
             return None
 
@@ -202,20 +188,6 @@ class MeetingRepository:
         await self.session.flush()
 
         return MeetingReadWithParticipants.model_validate(obj=meeting)
-
-    async def delete_meeting(self, meeting_id: int) -> None:
-        """
-        Удаляет встречу по ID
-
-        Args:
-            meeting_id - ID встречи для удаления
-        """
-        meeting = await self._get_meeting_by_id(meeting_id=meeting_id)
-        if not meeting:
-            return
-
-        await self.session.delete(instance=meeting)
-        await self.session.flush()
 
     async def get_meetings_by_date_range(
         self, user_id: int, start_dt: datetime, end_dt: datetime

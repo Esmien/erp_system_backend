@@ -68,7 +68,10 @@ async def test_get_meeting_forbidden(client):
     try:
         response = await client.get(f"/api/v1/meetings/{meeting_id}/")
         assert response.status_code == 403
-        assert "данная встреча для вас недоступна" in response.json()["detail"].lower()
+        assert (
+            "вы не можете получить данные этой встречи"
+            in response.json()["detail"].lower()
+        )
     finally:
         if old_dep:
             app.dependency_overrides[get_current_user] = old_dep
