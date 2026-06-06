@@ -70,3 +70,6 @@ class Task(Base):
             f"status IN ({ALLOWED_STATUSES})", name="check_valid_status_name"
         ),
     )
+
+    def __str__(self) -> str:
+        return f"Название: {self.title}, дедлайн: {self.expire}, статус: {self.status}"
