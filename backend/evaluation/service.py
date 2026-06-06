@@ -4,6 +4,7 @@ from backend.core.constants import (
     Action,
     TaskStatus,
 )
+from backend.evaluation.repository import EvaluationRepository
 from backend.exceptions import (
     TaskDoesNotExistsError,
     TaskAlreadyEvaluatedError,
@@ -23,7 +24,7 @@ from backend.user.schemas import UserDTO
 
 class EvaluationService(BaseService[EvaluationRead]):
     @property
-    def repository(self):
+    def repository(self) -> EvaluationRepository:
         return self.uow.evaluations
 
     @property
@@ -77,7 +78,7 @@ class EvaluationService(BaseService[EvaluationRead]):
                 raise TaskDoesNotCompletedError("Задача еще не выполнена")
 
             # Проверяем, не оценена ли задача уже
-            existing_eval = await self.uow.evaluations.get_by_task_id(task_id)
+            existing_eval = await self.repository.get_by_task_id(task_id)
             if existing_eval:
                 raise TaskAlreadyEvaluatedError("Эта задача уже оценена")
 
@@ -129,7 +130,7 @@ class EvaluationService(BaseService[EvaluationRead]):
                 error_msg="У вас нет прав для просмотра этой оценки",
             )
 
-            evaluation = await self.uow.evaluations.get_by_task_id(task_id)
+            evaluation = await self.repository.get_by_task_id(task_id)
 
             return evaluation
 
@@ -144,4 +145,4 @@ class EvaluationService(BaseService[EvaluationRead]):
             Статистика текущего пользователя
         """
         async with self.uow:
-            return await self.uow.evaluations.get_user_statistics(user_id=user.id)
+            return await self.repository.get_user_statistics(user_id=user.id)

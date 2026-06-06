@@ -10,6 +10,7 @@ from backend.core.constants import (
     Action,
 )
 from backend.rbac.schemas import AccessContextDTO
+from backend.task.repository import TaskRepository
 from backend.task.schemas import (
     TaskCreate,
     TaskUpdate,
@@ -26,7 +27,7 @@ from backend.exceptions import (
 
 class TaskService(BaseService[TaskRead]):
     @property
-    def repository(self):
+    def repository(self) -> TaskRepository:
         return self.uow.tasks
 
     @property
@@ -90,7 +91,7 @@ class TaskService(BaseService[TaskRead]):
             )
 
             # Собираем отфильтрованные по скоупам таски
-            tasks = await self.uow.tasks.get_tasks_with_filters(
+            tasks = await self.repository.get_tasks_with_filters(
                 user_id=user_id_filter, team_id=team_id_filter, task_status=task_status
             )
 

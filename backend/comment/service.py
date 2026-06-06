@@ -1,5 +1,6 @@
 from loguru import logger
 
+from backend.comment.repository import CommentRepository
 from backend.comment.schemas import CommentCreate, CommentRead
 from backend.core.base_service import BaseService
 from backend.core.constants import BusinessElementName, Action
@@ -11,7 +12,7 @@ from backend.user.schemas import UserDTO
 
 class CommentService(BaseService[CommentRead]):
     @property
-    def repository(self):
+    def repository(self) -> CommentRepository:
         return self.uow.comments
 
     @property
@@ -106,4 +107,4 @@ class CommentService(BaseService[CommentRead]):
             )
 
             # Получаем комментарии
-            return await self.uow.comments.get_comments_by_task_id(task_id)
+            return await self.repository.get_comments_by_task_id(task_id)
