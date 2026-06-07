@@ -1,11 +1,13 @@
-from typing import TypeVar, Protocol
+from typing import TypeVar, Protocol, Literal
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload, Mapped
+from sqlalchemy.orm.attributes import set_committed_value
 
+from backend.core.base_repository import BaseRepository
 from backend.team.models import Team
-from backend.team.schemas import TeamCreate, TeamRead, TeamWithMembersRead
+from backend.team.schemas import TeamRead, TeamWithMembersRead
 from backend.user.models import User
 
 
@@ -17,9 +19,28 @@ class HasId(Protocol):
 ModelT = TypeVar("ModelT", bound=HasId)
 
 
-class TeamRepository:
+class TeamRepository(BaseRepository[Team, TeamWithMembersRead]):
     def __init__(self, session: AsyncSession):
-        self.session = session
+        super().__init__(session=session, model=Team, dto=TeamWithMembersRead)
+
+    async def _get_instance(self, obj_id: int) -> Team | None:
+        """
+        Переопределение метода базового класса.
+        Все CRUD теперь подтягивают участников через selectinload
+
+        Args:
+            obj_id - ID искомого объекта
+
+        Returns:
+            ORM-модель команды со списком участников или None, если не нашлась
+        """
+        stmt = (
+            select(self.model)
+            .where(self.model.id == obj_id)
+            .options(selectinload(self.model.members))
+        )
+        result = await self.session.execute(statement=stmt)
+        return result.scalar_one_or_none()
 
     async def _get_obj_model_by_id(
         self, class_: type[ModelT], obj_id: int
@@ -34,118 +55,45 @@ class TeamRepository:
         Returns:
             Готовая искомая модель алхимии или None, если ничего не нашлось
         """
-        stmt = select(class_).where(class_.id == obj_id)
-        result = await self.session.execute(statement=stmt)
+        return await self.session.get(class_, obj_id)
 
-        return result.scalar_one_or_none()
-
-    async def _get_team_model_by_name(self, team_name: str) -> Team | None:
+    async def get_team_model_by_field(
+        self, field: Literal["name", "invite_code"], value: str
+    ) -> TeamRead | None:
         """
-        Получает инстанс модели команды по названию команды
+        Получает команду по параметру поиска
 
         Args:
-            team_name - название команды
+            field - поле для поиска
+            value - значение поля
 
         Returns:
-            Готовая модель команды или None, если не нашлась
+            Готовый DTO команды или None, если не нашлась
         """
-        stmt = select(Team).where(Team.name == team_name)
+        search_field = getattr(Team, field)
+        stmt = select(Team).where(search_field == value)
         result = await self.session.execute(statement=stmt)
-
-        return result.scalar_one_or_none()
-
-    async def _get_team_model_by_invite_code(self, invite_code: str) -> Team | None:
-        """
-        Получает инстанс модели команды по инвайт-коду
-
-        Args:
-            invite_code - код для поиска
-
-        Returns:
-            Готовая модель команды или None, если не нашлась
-        """
-        stmt = select(Team).where(Team.invite_code == invite_code)
-        result = await self.session.execute(statement=stmt)
-
-        return result.scalar_one_or_none()
-
-    async def get_team_by_id(self, team_id: int) -> TeamWithMembersRead | None:
-        """
-        Получает модель команды по ее ID
-
-        Args:
-            team_id - ID команды
-
-        Returns:
-            Модель команды с загруженными участниками или None, если не найдена
-        """
-        stmt = (
-            select(Team).where(Team.id == team_id).options(selectinload(Team.members))
-        )
-        result = await self.session.execute(statement=stmt)
-
         team = result.scalar_one_or_none()
-
-        return TeamWithMembersRead.model_validate(obj=team) if team else None
-
-    async def check_team_name_exists(self, team_name: str) -> bool:
-        """
-        Проверяет, существует ли команда по ее названию
-
-        Args:
-            team_name - название команды
-
-        Returns:
-            True - если существует, False - если нет
-        """
-        return await self._get_team_model_by_name(team_name=team_name) is not None
-
-    async def check_invite_code_exists(self, code: str) -> bool:
-        """
-        Проверяет, существует ли переданный инвайт-код у какой-либо команды.
-        Необходимо для защиты от одинаковых кодов у разных команд
-
-        Args:
-            code - код для проверки
-
-        Returns:
-            True - если существует, False - если нет
-        """
-        return await self._get_team_model_by_invite_code(invite_code=code) is not None
-
-    async def get_team_by_invite_code(self, code: str) -> TeamRead | None:
-        """
-        Находит команду по инвайт коду
-
-        Args:
-            code - инвайт код
-
-        Returns:
-            Модель соответствующей команды или None, если код неправильный
-        """
-        team = await self._get_team_model_by_invite_code(invite_code=code)
 
         return TeamRead.model_validate(obj=team) if team else None
 
-    async def create_team(self, team_in: TeamCreate, invite_code: str) -> TeamRead:
+    async def create(self, **kwargs) -> TeamWithMembersRead:
         """
-        Создает команду
-
-        Args:
-            team_in - Pydantic-модель команды для создания
-            invite_code - сгенерированный инвайт-код для присвоения его команде
-
-        Returns:
-            Модель команды со всеми необходимыми полями
+        Переопределяем базовый метод создания, чтобы избежать ошибки MissingGreenlet
+        при валидации схемы, ожидающей вложенный список участников.
         """
-        new_team = Team(
-            name=team_in.name, description=team_in.description, invite_code=invite_code
-        )
-
-        self.session.add(instance=new_team)
+        instance = self.model(**kwargs)
+        self.session.add(instance=instance)
         await self.session.flush()
 
-        return TeamRead.model_validate(obj=new_team)
+        # Обновляем поля из БД
+        await self.session.refresh(instance=instance)
+
+        # Команда только что создана, участников в ней 100% еще нет.
+        # Явно задаем пустой список, чтобы Pydantic не триггерил ленивую загрузку
+        set_committed_value(instance, "members", [])
+
+        return self.dto.model_validate(obj=instance)
 
     async def add_user_to_team(self, user_id: int, team_id: int) -> bool:
         """

@@ -7,7 +7,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     POETRY_VIRTUALENVS_CREATE=false
 
 # Устанавливаем системные зависимости
-RUN apt-get update && apt-get install -y gcc libffi-dev \
+RUN apt-get update && apt-get install -y gcc libffi-dev make\
     && pip install --no-cache-dir poetry \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*

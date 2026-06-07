@@ -3,11 +3,11 @@ import string
 
 from loguru import logger
 
+from backend.core.base_service import BaseService
 from backend.core.config import settings
 from backend.core.constants import BusinessElementName, Action
-from backend.core.uow import IUnitOfWork
 from backend.rbac.schemas import AccessContextDTO
-from backend.rbac.service import RbacService
+from backend.team.repository import TeamRepository
 from backend.team.schemas import TeamCreate, TeamWithMembersRead, TeamRead
 from backend.exceptions import (
     TeamDoesNotExistsError,
@@ -17,10 +17,21 @@ from backend.exceptions import (
 from backend.user.schemas import UserDTO
 
 
-class TeamService:
-    def __init__(self, uow: IUnitOfWork, rbac_service: RbacService):
-        self.uow = uow
-        self.rbac = rbac_service
+class TeamService(BaseService[TeamWithMembersRead]):
+    @property
+    def repository(self) -> TeamRepository:
+        return self.uow.teams
+
+    @property
+    def business_element(self) -> BusinessElementName:
+        return BusinessElementName.TEAMS
+
+    @property
+    def not_found_exception(self) -> Exception:
+        return TeamDoesNotExistsError("Команда не найдена")
+
+    def build_abac_context(self, obj: TeamRead, user: UserDTO) -> AccessContextDTO:
+        return AccessContextDTO(is_author=False, is_participant=obj.id == user.team_id)
 
     @staticmethod
     def generate_invite_code(length: int = settings.inv_code.CODE_LENGTH) -> str:
@@ -52,20 +63,14 @@ class TeamService:
             TeamDoesNotExistsError - если команды с таким названием не существует
         """
         async with self.uow:
+            team = await self.get_or_raise(obj_id=team_id)
             # Проверка прав - можно только участникам или руководителям
-            await self.rbac.enforce_permission(
+            await self.check_permissions(
                 user=user,
-                business_element_name=BusinessElementName.TEAMS,
                 action=Action.READ,
-                context=AccessContextDTO(is_participant=(user.team_id == team_id)),
-                error_msg="Недостаточно прав для просмотра этой команды",
+                obj=team,
+                error_msg="Вы не можете посмотреть данные этой команды",
             )
-
-            team = await self.uow.teams.get_team_by_id(team_id=team_id)
-
-        if team is None:
-            logger.info(f"Команда ID {team_id} не найдена.")
-            raise TeamDoesNotExistsError("Команда не найдена")
 
         logger.success(
             f"Успешно получены данные команды ID: {team.id}, Название: {team.name}."
@@ -88,19 +93,18 @@ class TeamService:
         """
         async with self.uow:
             # Проверка прав - можно только руководителям
-            await self.rbac.enforce_permission(
+            await self.check_permissions(
                 user=user,
-                business_element_name=BusinessElementName.TEAMS,
                 action=Action.CREATE,
                 error_msg="Недостаточно прав для создания команды",
             )
 
             # Проверяем существование команды, чтобы избежать дубликатов
-            is_exists = await self.uow.teams.check_team_name_exists(
-                team_name=team_in.name
+            team_by_name = await self.repository.get_team_model_by_field(
+                field="name", value=team_in.name
             )
 
-            if is_exists:
+            if team_by_name:
                 logger.info(f"Команда с названием {team_in.name} уже существует.")
                 raise TeamAlreadyExistsError("Команда с таким названием уже существует")
 
@@ -108,18 +112,18 @@ class TeamService:
             # Если совпадений в Бд не найдено, то цикл завершается
             while True:
                 code = self.generate_invite_code()
-                is_code_exists = await self.uow.teams.check_invite_code_exists(
-                    code=code
+                team_by_code = await self.repository.get_team_model_by_field(
+                    field="invite_code", value=code
                 )
 
-                if not is_code_exists:
+                if not team_by_code:
                     logger.info(
                         f"Инвайт код для команды {team_in.name} успешно сгенерирован."
                     )
                     break
 
-            created_team = await self.uow.teams.create_team(
-                team_in=team_in, invite_code=code
+            created_team = await self.repository.create(
+                **team_in.model_dump(), invite_code=code
             )
 
             await self.uow.commit()
@@ -151,13 +155,15 @@ class TeamService:
 
         async with self.uow:
             # Ищем команду по инвайт коду и вступаем, если все ок
-            team = await self.uow.teams.get_team_by_invite_code(code=invite_code)
+            team = await self.repository.get_team_model_by_field(
+                field="invite_code", value=invite_code
+            )
 
             if not team:
                 logger.info(f"Инвайт код {invite_code} не найден.")
                 raise TeamDoesNotExistsError("Команда с таким кодом не найдена")
 
-            await self.uow.teams.add_user_to_team(user_id=user.id, team_id=team.id)
+            await self.repository.add_user_to_team(user_id=user.id, team_id=team.id)
             await self.uow.commit()
 
         logger.success(f"Пользователь ID: {user.id} добавлен в команду ID: {team.id}")

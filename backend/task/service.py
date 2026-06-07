@@ -2,7 +2,7 @@ from typing import Literal
 
 from loguru import logger
 
-from backend.core.uow import IUnitOfWork
+from backend.core.base_service import BaseService
 from backend.core.constants import (
     TaskStatus,
     TASK_NOT_FOUND,
@@ -10,7 +10,7 @@ from backend.core.constants import (
     Action,
 )
 from backend.rbac.schemas import AccessContextDTO
-from backend.rbac.service import RbacService
+from backend.task.repository import TaskRepository
 from backend.task.schemas import (
     TaskCreate,
     TaskUpdate,
@@ -25,68 +25,24 @@ from backend.exceptions import (
 )
 
 
-class TaskService:
-    def __init__(self, uow: IUnitOfWork, rbac_service: RbacService):
-        self.uow = uow
-        self.rbac = rbac_service
+class TaskService(BaseService[TaskRead]):
+    @property
+    def repository(self) -> TaskRepository:
+        return self.uow.tasks
 
-    @staticmethod
-    def _build_task_context(task: TaskRead, user: UserDTO) -> AccessContextDTO:
-        """Собирает ABAC-контекст для проверки прав"""
+    @property
+    def business_element(self) -> BusinessElementName:
+        return BusinessElementName.TASKS
+
+    @property
+    def not_found_exception(self) -> Exception:
+        return TaskDoesNotExistsError("Задача не найдена.")
+
+    def build_abac_context(self, obj: TaskRead, user: UserDTO) -> AccessContextDTO:
         return AccessContextDTO(
-            is_author=task.author_id == user.id,
-            is_participant=(task.author_id == user.id) or (task.executor_id == user.id),
+            is_author=obj.author_id == user.id,
+            is_participant=(obj.author_id == user.id) or (obj.executor_id == user.id),
         )
-
-    async def _get_task_by_id(self, task_id: int) -> TaskRead:
-        """
-        Вспомогательный метод для быстрого получения задачи по ее ID
-
-        Args:
-            task_id - ID задачи
-
-        Returns:
-            Найденная задача
-
-        Raises:
-            TaskDoesNotExistsError - если задача не нашлась
-        """
-        task = await self.uow.tasks.get_task_by_id(task_id=task_id)
-        if not task:
-            raise TaskDoesNotExistsError(TASK_NOT_FOUND)
-        return task
-
-    async def get_task(self, task_id: int, user: UserDTO) -> TaskRead:
-        """
-        Получает задачу по ID с проверкой прав
-
-        Args:
-            task_id - ID искомой задачи
-            user - пользователь, который запрашивает задачу
-
-        Returns:
-            Модель найденной задачи
-
-        Raises:
-            TaskDoesNotExists - если задача не нашлась
-            AccessDeniedError - если нет прав на просмотр задачи
-        """
-        async with self.uow:
-            task = await self._get_task_by_id(
-                task_id=task_id
-            )  # Raises TaskDoesNotExists
-
-            # Собираем контекст и проверяем права с его учетом
-            context = self._build_task_context(task=task, user=user)
-            await self.rbac.enforce_permission(
-                user=user,
-                business_element_name=BusinessElementName.TASKS,
-                action=Action.READ,
-                context=context,
-                error_msg="Нет прав на просмотр этой задачи",
-            )
-
-            return task
 
     async def get_filtered_tasks(
         self,
@@ -135,7 +91,7 @@ class TaskService:
             )
 
             # Собираем отфильтрованные по скоупам таски
-            tasks = await self.uow.tasks.get_tasks_with_filters(
+            tasks = await self.repository.get_tasks_with_filters(
                 user_id=user_id_filter, team_id=team_id_filter, task_status=task_status
             )
 
@@ -159,15 +115,14 @@ class TaskService:
             AccessDeniedError - если нет прав для создания задачи
         """
         async with self.uow:
-            await self.rbac.enforce_permission(
+            await self.check_permissions(
                 user=author,
-                business_element_name=BusinessElementName.TASKS,
                 action=Action.CREATE,
-                error_msg="Недостаточно прав для создания задачи",
+                error_msg="Вы не можете создавать задачи",
             )
 
-            new_task = await self.uow.tasks.create_task(
-                task_in=task_in, author_id=author.id
+            new_task = await self.repository.create(
+                **task_in.model_dump(), author_id=author.id
             )
             await self.uow.commit()
 
@@ -199,18 +154,16 @@ class TaskService:
 
         if not update_dict:
             # Если обновлять нечего, просто возвращаем текущую задачу
-            return await self.get_task(task_id=task_id, user=user)
+            return await self.get(obj_id=task_id, user=user)
 
         async with self.uow:
-            task = await self._get_task_by_id(task_id=task_id)
+            task = await self.get_or_raise(obj_id=task_id)
 
-            context = self._build_task_context(user=user, task=task)
-            await self.rbac.enforce_permission(
+            await self.check_permissions(
                 user=user,
-                business_element_name=BusinessElementName.TASKS,
                 action=Action.UPDATE,
-                context=context,
-                error_msg="У вас нет прав для редактирования этой задачи",
+                obj=task,
+                error_msg="Вы не можете редактировать эту задачу",
             )
 
             # Проверяем существование пользователя для назначения исполнителем
@@ -222,12 +175,12 @@ class TaskService:
                         "Попытка назначить несуществующего исполнителя"
                     )
 
-            updated_task = await self.uow.tasks.update_task(
-                task_id=task_id, update_data=update_dict
+            updated_task = await self.repository.update(
+                obj_id=task_id, update_data=update_dict
             )
             # Если что-то пошло не так на стороне репозитория
             if not updated_task:
-                raise TaskDoesNotExistsError
+                raise self.not_found_exception
 
             await self.uow.commit()
 
@@ -253,19 +206,17 @@ class TaskService:
             TaskDoesNotExistsError - если задача не найдена
         """
         async with self.uow:
-            task = await self._get_task_by_id(task_id=task_id)
+            task = await self.get_or_raise(obj_id=task_id)
 
-            context = self._build_task_context(user=user, task=task)
-            await self.rbac.enforce_permission(
+            await self.check_permissions(
                 user=user,
-                business_element_name=BusinessElementName.TASKS,
                 action=Action.CHANGE_STATUS,
-                context=context,
-                error_msg="Недостаточно прав для изменения статуса",
+                obj=task,
+                error_msg="Вы не можете изменить статус этой задачи",
             )
 
-            updated_task = await self.uow.tasks.update_task(
-                task_id=task_id, update_data=new_status.model_dump()
+            updated_task = await self.repository.update(
+                obj_id=task_id, update_data=new_status.model_dump()
             )
 
             # Если что-то пошло не так на стороне репозитория
@@ -276,32 +227,3 @@ class TaskService:
 
         logger.success(f"Задаче ID {task_id} присвоен статус {updated_task.status}")
         return updated_task
-
-    async def delete_task(self, task_id: int, user: UserDTO) -> None:
-        """
-        Удаляет задачу с проверкой прав
-
-        Args:
-            task_id - ID задачи для удаления
-            user - пользователь, который удаляет задачу
-
-        Raises:
-            AccessDeniedError - если нет прав на удаление
-            TaskDoesNotExistsError - если задача не нашлась
-        """
-        async with self.uow:
-            task = await self._get_task_by_id(task_id=task_id)
-
-            context = self._build_task_context(user=user, task=task)
-            await self.rbac.enforce_permission(
-                user=user,
-                business_element_name=BusinessElementName.TASKS,
-                action=Action.DELETE,
-                context=context,
-                error_msg="Недостаточно прав для удаления этой задачи",
-            )
-
-            await self.uow.tasks.delete_task(task_id=task_id)
-            await self.uow.commit()
-
-        logger.success(f"Задача ID {task_id} удалена пользователем {user.email}")

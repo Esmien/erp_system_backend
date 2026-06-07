@@ -1,14 +1,15 @@
+from backend.core.base_service import BaseService
 from backend.core.constants import (
     BusinessElementName,
     Action,
-    TASK_NOT_FOUND,
     TaskStatus,
 )
-from backend.core.uow import IUnitOfWork
+from backend.evaluation.repository import EvaluationRepository
 from backend.exceptions import (
     TaskDoesNotExistsError,
     TaskAlreadyEvaluatedError,
     TaskDoesNotCompletedError,
+    EvaluationDoesNotExistsError,
 )
 from backend.evaluation.schemas import (
     EvaluationCreate,
@@ -17,14 +18,30 @@ from backend.evaluation.schemas import (
     UserStatisticsRead,
 )
 from backend.rbac.schemas import AccessContextDTO
-from backend.rbac.service import RbacService
+from backend.task.schemas import TaskRead
 from backend.user.schemas import UserDTO
 
 
-class EvaluationService:
-    def __init__(self, uow: IUnitOfWork, rbac_service: RbacService):
-        self.uow = uow
-        self.rbac = rbac_service
+class EvaluationService(BaseService[EvaluationRead]):
+    @property
+    def repository(self) -> EvaluationRepository:
+        return self.uow.evaluations
+
+    @property
+    def business_element(self) -> BusinessElementName:
+        return BusinessElementName.EVALUATIONS
+
+    @property
+    def not_found_exception(self) -> Exception:
+        return EvaluationDoesNotExistsError("Оценка не найдена")
+
+    async def _get_task(self, task_id: int) -> TaskRead:
+        """Вспомогательный метод для получения задачи"""
+        task: TaskRead | None = await self.uow.tasks.get_by_id(obj_id=task_id)
+        if not task:
+            raise TaskDoesNotExistsError("Задача не найдена.")
+
+        return task
 
     async def evaluate_task(
         self, task_id: int, evaluation_in: EvaluationCreate, user: UserDTO
@@ -48,23 +65,20 @@ class EvaluationService:
         """
         async with self.uow:
             # Проверяем глобальные права на выставление оценок
-            await self.rbac.enforce_permission(
+            await self.check_permissions(
                 user=user,
-                business_element_name=BusinessElementName.EVALUATIONS,
                 action=Action.CREATE,
                 error_msg="Недостаточно прав для оценки задачи",
             )
 
             # Проверяем, существует ли задача
-            task = await self.uow.tasks.get_task_by_id(task_id)
-            if not task:
-                raise TaskDoesNotExistsError(TASK_NOT_FOUND)
+            task = await self._get_task(task_id=task_id)
 
             if task.status is not TaskStatus.DONE:
                 raise TaskDoesNotCompletedError("Задача еще не выполнена")
 
             # Проверяем, не оценена ли задача уже
-            existing_eval = await self.uow.evaluations.get_by_task_id(task_id)
+            existing_eval = await self.repository.get_by_task_id(task_id)
             if existing_eval:
                 raise TaskAlreadyEvaluatedError("Эта задача уже оценена")
 
@@ -75,7 +89,7 @@ class EvaluationService:
                 task_id=task_id,
                 evaluator_id=user.id,
             )
-            saved_eval = await self.uow.evaluations.add(new_eval)
+            saved_eval = await self.repository.create(**new_eval.model_dump())
 
             await self.uow.commit()
 
@@ -99,9 +113,7 @@ class EvaluationService:
             AccessDeniedError - если нет прав на просмотр оценки
         """
         async with self.uow:
-            task = await self.uow.tasks.get_task_by_id(task_id)
-            if not task:
-                raise TaskDoesNotExistsError(TASK_NOT_FOUND)
+            task = await self._get_task(task_id=task_id)
 
             # Проверяем причастность юзера к задаче
             is_participant = (task.author_id == user.id) or (
@@ -118,7 +130,7 @@ class EvaluationService:
                 error_msg="У вас нет прав для просмотра этой оценки",
             )
 
-            evaluation = await self.uow.evaluations.get_by_task_id(task_id)
+            evaluation = await self.repository.get_by_task_id(task_id)
 
             return evaluation
 
@@ -133,4 +145,4 @@ class EvaluationService:
             Статистика текущего пользователя
         """
         async with self.uow:
-            return await self.uow.evaluations.get_user_statistics(user_id=user.id)
+            return await self.repository.get_user_statistics(user_id=user.id)

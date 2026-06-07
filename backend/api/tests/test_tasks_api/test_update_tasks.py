@@ -30,7 +30,7 @@ async def test_update_foreign_task_forbidden(client, open_task_json):
             f"/api/v1/tasks/{task_id}/status/", json=patch_data
         )
         assert response.status_code == 403
-        assert response.json()["detail"] == "Недостаточно прав для изменения статуса"
+        assert response.json()["detail"] == "Вы не можете изменить статус этой задачи"
     finally:
         # Возвращаем зависимость на место
         if old_dep:

@@ -28,11 +28,11 @@ async def test_get_team(
     team_service, mock_uow, team_exists, expected_exception, mock_user
 ):
     if team_exists:
-        mock_uow.teams.get_team_by_id.return_value = TeamWithMembersRead(
+        mock_uow.teams.get_by_id.return_value = TeamWithMembersRead(
             id=1, name="Test", invite_code="111111", members=[]
         )
     else:
-        mock_uow.teams.get_team_by_id.return_value = None
+        mock_uow.teams.get_by_id.return_value = None
 
     if expected_exception:
         with pytest.raises(expected_exception):
@@ -40,14 +40,14 @@ async def test_get_team(
     else:
         result = await team_service.get_team(team_id=1, user=mock_user)
         assert result.id == 1
-        mock_uow.teams.get_team_by_id.assert_called_once_with(team_id=1)
+        mock_uow.teams.get_by_id.assert_called_once_with(obj_id=1)
         # Проверяем RBAC
         team_service.rbac.enforce_permission.assert_awaited_once_with(
             user=mock_user,
             business_element_name=BusinessElementName.TEAMS,
             action=Action.READ,
             context=AccessContextDTO(is_participant=True),
-            error_msg="Недостаточно прав для просмотра этой команды",
+            error_msg="Вы не можете посмотреть данные этой команды",
         )
 
 
@@ -62,26 +62,25 @@ async def test_get_team_access_denied(team_service, mock_uow, mock_user):
 @pytest.mark.parametrize("name_exists", [True, False])
 async def test_create_team(team_service, mock_uow, name_exists, mock_user):
     team_in = TeamCreate(name="Test Team")
-    mock_uow.teams.check_team_name_exists.return_value = name_exists
+    mock_uow.teams.get_team_model_by_field.return_value = name_exists
 
     if name_exists:
         with pytest.raises(TeamAlreadyExistsError):
             await team_service.create_team(team_in=team_in, user=mock_user)
     else:
-        mock_uow.teams.check_invite_code_exists.side_effect = [True, False]
-        mock_uow.teams.create_team.return_value = TeamRead(
+        mock_uow.teams.create.return_value = TeamRead(
             id=1, name="Test Team", invite_code="FREE00"
         )
 
         result = await team_service.create_team(team_in=team_in, user=mock_user)
 
         assert result.name == "Test Team"
-        assert mock_uow.teams.check_invite_code_exists.call_count == 2
-        mock_uow.teams.create_team.assert_called_once()
+        mock_uow.teams.create.assert_called_once()
         mock_uow.commit.assert_called_once()
         team_service.rbac.enforce_permission.assert_awaited_once_with(
             user=mock_user,
             business_element_name=BusinessElementName.TEAMS,
+            context=None,
             action=Action.CREATE,
             error_msg="Недостаточно прав для создания команды",
         )
@@ -109,11 +108,11 @@ async def test_join_team(
     )
 
     if code_exists:
-        mock_uow.teams.get_team_by_invite_code.return_value = TeamRead(
+        mock_uow.teams.get_team_model_by_field.return_value = TeamRead(
             id=1, name="Team", invite_code="111111"
         )
     else:
-        mock_uow.teams.get_team_by_invite_code.return_value = None
+        mock_uow.teams.get_team_model_by_field.return_value = None
 
     if expected_exception:
         with pytest.raises(expected_exception):

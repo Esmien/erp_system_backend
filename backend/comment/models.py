@@ -21,10 +21,13 @@ class Comment(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     text: Mapped[str | None] = mapped_column(Text, comment="Комментарий к задаче")
     task_id: Mapped[int] = mapped_column(
-        ForeignKey(column="tasks.id", ondelete="CASCADE"), comment="ID связанной задачи"
+        ForeignKey(column="tasks.id", ondelete="CASCADE"),
+        index=True,
+        comment="ID связанной задачи",
     )
     author_id: Mapped[int | None] = mapped_column(
         ForeignKey(column="users.id", ondelete="SET NULL"),
+        index=True,
         comment="ID автора комментария",
     )
 
@@ -33,5 +36,7 @@ class Comment(Base):
     author: Mapped[User | None] = relationship(back_populates="comments")
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
+        DateTime(timezone=True),
+        server_default=func.now(),
+        comment="Дата/время написания комментария",
     )

@@ -37,9 +37,7 @@ class TestMeetingRepository:
         assert created_meeting.participants[0].id == participant_ids[0]
 
         # Тестируем получение
-        fetched_meeting = await meeting_repo.get_meeting_info(
-            meeting_id=created_meeting.id
-        )
+        fetched_meeting = await meeting_repo.get_by_id(obj_id=created_meeting.id)
         assert fetched_meeting is not None
         assert fetched_meeting.id == created_meeting.id
 
@@ -188,13 +186,13 @@ class TestMeetingRepository:
         )
 
         # Убеждаемся, что она есть
-        assert await meeting_repo.get_meeting_info(meeting_id=meeting.id) is not None
+        assert await meeting_repo.get_by_id(obj_id=meeting.id) is not None
 
         # Удаляем
-        await meeting_repo.delete_meeting(meeting_id=meeting.id)
+        await meeting_repo.delete(obj_id=meeting.id)
 
         # Пытаемся получить снова
-        fetched = await meeting_repo.get_meeting_info(meeting_id=meeting.id)
+        fetched = await meeting_repo.get_by_id(obj_id=meeting.id)
         assert fetched is None
 
     async def test_get_meetings_by_date_range(

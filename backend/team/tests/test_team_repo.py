@@ -11,7 +11,7 @@ from backend.team.schemas import TeamCreate
     ],
 )
 async def test_get_team_by_id(team_repo, team_id, expected_exists):
-    result = await team_repo.get_team_by_id(team_id)
+    result = await team_repo.get_by_id(obj_id=team_id)
 
     if expected_exists:
         assert result is not None
@@ -21,42 +21,25 @@ async def test_get_team_by_id(team_repo, team_id, expected_exists):
 
 
 @pytest.mark.parametrize(
-    "name, expected",
+    "field, value, should_exist",
     [
-        ("Dummy name", True),
-        ("Non-existent Team", False),
+        # Проверяем поиск по имени
+        ("name", "Dummy name", True),
+        ("name", "Non-existent Team", False),
+        ("invite_code", "111111", True),
+        ("invite_code", "INVALID_INVITE", False),
     ],
 )
-async def test_check_team_name_exists(team_repo, name, expected):
-    result = await team_repo.check_team_name_exists(name)
-    assert result is expected
+async def test_get_team_model_by_field(team_repo, field, value, should_exist):
+    result = await team_repo.get_team_model_by_field(field=field, value=value)
 
-
-@pytest.mark.parametrize(
-    "code, expected",
-    [
-        ("111111", True),
-        ("000000", False),
-    ],
-)
-async def test_check_invite_code_exists(team_repo, code, expected):
-    result = await team_repo.check_invite_code_exists(code)
-    assert result is expected
-
-
-@pytest.mark.parametrize(
-    "code, expected_exists",
-    [
-        ("111111", True),
-        ("000000", False),
-    ],
-)
-async def test_get_team_by_invite_code(team_repo, code, expected_exists):
-    result = await team_repo.get_team_by_invite_code(code)
-
-    if expected_exists:
-        assert result.invite_code == code
+    if should_exist:
+        # Проверяем, что команда нашлась
+        assert result is not None
+        # И что мы нашли именно то, что искали (через getattr достаем значение поля)
+        assert getattr(result, field) == value
     else:
+        # Если команды быть не должно, ожидаем строго None
         assert result is None
 
 
@@ -64,7 +47,7 @@ async def test_create_team(team_repo):
     team_in = TeamCreate(name="New Awesome Team", description="Test Description")
     code = "NEW123"
 
-    result = await team_repo.create_team(team_in, code)
+    result = await team_repo.create(**team_in.model_dump(), invite_code=code)
 
     assert result.id is not None
     assert result.name == "New Awesome Team"

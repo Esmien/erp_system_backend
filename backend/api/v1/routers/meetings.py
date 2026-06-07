@@ -132,4 +132,4 @@ async def delete_meeting(
     """
     Удаляет встречу
     """
-    await service.delete_meeting(meeting_id=meeting_id, user=current_user)
+    await service.delete(obj_id=meeting_id, user=current_user)

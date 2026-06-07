@@ -45,13 +45,19 @@ class Task(Base):
             values_callable=lambda obj: [e.value for e in obj],
         ),
         default=TaskStatus.OPEN,
+        index=True,
+        comment="Статус задачи",
     )
 
     author_id: Mapped[int | None] = mapped_column(
-        ForeignKey(column="users.id", ondelete="SET NULL")
+        ForeignKey(column="users.id", ondelete="SET NULL"),
+        index=True,
+        comment="ID автора задачи",
     )
     executor_id: Mapped[int | None] = mapped_column(
-        ForeignKey(column="users.id", ondelete="SET NULL")
+        ForeignKey(column="users.id", ondelete="SET NULL"),
+        index=True,
+        comment="ID исполнителя задачи",
     )
     author: Mapped[User | None] = relationship(
         foreign_keys=[author_id], back_populates="created_tasks"
@@ -61,7 +67,9 @@ class Task(Base):
     )
 
     created_at: Mapped[datetime.datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
+        DateTime(timezone=True),
+        server_default=func.now(),
+        comment="Дата/время создания задачи",
     )
 
     # Создаем кастомные констрейты в Postgres

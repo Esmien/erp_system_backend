@@ -41,18 +41,34 @@ class User(Base):
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
 
     # Блок основных столбцов
-    email: Mapped[str] = mapped_column(String, unique=True)
-    hashed_password: Mapped[str] = mapped_column(String)
-    name: Mapped[str] = mapped_column(String(20), nullable=False)
-    surname: Mapped[str | None] = mapped_column(String(30), nullable=True)
-    last_name: Mapped[str | None] = mapped_column(String(35), nullable=True)
+    email: Mapped[str] = mapped_column(
+        String, unique=True, comment="Электронная почта/логин пользователя"
+    )
+    hashed_password: Mapped[str] = mapped_column(
+        String, comment="Зашифрованный хэшем пароль"
+    )
+    name: Mapped[str] = mapped_column(
+        String(20), nullable=False, comment="Имя пользователя"
+    )
+    surname: Mapped[str | None] = mapped_column(
+        String(30), nullable=True, comment="Отчество пользователя"
+    )
+    last_name: Mapped[str | None] = mapped_column(
+        String(35), nullable=True, comment="Фамилия пользователя"
+    )
 
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    is_active: Mapped[bool] = mapped_column(
+        Boolean, default=True, index=True, comment="Статус активности (True/False)"
+    )
 
     # Блок связей
-    role_id: Mapped[int] = mapped_column(ForeignKey("roles.id"))
+    role_id: Mapped[int] = mapped_column(
+        ForeignKey("roles.id"), index=True, comment="ID роли пользователя"
+    )
     team_id: Mapped[int | None] = mapped_column(
-        ForeignKey("teams.id", ondelete="SET NULL")
+        ForeignKey("teams.id", ondelete="SET NULL"),
+        index=True,
+        comment="ID команды, в которой состоит пользователь",
     )
     role: Mapped["Role"] = relationship(back_populates="users", lazy="selectin")
     team: Mapped[Team | None] = relationship(back_populates="members")
@@ -98,6 +114,7 @@ class Role(Base):
             values_callable=lambda obj: [e.value for e in obj],
         ),
         unique=True,
+        comment="Название роли",
     )
     users: Mapped[list["User"]] = relationship(back_populates="role", lazy="selectin")
 

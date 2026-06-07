@@ -22,14 +22,21 @@ class Team(Base):
     __tablename__ = "teams"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
-    description: Mapped[str | None] = mapped_column(Text)
+    name: Mapped[str] = mapped_column(
+        String(100), unique=True, nullable=False, comment="Название команды"
+    )
+    description: Mapped[str | None] = mapped_column(Text, comment="Описание команды")
     invite_code: Mapped[str] = mapped_column(
-        String(6), unique=True, index=True, nullable=False
+        String(6),
+        unique=True,
+        nullable=False,
+        comment="Код приглашения в команду, генерируется автоматически",
     )
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
+        DateTime(timezone=True),
+        server_default=func.now(),
+        comment="Дата создания команды",
     )
     members: Mapped[list[User]] = relationship(back_populates="team")
 

@@ -54,11 +54,15 @@ class Meeting(Base):
             values_callable=lambda obj: [e.value for e in obj],
         ),
         default=MeetingStatus.PENDING,
+        index=True,
+        comment="Статус встречи",
     )
 
     # Связь с автором
     author_id: Mapped[int | None] = mapped_column(
-        ForeignKey(column="users.id", ondelete="SET NULL")
+        ForeignKey(column="users.id", ondelete="SET NULL"),
+        comment="ID автора встречи",
+        index=True,
     )
     author: Mapped[User | None] = relationship(
         foreign_keys=[author_id], back_populates="created_meetings"
