@@ -20,8 +20,9 @@ async def test_get_all_meetings(client):
 
     assert response.status_code == 200
     data = response.json()
-    assert len(data) >= 1
-    assert any(m["theme"] == "Встреча для списка" for m in data)
+    items = data.get("items", [])  # Извлекаем список
+    assert len(items) >= 1
+    assert any(m["theme"] == "Встреча для списка" for m in items)
 
 
 async def test_get_meeting_by_id_success(client):

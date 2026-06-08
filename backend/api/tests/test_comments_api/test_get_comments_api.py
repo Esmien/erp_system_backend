@@ -15,15 +15,15 @@ async def test_get_comments_success(client, count):
 
     response = await client.get(url="/api/v1/tasks/1/comments/")
     response_json = response.json()
+    items = response_json.get("items", [])  # Извлекаем список из пагинации
 
     if comments:
-        second_comment = response_json[1].get("text")
+        second_comment = items[1].get("text")
         assert second_comment == "Это 2 важный комментарий к задаче"
-    else:
-        assert isinstance(response_json, list)
 
     assert response.status_code == 200
-    assert len(response_json) == count
+    assert len(items) == count
+    assert response_json.get("total") == count  # Заодно проверяем total
 
 
 async def test_get_comments_of_not_exists_task(client):

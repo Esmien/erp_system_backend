@@ -60,35 +60,56 @@ class TestMeetingService:
     # --- Новые тесты для get_all_meetings ---
 
     async def test_get_all_meetings_all_access(
-        self, meeting_service, mock_uow, mock_user_for_meeting, mock_rbac_service
+        self,
+        meeting_service,
+        mock_uow,
+        mock_user_for_meeting,
+        mock_rbac_service,
+        params,
     ):
         # Имитируем, что RBAC дал полный доступ (ALL)
         mock_rbac_service.get_list_access_level.return_value = AccessLevel.ALL
-        mock_uow.meetings.get_meetings.return_value = []
+        mock_uow.meetings.get_meetings.return_value = ([], 0)
 
-        await meeting_service.get_all_meetings(mock_user_for_meeting)
+        await meeting_service.get_all_meetings(
+            user=mock_user_for_meeting, params=params
+        )
 
         mock_rbac_service.get_list_access_level.assert_called_once()
         # При ALL фильтр по юзеру отключается
-        mock_uow.meetings.get_meetings.assert_called_once_with(user_id=None)
+        mock_uow.meetings.get_meetings.assert_called_once_with(
+            user_id=None, offset=params.offset, limit=params.limit
+        )
 
     async def test_get_all_meetings_participant_access(
-        self, meeting_service, mock_uow, mock_user_for_meeting, mock_rbac_service
+        self,
+        meeting_service,
+        mock_uow,
+        mock_user_for_meeting,
+        mock_rbac_service,
+        params,
     ):
         # Имитируем, что RBAC дал доступ только причастным (PARTICIPANT)
         mock_rbac_service.get_list_access_level.return_value = AccessLevel.PARTICIPANT
-        mock_uow.meetings.get_meetings.return_value = []
+        mock_uow.meetings.get_meetings.return_value = ([], 0)
 
-        await meeting_service.get_all_meetings(mock_user_for_meeting)
+        await meeting_service.get_all_meetings(
+            user=mock_user_for_meeting, params=params
+        )
 
         mock_rbac_service.get_list_access_level.assert_called_once()
         # При PARTICIPANT должен передаваться ID пользователя для фильтрации
         mock_uow.meetings.get_meetings.assert_called_once_with(
-            user_id=mock_user_for_meeting.id
+            user_id=mock_user_for_meeting.id, offset=params.offset, limit=params.limit
         )
 
     async def test_get_all_meetings_access_denied(
-        self, meeting_service, mock_uow, mock_user_for_meeting, mock_rbac_service
+        self,
+        meeting_service,
+        mock_uow,
+        mock_user_for_meeting,
+        mock_rbac_service,
+        params,
     ):
         # Имитируем ситуацию, когда RBAC выбрасывает ошибку прав доступа
         mock_rbac_service.get_list_access_level.side_effect = AccessDeniedError(
@@ -96,7 +117,9 @@ class TestMeetingService:
         )
 
         with pytest.raises(AccessDeniedError):
-            await meeting_service.get_all_meetings(mock_user_for_meeting)
+            await meeting_service.get_all_meetings(
+                user=mock_user_for_meeting, params=params
+            )
 
         # Убеждаемся, что до БД запрос даже не дошел
         mock_uow.meetings.get_meetings.assert_not_called()

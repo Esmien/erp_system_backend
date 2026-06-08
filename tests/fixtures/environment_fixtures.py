@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 import pytest_asyncio
 
+from backend.api.dependencies.pagination import PaginationParams
 from tests.fixtures.environment_setup import fixture_async_session_maker
 
 
@@ -54,3 +55,8 @@ def mock_uow():
     uow.rollback = AsyncMock()
 
     return uow
+
+
+@pytest.fixture
+def params():
+    return PaginationParams(page=1, size=20)
