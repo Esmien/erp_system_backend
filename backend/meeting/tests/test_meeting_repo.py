@@ -163,11 +163,15 @@ class TestMeetingRepository:
         )
 
         # Запрос без фильтра (как работает админ/менеджер)
-        all_meetings = await meeting_repo.get_meetings(user_id=None)
+        all_meetings, total = await meeting_repo.get_meetings(
+            user_id=None, offset=0, limit=20
+        )
         assert len(all_meetings) >= 2
 
         # Запрос с фильтром (пользователь 1 видит только то, где он участник)
-        user_1_meetings = await meeting_repo.get_meetings(user_id=test_users[1].id)
+        user_1_meetings, totl = await meeting_repo.get_meetings(
+            user_id=test_users[1].id, offset=0, limit=20
+        )
         assert len(user_1_meetings) == 1
         assert user_1_meetings[0].theme == "Синхронизация команд"
 
@@ -224,8 +228,12 @@ class TestMeetingRepository:
         )
 
         # Ищем встречи за ближайшие 3 дня
-        meetings = await meeting_repo.get_meetings_by_date_range(
-            user_id=user_id, start_dt=base_time, end_dt=base_time + timedelta(days=3)
+        meetings, total = await meeting_repo.get_meetings_by_date_range(
+            offset=0,
+            limit=20,
+            user_id=user_id,
+            start_dt=base_time,
+            end_dt=base_time + timedelta(days=3),
         )
 
         assert len(meetings) == 1

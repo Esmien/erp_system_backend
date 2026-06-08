@@ -105,47 +105,55 @@ async def test_delete_task_success(
     mock_uow.commit.assert_called_once()
 
 
-async def test_get_filtered_tasks_team_scope(task_service, mock_uow, mock_user_author):
+async def test_get_filtered_tasks_team_scope(
+    task_service, mock_uow, mock_user_author, params
+):
     mock_user_author.team_id = 1
-    mock_uow.tasks.get_tasks_with_filters.return_value = []
+    mock_uow.tasks.get_tasks_with_filters.return_value = ([], 0)
 
-    result = await task_service.get_filtered_tasks(
-        user=mock_user_author, scope="team", task_status=None
+    tasks = await task_service.get_filtered_tasks(
+        user=mock_user_author, scope="team", task_status=None, params=params
     )
-    assert result == []
+    assert tasks.items == []
     mock_uow.tasks.get_tasks_with_filters.assert_called_once_with(
-        user_id=None, team_id=1, task_status=None
+        user_id=None,
+        team_id=1,
+        task_status=None,
+        offset=params.offset,
+        limit=params.limit,
     )
 
 
 async def test_get_filtered_tasks_team_scope_no_team(
-    task_service, mock_uow, mock_user_author
+    task_service, mock_uow, mock_user_author, params
 ):
     mock_user_author.team_id = None
+
     with pytest.raises(TeamDoesNotExistsError):
         await task_service.get_filtered_tasks(
-            user=mock_user_author, scope="team", task_status=None
+            user=mock_user_author, scope="team", task_status=None, params=params
         )
 
 
 async def test_get_filtered_tasks_all_scope_success(
-    task_service, mock_uow, mock_user_author
+    task_service, mock_uow, mock_user_author, params
 ):
-    mock_uow.tasks.get_tasks_with_filters.return_value = []
+    mock_uow.tasks.get_tasks_with_filters.return_value = ([], 0)
 
-    result = await task_service.get_filtered_tasks(
-        user=mock_user_author, scope="all", task_status=None
+    tasks = await task_service.get_filtered_tasks(
+        user=mock_user_author, scope="all", task_status=None, params=params
     )
-    assert result == []
+    assert tasks.items == []
 
 
 async def test_get_filtered_tasks_all_scope_access_denied(
-    task_service, mock_uow, mock_user_author
+    task_service, mock_uow, mock_user_author, params
 ):
     task_service.rbac.enforce_permission.side_effect = AccessDeniedError
+
     with pytest.raises(AccessDeniedError):
         await task_service.get_filtered_tasks(
-            user=mock_user_author, scope="all", task_status=None
+            user=mock_user_author, scope="all", task_status=None, params=params
         )
 
 
@@ -231,16 +239,22 @@ async def test_delete_task_not_found(task_service, mock_uow, mock_user_author):
         await task_service.delete(obj_id=999, user=mock_user_author)
 
 
-async def test_get_filtered_tasks_my_scope(task_service, mock_uow, mock_user_author):
-    mock_uow.tasks.get_tasks_with_filters.return_value = []
+async def test_get_filtered_tasks_my_scope(
+    task_service, mock_uow, mock_user_author, params
+):
+    mock_uow.tasks.get_tasks_with_filters.return_value = ([], 0)
 
-    result = await task_service.get_filtered_tasks(
-        user=mock_user_author, scope="my", task_status=None
+    tasks = await task_service.get_filtered_tasks(
+        user=mock_user_author, scope="my", task_status=None, params=params
     )
 
-    assert result == []
+    assert tasks.items == []
     mock_uow.tasks.get_tasks_with_filters.assert_called_once_with(
-        user_id=mock_user_author.id, team_id=None, task_status=None
+        user_id=mock_user_author.id,
+        team_id=None,
+        task_status=None,
+        offset=params.offset,
+        limit=params.limit,
     )
 
 

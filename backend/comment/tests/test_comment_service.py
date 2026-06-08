@@ -1,5 +1,6 @@
 import pytest
 
+from backend.api.dependencies.pagination import PaginationParams
 from backend.comment.schemas import CommentCreate
 from backend.core.constants import RoleName
 from backend.exceptions import AccessDeniedError, TaskDoesNotExistsError
@@ -90,17 +91,23 @@ async def test_get_task_comments_success(
     comment_service, mock_uow, sample_task, sample_comment, mock_user_author
 ):
     mock_uow.tasks.get_by_id.return_value = sample_task
-    mock_uow.comments.get_comments_by_task_id.return_value = [sample_comment]
+    mock_uow.comments.get_comments_by_task_id.return_value = ([sample_comment], 1)
     sample_task.executor_id = mock_user_author.id
 
-    comments = await comment_service.get_task_comments(
+    params = PaginationParams(page=1, size=20)
+
+    page_result = await comment_service.get_task_comments(
         task_id=sample_task.id,
         user=mock_user_author,
+        params=params,
     )
 
-    assert comments == [sample_comment]
-    mock_uow.tasks.get_by_id.assert_awaited_once_with(obj_id=sample_task.id)
-    mock_uow.comments.get_comments_by_task_id.assert_awaited_once_with(sample_task.id)
+    assert page_result.items == [sample_comment]
+    mock_uow.comments.get_comments_by_task_id.assert_awaited_once_with(
+        task_id=sample_task.id,
+        offset=params.offset,
+        limit=params.limit,
+    )
 
 
 @pytest.mark.parametrize(
@@ -120,11 +127,11 @@ async def test_get_task_comments_with_exc(
 
     mock_user_stranger.id = 999
     mock_user_stranger.role.name = RoleName.USER
+    params = PaginationParams(page=1, size=20)
 
     with pytest.raises(exc):
         await comment_service.get_task_comments(
-            task_id=sample_task.id,
-            user=mock_user_stranger,
+            task_id=sample_task.id, user=mock_user_stranger, params=params
         )
 
     mock_uow.comments.get_comments_by_task_id.assert_not_awaited()
