@@ -25,7 +25,7 @@ router = APIRouter(prefix="/auth", tags=["Аутентификация"])
             "model": ErrorResponseSchema,
             "description": "Пользователь уже существует",
         },
-        503: {
+        500: {
             "model": ErrorResponseSchema,
             "description": "Роль не найдена",
         },
