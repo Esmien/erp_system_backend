@@ -6,6 +6,7 @@ from backend.api.dependencies.calendar import (
     MonthQuery,
     DayQuery,
 )
+from backend.api.dependencies.pagination import PaginationParamsDepends
 from backend.api.dependencies.permissions import get_current_user, CurrentUserDepends
 from backend.calendar.schemas import CalendarResponse
 
@@ -27,6 +28,7 @@ async def get_calendar(
     current_user: CurrentUserDepends,
     year: YearQuery,
     month: MonthQuery,
+    params: PaginationParamsDepends,
     day: DayQuery | None = None,
 ):
     """
@@ -34,5 +36,5 @@ async def get_calendar(
     Если `day` не передан, возвращает данные за весь месяц.
     """
     return await service.get_user_calendar(
-        user=current_user, year=year, month=month, day=day
+        user=current_user, year=year, month=month, day=day, params=params
     )

@@ -1,8 +1,10 @@
 from pydantic import BaseModel
+
+from backend.api.dependencies.pagination import Page
 from backend.task.schemas import TaskRead
 from backend.meeting.schemas import MeetingReadWithParticipants
 
 
 class CalendarResponse(BaseModel):
-    tasks: list[TaskRead]
-    meetings: list[MeetingReadWithParticipants]
+    tasks: Page[TaskRead]
+    meetings: Page[MeetingReadWithParticipants]
