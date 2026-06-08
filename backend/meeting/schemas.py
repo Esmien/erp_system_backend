@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from pydantic import BaseModel, ConfigDict, model_validator, Field
 
-from backend.core.constants import MeetingStatus
+from backend.core.enums import MeetingStatus
 from backend.exceptions import DatetimeCompatibleError
 from backend.user.schemas import UserRead
 

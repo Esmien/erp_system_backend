@@ -2,7 +2,7 @@ import pytest
 
 from backend.api.dependencies.pagination import PaginationParams
 from backend.comment.schemas import CommentCreate
-from backend.core.constants import RoleName
+from backend.core.enums import RoleName
 from backend.exceptions import AccessDeniedError, TaskDoesNotExistsError
 
 

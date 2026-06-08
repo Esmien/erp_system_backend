@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 
 import pytest
 
-from backend.core.constants import TaskStatus, RoleName
+from backend.core.enums import TaskStatus, RoleName
 from backend.task.repository import TaskRepository
 from backend.task.schemas import TaskCreate, TaskRead
 from backend.task.service import TaskService

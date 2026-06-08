@@ -1,5 +1,5 @@
 from backend.core.base_service import BaseService
-from backend.core.constants import (
+from backend.core.enums import (
     BusinessElementName,
     Action,
     TaskStatus,

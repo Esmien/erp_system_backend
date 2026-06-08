@@ -4,7 +4,7 @@ from backend.api.dependencies.pagination import PaginationParams, Page
 from backend.comment.repository import CommentRepository
 from backend.comment.schemas import CommentCreate, CommentRead
 from backend.core.base_service import BaseService
-from backend.core.constants import BusinessElementName, Action
+from backend.core.enums import BusinessElementName, Action
 from backend.exceptions import TaskDoesNotExistsError, CommentDoesNotExistsError
 from backend.rbac.schemas import AccessContextDTO
 from backend.task.schemas import TaskRead

@@ -5,7 +5,7 @@ from loguru import logger
 
 from backend.core.base_service import BaseService
 from backend.core.config import settings
-from backend.core.constants import BusinessElementName, Action
+from backend.core.enums import BusinessElementName, Action
 from backend.rbac.schemas import AccessContextDTO
 from backend.team.repository import TeamRepository
 from backend.team.schemas import TeamCreate, TeamWithMembersRead, TeamRead

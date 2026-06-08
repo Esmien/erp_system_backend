@@ -1,5 +1,5 @@
 import pytest
-from backend.core.constants import BusinessElementName
+from backend.core.enums import BusinessElementName
 from backend.rbac.schemas import AccessRuleDTO, AccessContextDTO
 from backend.core.policies import AccessLevel
 

@@ -3,7 +3,7 @@ from pydantic import BaseModel
 
 from backend.core.base_repository import BaseRepository
 from backend.core.uow import IUnitOfWork
-from backend.core.constants import Action, BusinessElementName
+from backend.core.enums import Action, BusinessElementName
 from backend.rbac.schemas import AccessContextDTO
 from backend.rbac.service import RbacService
 from backend.user.schemas import UserDTO

@@ -6,7 +6,7 @@ from backend.evaluation.repository import EvaluationRepository
 from backend.evaluation.service import EvaluationService
 from backend.user.models import User
 from backend.task.models import Task
-from backend.core.constants import TaskStatus
+from backend.core.enums import TaskStatus
 from backend.user.schemas import UserDTO
 
 

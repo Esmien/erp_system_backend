@@ -3,7 +3,7 @@ from unittest.mock import ANY
 
 import pytest
 
-from backend.core.constants import AccessLevel
+from backend.core.enums import AccessLevel
 from backend.exceptions import (
     MeetingOverlapError,
     MeetingDoesNotExistsError,

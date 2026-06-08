@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict
 
-from backend.core.constants import AccessLevel
+from backend.core.enums import AccessLevel
 
 
 class AccessRules(BaseModel):

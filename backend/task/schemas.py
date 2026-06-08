@@ -1,6 +1,6 @@
 from datetime import date, datetime
 from pydantic import BaseModel, ConfigDict, Field, field_validator
-from backend.core.constants import TaskStatus
+from backend.core.enums import TaskStatus
 from backend.exceptions import DatetimeCompatibleError
 
 

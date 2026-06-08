@@ -8,7 +8,7 @@ from sqlalchemy import String, Text, Date, ForeignKey, CheckConstraint, DateTime
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from backend.core.constants import TaskStatus
+from backend.core.enums import TaskStatus
 from backend.core.database.engine import Base
 
 # Для аннотаций во избежание циклических импортов

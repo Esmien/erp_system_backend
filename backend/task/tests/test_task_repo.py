@@ -1,4 +1,4 @@
-from backend.core.constants import TaskStatus
+from backend.core.enums import TaskStatus
 
 
 async def test_create_task(task_repo, task_in):

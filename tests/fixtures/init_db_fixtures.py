@@ -1,7 +1,7 @@
 import pytest
 from sqlalchemy import text
 
-from backend.core.constants import TaskStatus
+from backend.core.enums import TaskStatus
 from backend.core.database.engine import Base
 from backend.core.database.init_db import init_basic_data
 from backend.core.security import get_password_hash

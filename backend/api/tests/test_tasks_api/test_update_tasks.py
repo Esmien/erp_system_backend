@@ -1,6 +1,6 @@
 from backend.api.dependencies.permissions import get_current_user
 from backend.api.main import app
-from backend.core.constants import TaskStatus
+from backend.core.enums import TaskStatus
 from tests.fixtures.environment_setup import override_get_regular_user
 
 

@@ -1,4 +1,4 @@
-from backend.core.constants import RoleName, BusinessElementName, AccessLevel
+from backend.core.enums import RoleName, BusinessElementName, AccessLevel
 from backend.rbac.schemas import AccessRules
 
 

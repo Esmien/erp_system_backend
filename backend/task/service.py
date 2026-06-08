@@ -4,7 +4,7 @@ from loguru import logger
 
 from backend.api.dependencies.pagination import PaginationParams, Page
 from backend.core.base_service import BaseService
-from backend.core.constants import (
+from backend.core.enums import (
     TaskStatus,
     TASK_NOT_FOUND,
     BusinessElementName,

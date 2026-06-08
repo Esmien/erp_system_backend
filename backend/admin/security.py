@@ -4,7 +4,7 @@ import jwt
 from jwt.exceptions import PyJWTError
 
 from backend.core.config import settings
-from backend.core.constants import RoleName
+from backend.core.enums import RoleName
 from backend.core.uow import UnitOfWork
 from backend.exceptions import BadCredentialsError
 

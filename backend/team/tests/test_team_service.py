@@ -1,6 +1,6 @@
 import pytest
 
-from backend.core.constants import BusinessElementName, Action
+from backend.core.enums import BusinessElementName, Action
 from backend.team.schemas import TeamCreate, TeamRead, TeamWithMembersRead
 from backend.user.schemas import UserDTO
 from backend.rbac.schemas import AccessContextDTO

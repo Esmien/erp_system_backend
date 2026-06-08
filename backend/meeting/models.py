@@ -7,7 +7,7 @@ from sqlalchemy import String, DateTime, func, ForeignKey, Table, Column
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from backend.core.constants import MeetingStatus
+from backend.core.enums import MeetingStatus
 from backend.core.database.engine import Base
 
 

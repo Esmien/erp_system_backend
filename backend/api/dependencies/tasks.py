@@ -4,7 +4,7 @@ from fastapi import Depends, Body, Query
 
 from backend.api.dependencies.rbac import RbacServiceDepends
 from backend.api.dependencies.uow import UowDepends
-from backend.core.constants import TaskStatus
+from backend.core.enums import TaskStatus
 from backend.task.schemas import TaskCreate, TaskUpdate, TaskChangeStatus
 from backend.task.service import TaskService
 

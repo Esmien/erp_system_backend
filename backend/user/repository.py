@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from backend.core.constants import RoleName
+from backend.core.enums import RoleName
 from backend.user.models import User, Role
 from backend.user.schemas import UserRegister, UserDTO, UserCreateDTO
 

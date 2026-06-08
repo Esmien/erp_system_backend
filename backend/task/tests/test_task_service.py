@@ -1,6 +1,6 @@
 import pytest
 
-from backend.core.constants import TaskStatus
+from backend.core.enums import TaskStatus
 from backend.task.schemas import (
     TaskRead,
     TaskCreate,

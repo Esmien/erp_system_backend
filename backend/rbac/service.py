@@ -1,4 +1,4 @@
-from backend.core.constants import BusinessElementName, Action
+from backend.core.enums import BusinessElementName, Action
 from backend.core.policies import AccessLevel
 from backend.core.uow import IUnitOfWork
 from backend.exceptions import AccessDeniedError

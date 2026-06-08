@@ -1,4 +1,4 @@
-from backend.core.constants import TaskStatus
+from backend.core.enums import TaskStatus
 from backend.evaluation.models import Evaluation
 from backend.evaluation.schemas import EvaluationCreateDTO
 from backend.task.models import Task

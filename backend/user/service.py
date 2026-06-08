@@ -1,6 +1,6 @@
 from loguru import logger
 
-from backend.core.constants import RoleName, BusinessElementName, Action
+from backend.core.enums import RoleName, BusinessElementName, Action
 from backend.core.uow import IUnitOfWork
 from backend.rbac.schemas import AccessContextDTO
 from backend.rbac.service import RbacService

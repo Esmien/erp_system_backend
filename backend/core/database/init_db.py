@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.core.database.engine import async_session_maker
 from backend.core.policies import DEFAULT_POLICIES
 from backend.core.security import get_password_hash
-from backend.core.constants import RoleName, BusinessElementName
+from backend.core.enums import RoleName, BusinessElementName
 from backend.user.models import User, Role
 from backend.rbac.models import BusinessElement, AccessRule
 

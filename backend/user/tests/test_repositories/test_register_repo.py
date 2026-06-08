@@ -2,7 +2,7 @@ from sqlalchemy import select
 
 import pytest
 
-from backend.core.constants import RoleName
+from backend.core.enums import RoleName
 from backend.user.models import Role
 from backend.user.schemas import UserCreateDTO
 

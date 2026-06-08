@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import MagicMock
 
 from backend.api.dependencies.evaluations import EvaluationCreateBody
-from backend.core.constants import (
+from backend.core.enums import (
     TaskStatus,
     TASK_NOT_FOUND,
     BusinessElementName,
