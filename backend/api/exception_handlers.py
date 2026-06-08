@@ -20,6 +20,9 @@ from backend.exceptions import (
     MeetingDoesNotExistsError,
     DatetimeCompatibleError,
     UnknownAccessLevelError,
+    InvalidPasswordError,
+    CommentDoesNotExistsError,
+    EvaluationDoesNotExistsError,
 )
 
 
@@ -86,3 +89,6 @@ def setup_exception_handlers(app: FastAPI):
     app.add_exception_handler(
         UnknownAccessLevelError, internal_server_exception_handler
     )
+    app.add_exception_handler(InvalidPasswordError, access_denied_exception_handler)
+    app.add_exception_handler(CommentDoesNotExistsError, not_found_exception_handler)
+    app.add_exception_handler(EvaluationDoesNotExistsError, not_found_exception_handler)
