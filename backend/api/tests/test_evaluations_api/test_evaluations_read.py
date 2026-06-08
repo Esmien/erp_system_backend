@@ -1,5 +1,5 @@
-from backend.api.main import app
 from backend.api.dependencies.permissions import get_current_user
+from backend.api.main import app
 from tests.fixtures.environment_setup import override_get_regular_user
 
 
@@ -39,18 +39,9 @@ async def test_get_evaluation_forbidden(client, closed_task_id, evaluation_data)
         f"/api/v1/tasks/{closed_task_id}/evaluation/", json=evaluation_data
     )
 
-    # Переключаемся на обычного пользователя (не автора и не исполнителя)
-    old_dep = app.dependency_overrides.get(get_current_user)
     app.dependency_overrides[get_current_user] = override_get_regular_user
 
-    try:
-        # Пытаемся подсмотреть чужую оценку
-        response = await client.get(f"/api/v1/tasks/{closed_task_id}/evaluation/")
-        assert response.status_code == 403
-        assert response.json()["detail"] == "У вас нет прав для просмотра этой оценки"
-    finally:
-        # Возвращаем зависимость на место
-        if old_dep:
-            app.dependency_overrides[get_current_user] = old_dep
-        else:
-            app.dependency_overrides.pop(get_current_user, None)
+    # Пытаемся подсмотреть чужую оценку
+    response = await client.get(f"/api/v1/tasks/{closed_task_id}/evaluation/")
+    assert response.status_code == 403
+    assert response.json()["detail"] == "У вас нет прав для просмотра этой оценки"

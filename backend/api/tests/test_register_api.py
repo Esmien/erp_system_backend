@@ -44,7 +44,7 @@ async def test_register_role_not_exists(
         response = await client.post(
             "/api/v1/auth/register/", json=valid_data_for_register
         )
-        assert response.status_code == 503
+        assert response.status_code == 500
         assert response.json() == reg_role_not_exists_response
     finally:
         if old_dep is not None:

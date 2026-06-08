@@ -1,7 +1,9 @@
 from backend.api.dependencies.permissions import get_current_user
 from backend.api.main import app
 from backend.core.enums import TaskStatus
-from tests.fixtures.environment_setup import override_get_regular_user
+from tests.fixtures.environment_setup import (
+    override_get_regular_user,
+)
 
 
 async def test_change_task_status(client, open_task_json):
@@ -21,22 +23,13 @@ async def test_update_foreign_task_forbidden(client, open_task_json):
     create_response = await client.post("/api/v1/tasks/", json=open_task_json)
     task_id = create_response.json().get("id")
 
-    old_dep = app.dependency_overrides.get(get_current_user)
     app.dependency_overrides[get_current_user] = override_get_regular_user
 
-    try:
-        patch_data = {"status": TaskStatus.DONE}
-        response = await client.patch(
-            f"/api/v1/tasks/{task_id}/status/", json=patch_data
-        )
-        assert response.status_code == 403
-        assert response.json()["detail"] == "Вы не можете изменить статус этой задачи"
-    finally:
-        # Возвращаем зависимость на место
-        if old_dep:
-            app.dependency_overrides[get_current_user] = old_dep
-        else:
-            app.dependency_overrides.pop(get_current_user, None)
+    patch_data = {"status": TaskStatus.DONE}
+    response = await client.patch(f"/api/v1/tasks/{task_id}/status/", json=patch_data)
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Вы не можете изменить статус этой задачи"
 
 
 async def test_update_task_success(client, open_task_json):

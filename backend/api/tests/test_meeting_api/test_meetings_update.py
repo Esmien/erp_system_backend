@@ -1,7 +1,9 @@
 from backend.api.dependencies.permissions import get_current_user
 from backend.api.main import app
 from backend.api.tests.test_meeting_api.utils import get_future_times
-from tests.fixtures.environment_setup import override_get_regular_user
+from tests.fixtures.environment_setup import (
+    override_get_regular_user,
+)
 
 
 async def test_update_meeting_success(client):
@@ -46,21 +48,12 @@ async def test_update_foreign_meeting_forbidden(client):
     )
     meeting_id = create_resp.json().get("id")
 
-    old_dep = app.dependency_overrides.get(get_current_user)
     app.dependency_overrides[get_current_user] = override_get_regular_user
 
-    try:
-        update_data = {"theme": "Хак темы"}
-        response = await client.patch(
-            f"/api/v1/meetings/{meeting_id}/", json=update_data
-        )
-        assert response.status_code == 403
-        assert (
-            "данные встречи может обновить только автор или руководитель"
-            in response.json()["detail"].lower()
-        )
-    finally:
-        if old_dep:
-            app.dependency_overrides[get_current_user] = old_dep
-        else:
-            app.dependency_overrides.pop(get_current_user, None)
+    update_data = {"theme": "Хак темы"}
+    response = await client.patch(f"/api/v1/meetings/{meeting_id}/", json=update_data)
+    assert response.status_code == 403
+    assert (
+        "данные встречи может обновить только автор или руководитель"
+        in response.json()["detail"].lower()
+    )

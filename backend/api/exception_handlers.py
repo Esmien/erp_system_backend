@@ -1,5 +1,7 @@
 from fastapi import Request, status, FastAPI
 from fastapi.responses import JSONResponse
+from loguru import logger
+from sqlalchemy.exc import SQLAlchemyError
 
 from backend.exceptions import (
     UserDoesNotExistsError,
@@ -35,7 +37,7 @@ def not_found_exception_handler(request: Request, exc: Exception):
 
 def internal_server_exception_handler(request: Request, exc: Exception):
     return JSONResponse(
-        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={"detail": str(exc)},
     )
 
@@ -68,6 +70,26 @@ def conflict_exception_handler(request: Request, exc: Exception):
     )
 
 
+def sqlalchemy_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    """
+    Глобальный перехватчик любых непредвиденных ошибок базы данных.
+    Прячет технические детали от клиента, но пишет полный трейсбэк в логи.
+    """
+    # Пишем в лог метод, URL и саму ошибку для дебага
+    logger.error(
+        f"Database error occurred while processing {request.method} {request.url.path} "
+        f"\nException details: {repr(exc)}"
+    )
+
+    # Отдаем клиенту безопасный стандартизированный ответ
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={
+            "detail": "Внутренняя ошибка базы данных. Пожалуйста, обратитесь в техническую поддержку."
+        },
+    )
+
+
 def setup_exception_handlers(app: FastAPI):
     app.add_exception_handler(TaskDoesNotExistsError, not_found_exception_handler)
     app.add_exception_handler(TeamDoesNotExistsError, not_found_exception_handler)
@@ -92,3 +114,4 @@ def setup_exception_handlers(app: FastAPI):
     app.add_exception_handler(InvalidPasswordError, access_denied_exception_handler)
     app.add_exception_handler(CommentDoesNotExistsError, not_found_exception_handler)
     app.add_exception_handler(EvaluationDoesNotExistsError, not_found_exception_handler)
+    app.add_exception_handler(SQLAlchemyError, sqlalchemy_exception_handler)

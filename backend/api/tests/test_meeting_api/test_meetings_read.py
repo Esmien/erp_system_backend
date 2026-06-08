@@ -1,7 +1,9 @@
 from backend.api.dependencies.permissions import get_current_user
 from backend.api.main import app
 from backend.api.tests.test_meeting_api.utils import get_future_times
-from tests.fixtures.environment_setup import override_get_regular_user
+from tests.fixtures.environment_setup import (
+    override_get_regular_user,
+)
 
 
 async def test_get_all_meetings(client):
@@ -63,18 +65,11 @@ async def test_get_meeting_forbidden(client):
     )
     meeting_id = create_resp.json().get("id")
 
-    old_dep = app.dependency_overrides.get(get_current_user)
     app.dependency_overrides[get_current_user] = override_get_regular_user
 
-    try:
-        response = await client.get(f"/api/v1/meetings/{meeting_id}/")
-        assert response.status_code == 403
-        assert (
-            "вы не можете получить данные этой встречи"
-            in response.json()["detail"].lower()
-        )
-    finally:
-        if old_dep:
-            app.dependency_overrides[get_current_user] = old_dep
-        else:
-            app.dependency_overrides.pop(get_current_user, None)
+    response = await client.get(f"/api/v1/meetings/{meeting_id}/")
+
+    assert response.status_code == 403
+    assert (
+        "вы не можете получить данные этой встречи" in response.json()["detail"].lower()
+    )

@@ -24,21 +24,12 @@ async def test_add_comment_task_not_found(client):
 
 
 async def test_add_comment_forbidden(client):
-    # Переключаемся на обычного пользователя, который не является автором/исполнителем
-    old_dep = app.dependency_overrides.get(get_current_user)
     app.dependency_overrides[get_current_user] = override_get_regular_user
 
-    try:
-        comment_data = {"text": "Попытка прокомментировать чужую задачу"}
-        response = await client.post("/api/v1/tasks/1/comments/", json=comment_data)
-        assert response.status_code == 403
-        assert (
-            response.json().get("detail").lower()
-            == "вы не можете оставлять комментарии к этой задаче"
-        )
-    finally:
-        # Возвращаем зависимость на место
-        if old_dep:
-            app.dependency_overrides[get_current_user] = old_dep
-        else:
-            app.dependency_overrides.pop(get_current_user, None)
+    comment_data = {"text": "Попытка прокомментировать чужую задачу"}
+    response = await client.post("/api/v1/tasks/1/comments/", json=comment_data)
+    assert response.status_code == 403
+    assert (
+        response.json().get("detail").lower()
+        == "вы не можете оставлять комментарии к этой задаче"
+    )
