@@ -18,11 +18,11 @@ class SecurityConfig(BaseModelConfig):
 
 
 class DatabaseConfig(BaseModelConfig):
-    DB_USER: str = "postgres"
-    DB_PASSWORD: str = "postgres"
-    DB_HOST: str = "db"
-    DB_PORT: int = 5432
-    DB_NAME: str = "parser_db"
+    DB_USER: str
+    DB_PASSWORD: str
+    DB_HOST: str
+    DB_PORT: int
+    DB_NAME: str
 
     @property
     def database_url(self) -> str:
