@@ -20,7 +20,9 @@ class MeetingRepository(BaseRepository[Meeting, MeetingReadWithParticipants]):
             session=session, model=Meeting, dto=MeetingReadWithParticipants
         )
 
-    async def _get_instance(self, obj_id: int) -> Meeting | None:
+    async def _get_instance(
+        self, obj_id: int, for_update: bool = False
+    ) -> Meeting | None:
         """
         Переопределение метода базового класса.
         Все CRUD теперь подтягивают участников через selectinload
@@ -36,6 +38,10 @@ class MeetingRepository(BaseRepository[Meeting, MeetingReadWithParticipants]):
             .where(self.model.id == obj_id)
             .options(selectinload(self.model.participants))
         )
+
+        if for_update:
+            stmt = stmt.with_for_update()
+
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
@@ -160,7 +166,7 @@ class MeetingRepository(BaseRepository[Meeting, MeetingReadWithParticipants]):
         Returns:
             Встреча с обновленными данными или None, если такой встречи не существует
         """
-        meeting = await self._get_instance(obj_id=meeting_id)
+        meeting = await self._get_instance(obj_id=meeting_id, for_update=True)
         if not meeting:
             return None
 

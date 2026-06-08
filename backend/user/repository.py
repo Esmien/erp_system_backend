@@ -70,17 +70,24 @@ class AuthRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def _get_user_model_by_email(self, user_email: str) -> User | None:
+    async def _get_user_model_by_email(
+        self, user_email: str, for_update: bool = False
+    ) -> User | None:
         """
         Вспомогательный метод для получения модели пользователя
 
         Args:
             user_email - Email искомого пользователя
+            for_update - флаг для блокировки транзакции при обновлении данных в БД
 
         Returns:
             Модель пользователя или None, если пользователя с таким Email нет
         """
         stmt = select(User).where(User.email == user_email)
+
+        if for_update:
+            stmt = stmt.with_for_update()
+
         result = await self.session.execute(statement=stmt)
         user_model = result.scalar_one_or_none()
 
@@ -127,7 +134,10 @@ class AuthRepository:
         Returns:
             Обновленная модель пользователя с is_active=True или None, если пользователь не существует
         """
-        user = await self._get_user_model_by_email(user_email=user_email)
+        # Защищаем через for_update от одновременных попыток изменить статус
+        user = await self._get_user_model_by_email(
+            user_email=user_email, for_update=True
+        )
 
         if not user:
             return None
@@ -152,7 +162,7 @@ class UserRepository:
         Returns:
             Найденная модель или None, если пользователя с таким ID не существует
         """
-        stmt = select(User).where(User.id == user_id)
+        stmt = select(User).where(User.id == user_id).with_for_update()
         result = await self.session.execute(statement=stmt)
         return result.scalar_one_or_none()
 

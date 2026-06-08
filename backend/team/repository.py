@@ -43,7 +43,7 @@ class TeamRepository(BaseRepository[Team, TeamWithMembersRead]):
         return result.scalar_one_or_none()
 
     async def _get_obj_model_by_id(
-        self, class_: type[ModelT], obj_id: int
+        self, class_: type[ModelT], obj_id: int, for_update: bool = False
     ) -> ModelT | None:
         """
         Получает из БД инстанс алхимии по ID и переданному классу модели
@@ -51,11 +51,12 @@ class TeamRepository(BaseRepository[Team, TeamWithMembersRead]):
         Args:
             class_ - название класса модели, чей инстанс нужно получить из БД
             obj_id - ID для поиска
+            for_update - флаг для блокировки транзакции
 
         Returns:
             Готовая искомая модель алхимии или None, если ничего не нашлось
         """
-        return await self.session.get(class_, obj_id)
+        return await self.session.get(class_, obj_id, with_for_update=for_update)
 
     async def get_team_model_by_field(
         self, field: Literal["name", "invite_code"], value: str
@@ -103,7 +104,11 @@ class TeamRepository(BaseRepository[Team, TeamWithMembersRead]):
             user - модель пользователя для добавления в команду
             team_id - ID целевой команды
         """
-        user = await self._get_obj_model_by_id(class_=User, obj_id=user_id)
+        # Прокидываем флаг для блокировки транзакции
+        # для защиты от попыток добавить пользователя в 2 команды одновременно
+        user = await self._get_obj_model_by_id(
+            class_=User, obj_id=user_id, for_update=True
+        )
         team = await self._get_obj_model_by_id(class_=Team, obj_id=team_id)
 
         if not user:
