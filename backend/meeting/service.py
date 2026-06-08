@@ -97,7 +97,7 @@ class MeetingService(BaseService[MeetingReadWithParticipants]):
 
             await self.uow.commit()
 
-        logger.success(
+        logger.info(
             f"Встреча '{new_meeting.theme}' успешно создана пользователем {author.email}"
         )
         return new_meeting

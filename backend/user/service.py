@@ -72,7 +72,7 @@ class RegisterService:
 
             # Регистрируем
             await self.uow.commit()
-            logger.success(
+            logger.info(
                 f"Пользователь ID: {registered_user.id}, Email: {registered_user.email} зарегистрирован"
             )
             return registered_user
@@ -148,7 +148,7 @@ class AuthService:
                 raise UserDoesNotExistsError
 
             await self.uow.commit()
-            logger.success(f"Пользователь {user.name} успешно активирован.")
+            logger.info(f"Пользователь {user.name} успешно активирован.")
 
         return activated_user
 
@@ -199,7 +199,7 @@ class AuthService:
             logger.info(f"Пользователь с ID {user_id} не активен.")
             raise UserNotActiveError
 
-        logger.success(f"Пользователь с ID {user_id} успешно получен. ({user.email})")
+        logger.info(f"Пользователь с ID {user_id} успешно получен. ({user.email})")
         return user
 
 
@@ -254,7 +254,7 @@ class UserService:
 
             await self.uow.commit()
 
-        logger.success(
+        logger.info(
             f"Пользователь ID: {user.id}, Email: {user.email} успешно обновлен."
         )
         return updated_user
@@ -288,6 +288,6 @@ class UserService:
                 raise UserDoesNotExistsError
 
             await self.uow.commit()
-            logger.success(
+            logger.info(
                 f"Пользователь ID: {deactivated_user.id}, Email: {deactivated_user.email} успешно удален (деактивирован)."
             )

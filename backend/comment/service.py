@@ -75,7 +75,7 @@ class CommentService(BaseService[CommentRead]):
 
             await self.uow.commit()
 
-        logger.success(
+        logger.info(
             f"Пользователь {user.email} оставил комментарий к задаче ID {task_id}"
         )
         return new_comment

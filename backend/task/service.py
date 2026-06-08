@@ -132,7 +132,7 @@ class TaskService(BaseService[TaskRead]):
             )
             await self.uow.commit()
 
-        logger.success(
+        logger.info(
             f"Задача '{new_task.title}' успешно создана пользователем {author.email}"
         )
         return new_task
@@ -190,7 +190,7 @@ class TaskService(BaseService[TaskRead]):
 
             await self.uow.commit()
 
-        logger.success(f"Задача ID {task_id} обновлена пользователем {user.email}")
+        logger.info(f"Задача ID {task_id} обновлена пользователем {user.email}")
         return updated_task
 
     async def change_status(
@@ -231,5 +231,5 @@ class TaskService(BaseService[TaskRead]):
 
             await self.uow.commit()
 
-        logger.success(f"Задаче ID {task_id} присвоен статус {updated_task.status}")
+        logger.info(f"Задаче ID {task_id} присвоен статус {updated_task.status}")
         return updated_task

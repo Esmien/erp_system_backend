@@ -72,7 +72,7 @@ class TeamService(BaseService[TeamWithMembersRead]):
                 error_msg="Вы не можете посмотреть данные этой команды",
             )
 
-        logger.success(
+        logger.info(
             f"Успешно получены данные команды ID: {team.id}, Название: {team.name}."
         )
         return team
@@ -128,7 +128,7 @@ class TeamService(BaseService[TeamWithMembersRead]):
 
             await self.uow.commit()
 
-        logger.success(f"Команда {created_team.name} успешно создана.")
+        logger.info(f"Команда {created_team.name} успешно создана.")
         return created_team
 
     async def join_team(self, user: UserDTO, invite_code: str) -> TeamRead:
@@ -166,5 +166,5 @@ class TeamService(BaseService[TeamWithMembersRead]):
             await self.repository.add_user_to_team(user_id=user.id, team_id=team.id)
             await self.uow.commit()
 
-        logger.success(f"Пользователь ID: {user.id} добавлен в команду ID: {team.id}")
+        logger.info(f"Пользователь ID: {user.id} добавлен в команду ID: {team.id}")
         return team
