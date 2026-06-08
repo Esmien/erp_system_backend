@@ -1,5 +1,6 @@
 from fastapi import status, APIRouter, Depends
 
+from backend.api.dependencies.pagination import Page, PaginationParamsDepends
 from backend.api.dependencies.permissions import CurrentUserDepends, get_current_user
 from backend.api.dependencies.comments import CommentCreateBody, CommentServiceDepends
 from backend.comment.schemas import CommentRead
@@ -14,7 +15,7 @@ router = APIRouter(
 
 @router.get(
     path="/",
-    response_model=list[CommentRead],
+    response_model=Page[CommentRead],
     summary="Получить список комментариев к задаче",
     responses={
         403: {
@@ -28,11 +29,12 @@ async def get_comments(
     task_id: int,
     service: CommentServiceDepends,
     user: CurrentUserDepends,
+    params: PaginationParamsDepends,
 ):
     """
     Возвращает все комментарии к выбранной задаче.
     """
-    return await service.get_task_comments(task_id=task_id, user=user)
+    return await service.get_task_comments(task_id=task_id, user=user, params=params)
 
 
 @router.post(

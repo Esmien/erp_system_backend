@@ -1,5 +1,6 @@
 from fastapi import APIRouter, status, Depends
 
+from backend.api.dependencies.pagination import PaginationParamsDepends, Page
 from backend.api.dependencies.permissions import CurrentUserDepends, get_current_user
 from backend.api.dependencies.tasks import (
     TaskServiceDepends,
@@ -43,7 +44,7 @@ async def get_task(
 
 @router.get(
     path="/",
-    response_model=list[TaskRead],
+    response_model=Page[TaskRead],
     status_code=status.HTTP_200_OK,
     summary="Получить список задач по фильтрам",
     responses={
@@ -60,6 +61,7 @@ async def get_task(
 async def get_tasks_by_filter(
     service: TaskServiceDepends,
     current_user: CurrentUserDepends,
+    params: PaginationParamsDepends,
     task_status: TaskStatusFilterQuery | None = None,
     scope: TaskScopeFilterQuery = "my",
 ):
@@ -67,7 +69,7 @@ async def get_tasks_by_filter(
     Возвращает список задач с учетом фильтров
     """
     return await service.get_filtered_tasks(
-        user=current_user, scope=scope, task_status=task_status
+        user=current_user, scope=scope, task_status=task_status, params=params
     )
 
 

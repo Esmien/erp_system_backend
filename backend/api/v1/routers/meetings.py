@@ -5,6 +5,7 @@ from backend.api.dependencies.meetings import (
     MeetingCreateBody,
     MeetingUpdateBody,
 )
+from backend.api.dependencies.pagination import Page, PaginationParamsDepends
 from backend.api.dependencies.permissions import get_current_user, CurrentUserDepends
 from backend.core.utils.error_schemas import ErrorResponseSchema
 from backend.meeting.schemas import MeetingReadWithParticipants
@@ -18,18 +19,19 @@ router = APIRouter(
 
 @router.get(
     path="/",
-    response_model=list[MeetingReadWithParticipants],
+    response_model=Page[MeetingReadWithParticipants],
     status_code=status.HTTP_200_OK,
     summary="Получить все доступные встречи",
 )
 async def get_all_available_meetings(
     service: MeetingServiceDepends,
     current_user: CurrentUserDepends,
+    params: PaginationParamsDepends,
 ):
     """
     Получает все доступные встречи
     """
-    return await service.get_all_meetings(user=current_user)
+    return await service.get_all_meetings(user=current_user, params=params)
 
 
 @router.get(
