@@ -70,5 +70,7 @@ class Meeting(Base):
 
     # Связь с участниками
     participants: Mapped[list[User]] = relationship(
-        secondary=meeting_participants, back_populates="participant_meetings"
+        secondary=meeting_participants,
+        back_populates="participant_meetings",
+        lazy="selectin",
     )

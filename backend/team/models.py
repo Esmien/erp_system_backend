@@ -38,7 +38,7 @@ class Team(Base):
         server_default=func.now(),
         comment="Дата создания команды",
     )
-    members: Mapped[list[User]] = relationship(back_populates="team")
+    members: Mapped[list[User]] = relationship(back_populates="team", lazy="selectin")
 
     def __str__(self) -> str:
         return f"Название: {self.name},  код приглашения: {self.invite_code}"
