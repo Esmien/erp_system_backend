@@ -1,7 +1,7 @@
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
 
 from backend.core.config import settings
@@ -18,18 +18,6 @@ engine = create_async_engine(settings.db.database_url, echo=False)
 async_session_maker = async_sessionmaker(
     bind=engine, expire_on_commit=False, autoflush=False
 )
-
-
-async def get_session() -> AsyncGenerator[AsyncSession, None]:
-    """
-    Провайдер сессии БД для FastAPI Depends.
-    Открывает сессию, отдаёт её, закрывает после завершения запроса.
-
-    Yields:
-        Активная асинхронная сессия БД
-    """
-    async with async_session_maker() as session:
-        yield session
 
 
 @asynccontextmanager
