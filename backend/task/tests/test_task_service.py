@@ -8,10 +8,10 @@ from backend.task.schemas import (
     TaskChangeStatus,
 )
 from backend.exceptions import (
-    TaskDoesNotExistsError,
+    TaskDoesNotExistError,
     AccessDeniedError,
-    TeamDoesNotExistsError,
-    UserDoesNotExistsError,
+    TeamDoesNotExistError,
+    UserDoesNotExistError,
 )
 
 
@@ -28,7 +28,7 @@ async def test_get_task_success(task_service, mock_uow, sample_task, mock_user_a
 async def test_get_task_not_found(task_service, mock_uow, mock_user_author):
     mock_uow.tasks.get_by_id.return_value = None
 
-    with pytest.raises(TaskDoesNotExistsError):
+    with pytest.raises(TaskDoesNotExistError):
         await task_service.get(obj_id=999, user=mock_user_author)
 
 
@@ -129,7 +129,7 @@ async def test_get_filtered_tasks_team_scope_no_team(
 ):
     mock_user_author.team_id = None
 
-    with pytest.raises(TeamDoesNotExistsError):
+    with pytest.raises(TeamDoesNotExistError):
         await task_service.get_filtered_tasks(
             user=mock_user_author, scope="team", task_status=None, params=params
         )
@@ -178,7 +178,7 @@ async def test_update_task_invalid_executor(
     mock_uow.auth.get_user_and_role_by_user_id.return_value = None
     update_data = TaskUpdate(executor_id=999)
 
-    with pytest.raises(UserDoesNotExistsError):
+    with pytest.raises(UserDoesNotExistError):
         await task_service.update_task(
             task_id=1, update_data=update_data, user=mock_user_author
         )
@@ -191,7 +191,7 @@ async def test_update_task_repo_fails(
     mock_uow.tasks.update.return_value = None
     update_data = TaskUpdate(title="Test")
 
-    with pytest.raises(TaskDoesNotExistsError):
+    with pytest.raises(TaskDoesNotExistError):
         await task_service.update_task(
             task_id=1, update_data=update_data, user=mock_user_author
         )
@@ -227,7 +227,7 @@ async def test_change_status_task_not_found(task_service, mock_uow, mock_user_au
     mock_uow.tasks.get_by_id.return_value = None
     new_status = TaskChangeStatus(status=TaskStatus.DONE)
 
-    with pytest.raises(TaskDoesNotExistsError):
+    with pytest.raises(TaskDoesNotExistError):
         await task_service.change_status(
             task_id=1, new_status=new_status, user=mock_user_author
         )
@@ -235,7 +235,7 @@ async def test_change_status_task_not_found(task_service, mock_uow, mock_user_au
 
 async def test_delete_task_not_found(task_service, mock_uow, mock_user_author):
     mock_uow.tasks.get_by_id.return_value = None
-    with pytest.raises(TaskDoesNotExistsError):
+    with pytest.raises(TaskDoesNotExistError):
         await task_service.delete(obj_id=999, user=mock_user_author)
 
 
@@ -265,7 +265,7 @@ async def test_change_status_repo_fails(
     mock_uow.tasks.update.return_value = None
     new_status = TaskChangeStatus(status=TaskStatus.DONE)
 
-    with pytest.raises(TaskDoesNotExistsError):
+    with pytest.raises(TaskDoesNotExistError):
         await task_service.change_status(
             task_id=1, new_status=new_status, user=mock_user_author
         )
@@ -277,7 +277,7 @@ async def test_update_task_not_found_initially(
     update_data = TaskUpdate(title="Попытка обновления")
     mock_uow.tasks.get_by_id.return_value = None
 
-    with pytest.raises(TaskDoesNotExistsError):
+    with pytest.raises(TaskDoesNotExistError):
         await task_service.update_task(
             task_id=999, update_data=update_data, user=mock_user_author
         )

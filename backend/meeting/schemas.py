@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from pydantic import BaseModel, ConfigDict, model_validator, Field
 
 from backend.core.enums import MeetingStatus
-from backend.exceptions import DatetimeCompatibleError
+from backend.exceptions import DatetimeMismatchError
 from backend.user.schemas import UserRead
 
 
@@ -47,12 +47,12 @@ class MeetingBase(BaseModel):
         start_tz = start_tz.replace(second=0, microsecond=0)
 
         if start_tz < now:
-            raise DatetimeCompatibleError(
+            raise DatetimeMismatchError(
                 "Встреча не может начаться раньше текущего времени"
             )
 
         if end_tz <= start_tz:
-            raise DatetimeCompatibleError(
+            raise DatetimeMismatchError(
                 "Встреча не может окончиться раньше или одновременно с началом"
             )
 
@@ -104,7 +104,7 @@ class MeetingUpdate(BaseModel):
                 else self.datetime_start.astimezone(timezone.utc)
             )
             if start_tz < now:
-                raise DatetimeCompatibleError(
+                raise DatetimeMismatchError(
                     "Встреча не может начаться раньше текущего времени"
                 )
 
@@ -123,7 +123,7 @@ class MeetingUpdate(BaseModel):
             )
 
             if end_tz <= start_tz:
-                raise DatetimeCompatibleError(
+                raise DatetimeMismatchError(
                     "Встреча не может окончиться раньше или одновременно с началом"
                 )
 

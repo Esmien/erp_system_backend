@@ -6,7 +6,7 @@ import pytest
 from backend.core.enums import AccessLevel
 from backend.exceptions import (
     MeetingOverlapError,
-    MeetingDoesNotExistsError,
+    MeetingDoesNotExistError,
     AccessDeniedError,
 )
 from backend.meeting.schemas import (
@@ -149,5 +149,5 @@ class TestMeetingService:
     ):
         mock_uow.meetings.get_by_id.return_value = None
 
-        with pytest.raises(MeetingDoesNotExistsError):
+        with pytest.raises(MeetingDoesNotExistError):
             await meeting_service.delete(obj_id=999, user=mock_user_for_meeting)

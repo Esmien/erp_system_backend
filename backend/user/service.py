@@ -8,8 +8,8 @@ from backend.user.schemas import Token, UserRegister, UserUpdate, UserCreateDTO,
 from backend.exceptions import (
     UserExistsError,
     UserNotActiveError,
-    UserDoesNotExistsError,
-    RoleDoesNotExistsError,
+    UserDoesNotExistError,
+    RoleDoesNotExistError,
     UserAlreadyActiveError,
     InvalidPasswordError,
     BadCredentialsError,
@@ -54,7 +54,7 @@ class RegisterService:
             # Проблема на стороне сервера, роль не найдена
             if not role_id:
                 logger.error(f"Ошибка! Роль {role_name} не найдена.")
-                raise RoleDoesNotExistsError(
+                raise RoleDoesNotExistError(
                     "Запрашиваемая роль не найдена, обратитесь в поддержку"
                 )
 
@@ -145,7 +145,7 @@ class AuthService:
 
             if not activated_user:
                 logger.info(f"Пользователь с {user.email} не существует.")
-                raise UserDoesNotExistsError
+                raise UserDoesNotExistError
 
             await self.uow.commit()
             logger.info(f"Пользователь {user.name} успешно активирован.")
@@ -194,7 +194,7 @@ class AuthService:
 
         if not user:
             logger.info(f"Пользователь с ID {user_id} не найден.")
-            raise UserDoesNotExistsError
+            raise UserDoesNotExistError
         if not self._check_user_active(user):
             logger.info(f"Пользователь с ID {user_id} не активен.")
             raise UserNotActiveError
@@ -250,7 +250,7 @@ class UserService:
                 logger.info(
                     f"Не найден пользователь для обновления, ID: {user.id}, Email: {user.email}."
                 )
-                raise UserDoesNotExistsError
+                raise UserDoesNotExistError
 
             await self.uow.commit()
 
@@ -285,7 +285,7 @@ class UserService:
                 logger.info(
                     f"Не найден пользователь для удаления, ID: {user.id}, Email: {user.email}."
                 )
-                raise UserDoesNotExistsError
+                raise UserDoesNotExistError
 
             await self.uow.commit()
             logger.info(

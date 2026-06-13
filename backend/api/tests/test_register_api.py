@@ -2,7 +2,7 @@ from backend.api.dependencies.reg_and_auth import (
     get_register_service,
 )
 from backend.api.main import app
-from backend.exceptions import RoleDoesNotExistsError
+from backend.exceptions import RoleDoesNotExistError
 
 
 async def test_register_success(
@@ -26,7 +26,7 @@ async def test_register_already_exists(
 
 class FakeRegisterService:
     def register_user(self, user_in):
-        raise RoleDoesNotExistsError(
+        raise RoleDoesNotExistError(
             "Запрашиваемая роль не найдена, обратитесь в поддержку"
         )
 

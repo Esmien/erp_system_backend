@@ -1,82 +1,61 @@
-class UserExistsError(Exception):
-    pass  # handled
+class UserExistsError(Exception): ...  # handled
 
 
-class UserDoesNotExistsError(Exception):
-    pass  # handled
+class UserDoesNotExistError(Exception): ...  # handled
 
 
-class RoleDoesNotExistsError(Exception):
-    pass  # handled
+class RoleDoesNotExistError(Exception): ...  # handled
 
 
-class InvalidPasswordError(Exception):
-    pass  # handled
+class InvalidPasswordError(Exception): ...  # handled
 
 
-class UserNotActiveError(Exception):
-    pass  # handled
+class UserNotActiveError(Exception): ...  # handled
 
 
-class TeamDoesNotExistsError(Exception):
-    pass  # handled
+class TeamDoesNotExistError(Exception): ...  # handled
 
 
-class AccessDeniedError(Exception):
-    pass  # handled
+class AccessDeniedError(Exception): ...  # handled
 
 
-class UnknownAccessLevelError(Exception):
-    pass  # handled
+class UnknownAccessLevelError(Exception): ...  # handled
 
 
-class TeamAlreadyExistsError(Exception):
-    pass  # handled
+class TeamAlreadyExistError(Exception): ...  # handled
 
 
-class UserAlreadyInTeamError(Exception):
-    pass  # handled
+class UserAlreadyInTeamError(Exception): ...  # handled
 
 
-class UserAlreadyActiveError(Exception):
-    pass  # handled
+class UserAlreadyActiveError(Exception): ...  # handled
 
 
-class TaskDoesNotExistsError(Exception):
-    pass  # handled
+class TaskDoesNotExistError(Exception): ...  # handled
 
 
-class TaskAlreadyEvaluatedError(Exception):
-    pass  # handled
+class TaskAlreadyEvaluatedError(Exception): ...  # handled
 
 
-class TaskDoesNotCompletedError(Exception):
-    pass  # handled
+class TaskNotCompletedError(Exception): ...  # handled
 
 
-class BadCredentialsError(Exception):
-    pass  # handled
+class BadCredentialsError(Exception): ...  # handled
 
 
-class PasswordsMismatchError(Exception):
-    pass  # handled
+class PasswordsMismatchError(Exception): ...  # handled
 
 
-class MeetingOverlapError(Exception):
-    pass  # handled
+class MeetingOverlapError(Exception): ...  # handled
 
 
-class MeetingDoesNotExistsError(Exception):
-    pass  # handled
+class MeetingDoesNotExistError(Exception): ...  # handled
 
 
-class DatetimeCompatibleError(Exception):
-    pass  # handled
+class DatetimeMismatchError(Exception): ...  # handled
 
 
-class CommentDoesNotExistsError(Exception):
-    pass  # handled
+class CommentDoesNotExistsError(Exception): ...  # handled
 
 
-class EvaluationDoesNotExistsError(Exception):
-    pass  # handled
+class EvaluationDoesNotExistError(Exception): ...  # handled

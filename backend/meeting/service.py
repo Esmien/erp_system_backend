@@ -6,7 +6,7 @@ from backend.core.base_service import BaseService
 from backend.core.enums import BusinessElementName, Action, AccessLevel
 from backend.exceptions import (
     MeetingOverlapError,
-    MeetingDoesNotExistsError,
+    MeetingDoesNotExistError,
     UnknownAccessLevelError,
 )
 from backend.meeting.repository import MeetingRepository
@@ -32,7 +32,7 @@ class MeetingService(BaseService[MeetingReadWithParticipants]):
 
     @property
     def not_found_exception(self) -> Exception:
-        return MeetingDoesNotExistsError("Встреча не найдена")
+        return MeetingDoesNotExistError("Встреча не найдена")
 
     def build_abac_context(
         self, obj: MeetingReadWithParticipants, user: UserDTO

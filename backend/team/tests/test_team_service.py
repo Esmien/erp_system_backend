@@ -5,8 +5,8 @@ from backend.team.schemas import TeamCreate, TeamRead, TeamWithMembersRead
 from backend.user.schemas import UserDTO
 from backend.rbac.schemas import AccessContextDTO
 from backend.exceptions import (
-    TeamDoesNotExistsError,
-    TeamAlreadyExistsError,
+    TeamDoesNotExistError,
+    TeamAlreadyExistError,
     UserAlreadyInTeamError,
     AccessDeniedError,
 )
@@ -22,7 +22,7 @@ def test_generate_invite_code(team_service):
 
 @pytest.mark.parametrize(
     "team_exists, expected_exception",
-    [(True, None), (False, TeamDoesNotExistsError)],
+    [(True, None), (False, TeamDoesNotExistError)],
 )
 async def test_get_team(
     team_service, mock_uow, team_exists, expected_exception, mock_user
@@ -65,7 +65,7 @@ async def test_create_team(team_service, mock_uow, name_exists, mock_user):
     mock_uow.teams.get_team_model_by_field.return_value = name_exists
 
     if name_exists:
-        with pytest.raises(TeamAlreadyExistsError):
+        with pytest.raises(TeamAlreadyExistError):
             await team_service.create_team(team_in=team_in, user=mock_user)
     else:
         mock_uow.teams.create.return_value = TeamRead(
@@ -90,7 +90,7 @@ async def test_create_team(team_service, mock_uow, name_exists, mock_user):
     "user_team_id, code_exists, expected_exception",
     [
         (1, True, UserAlreadyInTeamError),
-        (None, False, TeamDoesNotExistsError),
+        (None, False, TeamDoesNotExistError),
         (None, True, None),
     ],
 )

@@ -1,7 +1,7 @@
 from datetime import date, datetime
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from backend.core.enums import TaskStatus
-from backend.exceptions import DatetimeCompatibleError
+from backend.exceptions import DatetimeMismatchError
 
 
 class TaskBase(BaseModel):
@@ -20,7 +20,7 @@ class TaskCreate(TaskBase):
     @classmethod
     def check_date(cls, value: date) -> date:
         if value < date.today():
-            raise DatetimeCompatibleError(
+            raise DatetimeMismatchError(
                 "Нельзя создать задачу с датой окончания раньше текущей"
             )
         return value

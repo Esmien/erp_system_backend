@@ -10,8 +10,8 @@ from backend.rbac.schemas import AccessContextDTO
 from backend.team.repository import TeamRepository
 from backend.team.schemas import TeamCreate, TeamWithMembersRead, TeamRead
 from backend.exceptions import (
-    TeamDoesNotExistsError,
-    TeamAlreadyExistsError,
+    TeamDoesNotExistError,
+    TeamAlreadyExistError,
     UserAlreadyInTeamError,
 )
 from backend.user.schemas import UserDTO
@@ -28,7 +28,7 @@ class TeamService(BaseService[TeamWithMembersRead]):
 
     @property
     def not_found_exception(self) -> Exception:
-        return TeamDoesNotExistsError("Команда не найдена")
+        return TeamDoesNotExistError("Команда не найдена")
 
     def build_abac_context(self, obj: TeamRead, user: UserDTO) -> AccessContextDTO:
         return AccessContextDTO(is_author=False, is_participant=obj.id == user.team_id)
@@ -106,7 +106,7 @@ class TeamService(BaseService[TeamWithMembersRead]):
 
             if team_by_name:
                 logger.info(f"Команда с названием {team_in.name} уже существует.")
-                raise TeamAlreadyExistsError("Команда с таким названием уже существует")
+                raise TeamAlreadyExistError("Команда с таким названием уже существует")
 
             # Запускаем генерацию инвайт-кода в цикле, чтобы он был уникальным.
             # Если совпадений в Бд не найдено, то цикл завершается
@@ -161,7 +161,7 @@ class TeamService(BaseService[TeamWithMembersRead]):
 
             if not team:
                 logger.info(f"Инвайт код {invite_code} не найден.")
-                raise TeamDoesNotExistsError("Команда с таким кодом не найдена")
+                raise TeamDoesNotExistError("Команда с таким кодом не найдена")
 
             await self.repository.add_user_to_team(user_id=user.id, team_id=team.id)
             await self.uow.commit()

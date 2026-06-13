@@ -3,7 +3,7 @@ import pytest
 from backend.api.dependencies.pagination import PaginationParams
 from backend.comment.schemas import CommentCreate
 from backend.core.enums import RoleName
-from backend.exceptions import AccessDeniedError, TaskDoesNotExistsError
+from backend.exceptions import AccessDeniedError, TaskDoesNotExistError
 
 
 async def test_add_comment_success(
@@ -50,7 +50,7 @@ async def test_add_comment_task_not_found(comment_service, mock_uow, mock_user_a
     mock_uow.tasks.get_by_id.return_value = None
     comment_in = CommentCreate(text="Коммент в пустоту")
 
-    with pytest.raises(TaskDoesNotExistsError):
+    with pytest.raises(TaskDoesNotExistError):
         await comment_service.add_comment(
             task_id=999, user=mock_user_author, comment_in=comment_in
         )
@@ -111,7 +111,7 @@ async def test_get_task_comments_success(
 
 
 @pytest.mark.parametrize(
-    "is_task, exc", [(True, AccessDeniedError), (False, TaskDoesNotExistsError)]
+    "is_task, exc", [(True, AccessDeniedError), (False, TaskDoesNotExistError)]
 )
 async def test_get_task_comments_with_exc(
     comment_service, mock_uow, sample_task, mock_user_stranger, is_task, exc

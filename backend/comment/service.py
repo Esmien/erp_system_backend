@@ -5,7 +5,7 @@ from backend.comment.repository import CommentRepository
 from backend.comment.schemas import CommentCreate, CommentRead
 from backend.core.base_service import BaseService
 from backend.core.enums import BusinessElementName, Action
-from backend.exceptions import TaskDoesNotExistsError, CommentDoesNotExistsError
+from backend.exceptions import TaskDoesNotExistError, CommentDoesNotExistsError
 from backend.rbac.schemas import AccessContextDTO
 from backend.task.schemas import TaskRead
 from backend.user.schemas import UserDTO
@@ -33,7 +33,7 @@ class CommentService(BaseService[CommentRead]):
         """Вспомогательный метод для получения задачи"""
         task: TaskRead | None = await self.uow.tasks.get_by_id(obj_id=task_id)
         if not task:
-            raise TaskDoesNotExistsError("Задача не найдена.")
+            raise TaskDoesNotExistError("Задача не найдена.")
 
         return task
 

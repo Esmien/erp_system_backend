@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from backend.exceptions import DatetimeCompatibleError
+from backend.exceptions import DatetimeMismatchError
 from backend.meeting.schemas import MeetingCreate, MeetingUpdate
 
 
@@ -38,7 +38,7 @@ def test_meeting_create_valid_dates():
     ],
 )
 def test_meeting_create_invalid_dates(start, end, exc_msg):
-    with pytest.raises(DatetimeCompatibleError, match=exc_msg):
+    with pytest.raises(DatetimeMismatchError, match=exc_msg):
         MeetingCreate(theme="Тестовая встреча", datetime_start=start, datetime_end=end)
 
 

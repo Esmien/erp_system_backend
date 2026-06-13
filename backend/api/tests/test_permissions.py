@@ -5,7 +5,7 @@ from fastapi import HTTPException
 
 from backend.api.dependencies.permissions import get_current_user
 from backend.exceptions import (
-    UserDoesNotExistsError,
+    UserDoesNotExistError,
     UserNotActiveError,
 )
 from backend.user.schemas import UserDTO
@@ -57,7 +57,7 @@ async def test_get_current_user(
 
 
 @pytest.mark.parametrize(
-    "service_exception", [UserDoesNotExistsError, UserNotActiveError]
+    "service_exception", [UserDoesNotExistError, UserNotActiveError]
 )
 @patch("backend.api.dependencies.permissions.settings")
 async def test_get_current_user_service_errors(

@@ -4,7 +4,7 @@ import pytest
 
 from backend.exceptions import (
     InvalidPasswordError,
-    UserDoesNotExistsError,
+    UserDoesNotExistError,
     UserNotActiveError,
     UserAlreadyActiveError,
     BadCredentialsError,
@@ -61,7 +61,7 @@ async def test_auth_check_creds(
     "is_active, uow_returns_user, expected_exc",
     [
         (True, None, UserAlreadyActiveError),  # Уже активен
-        (False, False, UserDoesNotExistsError),  # UoW ничего не вернул
+        (False, False, UserDoesNotExistError),  # UoW ничего не вернул
         (False, True, None),  # Успешная активация
     ],
 )
@@ -120,7 +120,7 @@ def test_get_auth_token(auth_service, is_active, expected_exc):
 @pytest.mark.parametrize(
     "uow_returns_user, is_active, expected_exc",
     [
-        (False, False, UserDoesNotExistsError),  # Не найден
+        (False, False, UserDoesNotExistError),  # Не найден
         (True, False, UserNotActiveError),  # Найден, но деактивирован
         (True, True, None),  # Успех
     ],

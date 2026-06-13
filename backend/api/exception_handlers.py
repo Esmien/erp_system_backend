@@ -4,27 +4,27 @@ from loguru import logger
 from sqlalchemy.exc import SQLAlchemyError
 
 from backend.exceptions import (
-    UserDoesNotExistsError,
-    TaskDoesNotExistsError,
-    TeamDoesNotExistsError,
-    RoleDoesNotExistsError,
+    UserDoesNotExistError,
+    TaskDoesNotExistError,
+    TeamDoesNotExistError,
+    RoleDoesNotExistError,
     AccessDeniedError,
     UserNotActiveError,
-    TeamAlreadyExistsError,
+    TeamAlreadyExistError,
     UserAlreadyInTeamError,
     UserExistsError,
     UserAlreadyActiveError,
     BadCredentialsError,
     PasswordsMismatchError,
     TaskAlreadyEvaluatedError,
-    TaskDoesNotCompletedError,
+    TaskNotCompletedError,
     MeetingOverlapError,
-    MeetingDoesNotExistsError,
-    DatetimeCompatibleError,
+    MeetingDoesNotExistError,
+    DatetimeMismatchError,
     UnknownAccessLevelError,
     InvalidPasswordError,
     CommentDoesNotExistsError,
-    EvaluationDoesNotExistsError,
+    EvaluationDoesNotExistError,
 )
 
 
@@ -91,27 +91,27 @@ def sqlalchemy_exception_handler(request: Request, exc: Exception) -> JSONRespon
 
 
 def setup_exception_handlers(app: FastAPI):
-    app.add_exception_handler(TaskDoesNotExistsError, not_found_exception_handler)
-    app.add_exception_handler(TeamDoesNotExistsError, not_found_exception_handler)
-    app.add_exception_handler(RoleDoesNotExistsError, internal_server_exception_handler)
+    app.add_exception_handler(TaskDoesNotExistError, not_found_exception_handler)
+    app.add_exception_handler(TeamDoesNotExistError, not_found_exception_handler)
+    app.add_exception_handler(RoleDoesNotExistError, internal_server_exception_handler)
     app.add_exception_handler(AccessDeniedError, access_denied_exception_handler)
     app.add_exception_handler(UserNotActiveError, access_denied_exception_handler)
-    app.add_exception_handler(TeamAlreadyExistsError, bad_request_exception_handler)
+    app.add_exception_handler(TeamAlreadyExistError, bad_request_exception_handler)
     app.add_exception_handler(UserAlreadyInTeamError, bad_request_exception_handler)
-    app.add_exception_handler(UserDoesNotExistsError, bad_request_exception_handler)
+    app.add_exception_handler(UserDoesNotExistError, bad_request_exception_handler)
     app.add_exception_handler(UserExistsError, bad_request_exception_handler)
     app.add_exception_handler(UserAlreadyActiveError, conflict_exception_handler)
     app.add_exception_handler(BadCredentialsError, not_authorized_exception_handler)
     app.add_exception_handler(PasswordsMismatchError, bad_request_exception_handler)
-    app.add_exception_handler(TaskDoesNotCompletedError, bad_request_exception_handler)
+    app.add_exception_handler(TaskNotCompletedError, bad_request_exception_handler)
     app.add_exception_handler(TaskAlreadyEvaluatedError, bad_request_exception_handler)
     app.add_exception_handler(MeetingOverlapError, conflict_exception_handler)
-    app.add_exception_handler(MeetingDoesNotExistsError, not_found_exception_handler)
-    app.add_exception_handler(DatetimeCompatibleError, bad_request_exception_handler)
+    app.add_exception_handler(MeetingDoesNotExistError, not_found_exception_handler)
+    app.add_exception_handler(DatetimeMismatchError, bad_request_exception_handler)
     app.add_exception_handler(
         UnknownAccessLevelError, internal_server_exception_handler
     )
     app.add_exception_handler(InvalidPasswordError, access_denied_exception_handler)
     app.add_exception_handler(CommentDoesNotExistsError, not_found_exception_handler)
-    app.add_exception_handler(EvaluationDoesNotExistsError, not_found_exception_handler)
+    app.add_exception_handler(EvaluationDoesNotExistError, not_found_exception_handler)
     app.add_exception_handler(SQLAlchemyError, sqlalchemy_exception_handler)

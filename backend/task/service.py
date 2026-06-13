@@ -20,9 +20,9 @@ from backend.task.schemas import (
 )
 from backend.user.schemas import UserDTO
 from backend.exceptions import (
-    TaskDoesNotExistsError,
-    UserDoesNotExistsError,
-    TeamDoesNotExistsError,
+    TaskDoesNotExistError,
+    UserDoesNotExistError,
+    TeamDoesNotExistError,
 )
 
 
@@ -37,7 +37,7 @@ class TaskService(BaseService[TaskRead]):
 
     @property
     def not_found_exception(self) -> Exception:
-        return TaskDoesNotExistsError("Задача не найдена.")
+        return TaskDoesNotExistError("Задача не найдена.")
 
     def build_abac_context(self, obj: TaskRead, user: UserDTO) -> AccessContextDTO:
         return AccessContextDTO(
@@ -77,7 +77,7 @@ class TaskService(BaseService[TaskRead]):
 
         if scope == "team":
             if not user.team_id:
-                raise TeamDoesNotExistsError(
+                raise TeamDoesNotExistError(
                     f"Пользователь {user.email} не состоит в команде"
                 )
             team_id_filter = user.team_id
@@ -177,7 +177,7 @@ class TaskService(BaseService[TaskRead]):
             if executor_id is not None:
                 executor = await self.uow.auth.get_user_and_role_by_user_id(executor_id)
                 if not executor:
-                    raise UserDoesNotExistsError(
+                    raise UserDoesNotExistError(
                         "Попытка назначить несуществующего исполнителя"
                     )
 
@@ -227,7 +227,7 @@ class TaskService(BaseService[TaskRead]):
 
             # Если что-то пошло не так на стороне репозитория
             if not updated_task:
-                raise TaskDoesNotExistsError(TASK_NOT_FOUND)
+                raise TaskDoesNotExistError(TASK_NOT_FOUND)
 
             await self.uow.commit()
 

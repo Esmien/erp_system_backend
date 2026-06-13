@@ -6,10 +6,10 @@ from backend.core.enums import (
 )
 from backend.evaluation.repository import EvaluationRepository
 from backend.exceptions import (
-    TaskDoesNotExistsError,
+    TaskDoesNotExistError,
     TaskAlreadyEvaluatedError,
-    TaskDoesNotCompletedError,
-    EvaluationDoesNotExistsError,
+    TaskNotCompletedError,
+    EvaluationDoesNotExistError,
 )
 from backend.evaluation.schemas import (
     EvaluationCreate,
@@ -33,13 +33,13 @@ class EvaluationService(BaseService[EvaluationRead]):
 
     @property
     def not_found_exception(self) -> Exception:
-        return EvaluationDoesNotExistsError("Оценка не найдена")
+        return EvaluationDoesNotExistError("Оценка не найдена")
 
     async def _get_task(self, task_id: int) -> TaskRead:
         """Вспомогательный метод для получения задачи"""
         task: TaskRead | None = await self.uow.tasks.get_by_id(obj_id=task_id)
         if not task:
-            raise TaskDoesNotExistsError("Задача не найдена.")
+            raise TaskDoesNotExistError("Задача не найдена.")
 
         return task
 
@@ -75,7 +75,7 @@ class EvaluationService(BaseService[EvaluationRead]):
             task = await self._get_task(task_id=task_id)
 
             if task.status is not TaskStatus.DONE:
-                raise TaskDoesNotCompletedError("Задача еще не выполнена")
+                raise TaskNotCompletedError("Задача еще не выполнена")
 
             # Проверяем, не оценена ли задача уже
             existing_eval = await self.repository.get_by_task_id(task_id)

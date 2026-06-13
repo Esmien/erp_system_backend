@@ -14,8 +14,8 @@ from backend.evaluation.schemas import (
 )
 from backend.exceptions import (
     AccessDeniedError,
-    TaskDoesNotCompletedError,
-    TaskDoesNotExistsError,
+    TaskNotCompletedError,
+    TaskDoesNotExistError,
     TaskAlreadyEvaluatedError,
 )
 from backend.rbac.schemas import AccessContextDTO
@@ -40,7 +40,7 @@ async def test_evaluate_task_not_completed(eval_service, mock_uow, test_user):
 
     evaluation_in = EvaluationCreate(value=5)
 
-    with pytest.raises(TaskDoesNotCompletedError, match="Задача еще не выполнена"):
+    with pytest.raises(TaskNotCompletedError, match="Задача еще не выполнена"):
         await eval_service.evaluate_task(
             task_id=1, evaluation_in=evaluation_in, user=test_user
         )
@@ -92,7 +92,7 @@ async def test_evaluate_task_not_found(eval_service, mock_uow, test_user):
     mock_uow.tasks.get_by_id.return_value = None
     evaluation_in = EvaluationCreateBody(value=5)
 
-    with pytest.raises(TaskDoesNotExistsError, match=TASK_NOT_FOUND):
+    with pytest.raises(TaskDoesNotExistError, match=TASK_NOT_FOUND):
         await eval_service.evaluate_task(
             task_id=999, evaluation_in=evaluation_in, user=test_user
         )
@@ -118,7 +118,7 @@ async def test_get_evaluation_task_not_found(eval_service, mock_uow, test_user):
     # Пытаемся получить оценку несуществующей задачи
     mock_uow.tasks.get_by_id.return_value = None
 
-    with pytest.raises(TaskDoesNotExistsError, match=TASK_NOT_FOUND):
+    with pytest.raises(TaskDoesNotExistError, match=TASK_NOT_FOUND):
         await eval_service.get_evaluation(task_id=999, user=test_user)
 
 

@@ -6,7 +6,7 @@ from fastapi.security import OAuth2PasswordBearer
 
 from backend.core.config import settings
 from backend.exceptions import (
-    UserDoesNotExistsError,
+    UserDoesNotExistError,
     UserNotActiveError,
 )
 
@@ -58,7 +58,7 @@ async def get_current_user(
     try:
         user = await auth_service.get_active_user_by_id(user_id=int(user_id))
         return user
-    except (UserDoesNotExistsError, UserNotActiveError):
+    except (UserDoesNotExistError, UserNotActiveError):
         raise credentials_exception
 
 
