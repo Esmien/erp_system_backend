@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from typing import TypeVar, Generic, Any
 from pydantic import BaseModel
 
@@ -11,7 +12,7 @@ from backend.user.schemas import UserDTO
 DTOType = TypeVar("DTOType", bound=BaseModel)
 
 
-class BaseService(Generic[DTOType]):
+class BaseService(ABC, Generic[DTOType]):
     def __init__(self, uow: IUnitOfWork, rbac_service: RbacService):
         self.uow = uow
         self.rbac = rbac_service
@@ -19,16 +20,16 @@ class BaseService(Generic[DTOType]):
     # --- Абстрактные свойства ---
 
     @property
-    def repository(self) -> BaseRepository[Any, DTOType]:
-        raise NotImplementedError()
+    @abstractmethod
+    def repository(self) -> BaseRepository[Any, DTOType]: ...
 
     @property
-    def business_element(self) -> BusinessElementName:
-        raise NotImplementedError()
+    @abstractmethod
+    def business_element(self) -> BusinessElementName: ...
 
     @property
-    def not_found_exception(self) -> Exception:
-        raise NotImplementedError()
+    @abstractmethod
+    def not_found_exception(self) -> Exception: ...
 
     def build_abac_context(self, obj: DTOType, user: UserDTO) -> AccessContextDTO:
         return AccessContextDTO(is_author=False, is_participant=False)
