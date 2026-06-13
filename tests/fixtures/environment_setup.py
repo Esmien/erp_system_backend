@@ -18,11 +18,6 @@ fixture_async_session_maker = async_sessionmaker(
 )
 
 
-async def override_get_session():
-    async with fixture_async_session_maker() as session:
-        yield session
-
-
 async def override_get_admin_user():
     async with fixture_async_session_maker() as session:
         stmt = (
