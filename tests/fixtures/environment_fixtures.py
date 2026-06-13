@@ -7,6 +7,13 @@ from backend.api.dependencies.pagination import PaginationParams
 from tests.fixtures.environment_setup import fixture_async_session_maker
 
 
+@pytest.fixture
+def mock_redis():
+    mock = AsyncMock()
+    mock.get.return_value = None
+    return mock
+
+
 @pytest_asyncio.fixture
 async def db_session():
     async with fixture_async_session_maker() as session:

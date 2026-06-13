@@ -1,5 +1,4 @@
 from backend.api.dependencies.permissions import get_current_user
-from backend.api.main import app
 from tests.fixtures.environment_setup import override_get_regular_user
 
 
@@ -40,7 +39,7 @@ async def test_evaluate_task_already_evaluated(client, closed_task_id, evaluatio
     assert "уже оценена" in response.json()["detail"].lower()
 
 
-async def test_evaluate_task_forbidden(client, closed_task_id, evaluation_data):
+async def test_evaluate_task_forbidden(client, closed_task_id, evaluation_data, app):
     app.dependency_overrides[get_current_user] = override_get_regular_user
 
     response = await client.post(

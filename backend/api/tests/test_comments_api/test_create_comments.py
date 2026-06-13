@@ -1,5 +1,4 @@
 from backend.api.dependencies.permissions import get_current_user
-from backend.api.main import app
 from tests.fixtures.environment_setup import override_get_regular_user
 
 
@@ -23,7 +22,7 @@ async def test_add_comment_task_not_found(client):
     assert response.json()["detail"] == "Задача не найдена."
 
 
-async def test_add_comment_forbidden(client):
+async def test_add_comment_forbidden(client, app):
     app.dependency_overrides[get_current_user] = override_get_regular_user
 
     comment_data = {"text": "Попытка прокомментировать чужую задачу"}

@@ -1,5 +1,4 @@
 from backend.api.dependencies.permissions import get_current_user
-from backend.api.main import app
 from backend.core.enums import TaskStatus
 from tests.fixtures.environment_setup import override_get_regular_user
 
@@ -43,7 +42,7 @@ async def test_get_tasks_by_filters(client):
     assert items[0]["title"] == "Задача 2"
 
 
-async def test_get_all_tasks_forbidden(client):
+async def test_get_all_tasks_forbidden(client, app):
     app.dependency_overrides[get_current_user] = override_get_regular_user
 
     response = await client.get("/api/v1/tasks/?scope=all")

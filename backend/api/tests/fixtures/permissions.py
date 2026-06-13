@@ -9,5 +9,5 @@ def auth_service_mock():
 
 
 @pytest.fixture
-def rbac_service_mock():
-    return AsyncMock()
+def rbac_service_mock(rbac_service):
+    return rbac_service

@@ -1,14 +1,28 @@
+from redis.asyncio import Redis
+
+from backend.core.config import settings
 from backend.core.enums import BusinessElementName, Action
 from backend.core.policies import AccessLevel
 from backend.core.uow import IUnitOfWork
+from backend.core.utils.cache import rbac_cache
 from backend.exceptions import AccessDeniedError
-from backend.rbac.schemas import AccessContextDTO
+from backend.rbac.schemas import AccessContextDTO, AccessRuleDTO
 from backend.user.schemas import UserDTO
 
 
 class RbacService:
-    def __init__(self, uow: IUnitOfWork):
+    def __init__(self, uow: IUnitOfWork, redis: Redis):
         self.uow = uow
+        self.redis = redis
+
+    @rbac_cache(ttl=settings.redis.CACHE_TTL)
+    async def _get_rule(
+        self, role_id: int, business_element_name: str
+    ) -> AccessRuleDTO | None:
+        """Метод-прослойка для работы с кэшем"""
+        return await self.uow.rbac.get_access_rule(
+            role_id=role_id, business_element_name=business_element_name
+        )
 
     async def get_list_access_level(
         self,
@@ -34,7 +48,7 @@ class RbacService:
             AccessDeniedError - если прав у пользователя недостаточно
         """
         # Получаем правило из БД
-        rule = await self.uow.rbac.get_access_rule(
+        rule = await self._get_rule(
             role_id=user.role_id, business_element_name=business_element_name
         )
 
@@ -72,7 +86,7 @@ class RbacService:
         """
         context = context or AccessContextDTO()
 
-        rule = await self.uow.rbac.get_access_rule(
+        rule = await self._get_rule(
             role_id=role_id, business_element_name=business_element_name
         )
 

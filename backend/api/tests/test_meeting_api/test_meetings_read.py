@@ -1,5 +1,4 @@
 from backend.api.dependencies.permissions import get_current_user
-from backend.api.main import app
 from backend.api.tests.test_meeting_api.utils import get_future_times
 from tests.fixtures.environment_setup import (
     override_get_regular_user,
@@ -52,7 +51,7 @@ async def test_get_meeting_not_found(client):
     assert "не найдена" in response.json()["detail"].lower()
 
 
-async def test_get_meeting_forbidden(client):
+async def test_get_meeting_forbidden(client, app):
     start, end = get_future_times()
     create_resp = await client.post(
         "/api/v1/meetings/",
