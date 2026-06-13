@@ -1,7 +1,6 @@
 from backend.api.dependencies.reg_and_auth import (
     get_register_service,
 )
-from backend.api.main import app
 from backend.exceptions import RoleDoesNotExistError
 
 
@@ -36,7 +35,7 @@ def override_register_service():
 
 
 async def test_register_role_not_exists(
-    client, valid_data_for_register, reg_role_not_exists_response
+    client, valid_data_for_register, reg_role_not_exists_response, app
 ):
     old_dep = app.dependency_overrides.get(get_register_service)
     app.dependency_overrides[get_register_service] = override_register_service

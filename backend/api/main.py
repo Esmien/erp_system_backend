@@ -15,6 +15,7 @@ from backend.api.v1.routers.comments import router as comments_router
 from backend.api.v1.routers.evaluations import router as evaluations_router
 from backend.api.v1.routers.meetings import router as meetings_router
 from backend.core.database.engine import engine
+from backend.core.database.redis import init_redis, close_redis
 from backend.core.logger import setup_logger
 
 
@@ -27,8 +28,12 @@ async def lifespan(app: FastAPI):
     logger.info("API запущено, логгер сконфигурирован")
     logger.info(f"Подключение к БД: {settings.db.database_url.split('@')[-1]}")
 
+    await init_redis()
+    logger.info("Подключение к Redis установлено.")
+
     yield
 
+    await close_redis()
     logger.info("🛑 Сервис остановлен")
 
 

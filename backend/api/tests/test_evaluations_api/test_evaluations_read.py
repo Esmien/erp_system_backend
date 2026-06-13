@@ -1,5 +1,4 @@
 from backend.api.dependencies.permissions import get_current_user
-from backend.api.main import app
 from tests.fixtures.environment_setup import override_get_regular_user
 
 
@@ -33,7 +32,7 @@ async def test_get_evaluation_task_not_found(client):
     assert response.json()["detail"] == "Задача не найдена."
 
 
-async def test_get_evaluation_forbidden(client, closed_task_id, evaluation_data):
+async def test_get_evaluation_forbidden(client, closed_task_id, evaluation_data, app):
     # Ставим оценку под админом
     await client.post(
         f"/api/v1/tasks/{closed_task_id}/evaluation/", json=evaluation_data

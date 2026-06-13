@@ -1,5 +1,4 @@
 from backend.api.dependencies.permissions import get_current_user
-from backend.api.main import app
 from tests.fixtures.environment_setup import (
     override_get_regular_user,
 )
@@ -17,7 +16,7 @@ async def test_delete_task_success(client, open_task_json):
     assert get_response.status_code == 404
 
 
-async def test_delete_foreign_task_forbidden(client, open_task_json):
+async def test_delete_foreign_task_forbidden(client, open_task_json, app):
     create_response = await client.post("/api/v1/tasks/", json=open_task_json)
     task_id = create_response.json().get("id")
 
