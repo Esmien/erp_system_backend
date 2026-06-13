@@ -67,7 +67,7 @@ jobs:
           DB_PASSWORD: postgres
           DB_NAME: business_management
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
-          REDIS_HOST: ${{ secrets.REDIS_HOST }}
-          REDIS_PORT: ${{ secrets.REDIS_PORT }}
+          REDIS_HOST: redis
+          REDIS_PORT: 6389
         run: |
           poetry run pytest --asyncio-mode=auto -v
