@@ -1,7 +1,6 @@
 import pytest
 
 from backend.api.dependencies.permissions import get_current_user
-from backend.api.main import app
 from tests.fixtures.environment_setup import override_get_regular_user
 
 
@@ -33,7 +32,7 @@ async def test_get_comments_of_not_exists_task(client):
     assert response.status_code == 404
 
 
-async def test_get_comments_forbidden(client):
+async def test_get_comments_forbidden(client, app):
     app.dependency_overrides[get_current_user] = override_get_regular_user
 
     await client.post(

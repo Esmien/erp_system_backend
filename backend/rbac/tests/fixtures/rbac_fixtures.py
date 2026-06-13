@@ -15,8 +15,8 @@ def mock_rbac_service():
 
 
 @pytest.fixture
-def rbac_service(mock_uow):
-    return RbacService(uow=mock_uow)
+def rbac_service(mock_uow, mock_redis):
+    return RbacService(uow=mock_uow, redis=mock_redis)
 
 
 @pytest.fixture
