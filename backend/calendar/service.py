@@ -1,7 +1,6 @@
 import calendar
 from datetime import date, datetime, time, timezone
 
-from backend.api.dependencies.pagination import PaginationParams, Page
 from backend.core.uow import IUnitOfWork
 from backend.calendar.schemas import CalendarResponse
 from backend.user.schemas import UserDTO
@@ -16,14 +15,13 @@ class CalendarService:
         user: UserDTO,
         year: int,
         month: int,
-        params: PaginationParams,
         day: int | None = None,
     ) -> CalendarResponse:
         """
         Собирает DTO со списками встреч и задач за выбранные даты
 
         Args:
-            user - позьзователь, который запрашивает данные
+            user - пользователь, который запрашивает данные
             year - год, за который нужны данные
             month - месяц, за который нужны данные
             day - день, за который нужны данные
@@ -46,30 +44,16 @@ class CalendarService:
         end_dt = datetime.combine(end_date, time.max, tzinfo=timezone.utc)
 
         async with self.uow:
-            # Получаем кортежи (items, total) из обновленных репозиториев
-            tasks_items, tasks_total = await self.uow.tasks.get_tasks_by_date_range(
-                offset=params.offset,
-                limit=params.limit,
+            # Получаем встречи и задачи
+            tasks_items = await self.uow.tasks.get_tasks_by_date_range(
                 user_id=user.id,
                 start_date=start_date,
                 end_date=end_date,
             )
-            (
-                meetings_items,
-                meetings_total,
-            ) = await self.uow.meetings.get_meetings_by_date_range(
-                offset=params.offset,
-                limit=params.limit,
+            meetings_items = await self.uow.meetings.get_meetings_by_date_range(
                 user_id=user.id,
-                start_dt=start_dt,
-                end_dt=end_dt,
+                start_date=start_dt,
+                end_date=end_dt,
             )
 
-        # Заворачиваем каждый список в отдельную страницу
-        tasks_page = Page.create(items=tasks_items, total=tasks_total, params=params)
-        meetings_page = Page.create(
-            items=meetings_items, total=meetings_total, params=params
-        )
-
-        # Отдаем в общую DTO календаря
-        return CalendarResponse(tasks=tasks_page, meetings=meetings_page)
+        return CalendarResponse(tasks=tasks_items, meetings=meetings_items)

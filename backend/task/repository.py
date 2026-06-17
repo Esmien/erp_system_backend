@@ -51,20 +51,18 @@ class TaskRepository(BaseRepository[Task, TaskRead]):
         return await self._paginate_statement(stmt=stmt, limit=limit, offset=offset)
 
     async def get_tasks_by_date_range(
-        self, offset: int, limit: int, user_id: int, start_date: date, end_date: date
-    ) -> tuple[list[TaskRead], int]:
+        self, user_id: int, start_date: date, end_date: date
+    ) -> list[TaskRead]:
         """
         Возвращает все доступные пользователю задачи за выбранный период
 
         Args:
-            offset - смещение указателя при чтении большого количества данных
-            limit - ограничение на количество выдаваемых за раз данных
             user_id - ID запрашивающего пользователя
             start_date - начало периода
             end_date - конец периода
 
         Returns:
-            Пагинированный список отфильтрованных задач и общее их количество
+            Список отфильтрованных задач
         """
         stmt = select(Task).where(
             and_(
@@ -74,4 +72,7 @@ class TaskRepository(BaseRepository[Task, TaskRead]):
             )
         )
 
-        return await self._paginate_statement(stmt=stmt, limit=limit, offset=offset)
+        result = await self.session.execute(statement=stmt)
+        tasks = result.scalars().all()
+
+        return [TaskRead.model_validate(obj=task) for task in tasks]
