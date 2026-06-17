@@ -228,12 +228,10 @@ class TestMeetingRepository:
         )
 
         # Ищем встречи за ближайшие 3 дня
-        meetings, total = await meeting_repo.get_meetings_by_date_range(
-            offset=0,
-            limit=20,
+        meetings = await meeting_repo.get_meetings_by_date_range(
             user_id=user_id,
-            start_dt=base_time,
-            end_dt=base_time + timedelta(days=3),
+            start_date=base_time,
+            end_date=base_time + timedelta(days=3),
         )
 
         assert len(meetings) == 1

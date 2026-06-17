@@ -196,24 +196,20 @@ class MeetingRepository(BaseRepository[Meeting, MeetingReadWithParticipants]):
 
     async def get_meetings_by_date_range(
         self,
-        offset: int,
-        limit: int,
         user_id: int,
-        start_dt: datetime,
-        end_dt: datetime,
-    ) -> tuple[list[MeetingReadWithParticipants], int]:
+        start_date: datetime,
+        end_date: datetime,
+    ) -> list[MeetingReadWithParticipants]:
         """
         Получает встречи за указанный период
 
         Args:
-            offset - смещение указателя при чтении большого количества данных
-            limit - ограничение на количество выдаваемых за раз данных
             user_id - ID пользователя, который запрашивает встречи
             start_dt - начало периода
             end_dt - конец периода
 
         Returns:
-            Пагинированный список отфильтрованных встреч и общее количество встреч
+            Список отфильтрованных встреч
         """
         stmt = (
             select(Meeting)
@@ -227,12 +223,18 @@ class MeetingRepository(BaseRepository[Meeting, MeetingReadWithParticipants]):
                         Meeting.participants.any(User.id == user_id),
                     ),
                     # Фильтруем по датам
-                    Meeting.datetime_start >= start_dt,
-                    Meeting.datetime_start <= end_dt,
+                    Meeting.datetime_start >= start_date,
+                    Meeting.datetime_start <= end_date,
                 )
             )
             # Сортируем - новые сверху
             .order_by(Meeting.datetime_start.asc())
         )
 
-        return await self._paginate_statement(stmt=stmt, limit=limit, offset=offset)
+        result = await self.session.execute(statement=stmt)
+        meetings = result.scalars().all()
+
+        return [
+            MeetingReadWithParticipants.model_validate(obj=meeting)
+            for meeting in meetings
+        ]
