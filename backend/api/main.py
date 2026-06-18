@@ -1,5 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+from fastapi.middleware import Middleware
+from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 from sqladmin import Admin
 
@@ -38,11 +40,24 @@ async def lifespan(app: FastAPI):
     logger.info("🛑 Сервис остановлен")
 
 
+middleware = [
+    Middleware(
+        CORSMiddleware,  # type: ignore
+        allow_origins=["http://localhost:8000"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+]
+
+
 app = FastAPI(
     title="Business Management Platform",
+    middleware=middleware,
     version="0.1.0",
     lifespan=lifespan,
 )
+
 
 # Подключаем роутеры
 app.include_router(router=auth_router, prefix="/api/v1")
@@ -55,6 +70,7 @@ app.include_router(router=meetings_router, prefix="/api/v1")
 app.include_router(router=calendar_router, prefix="/api/v1")
 
 setup_exception_handlers(app=app)
+
 authentication_backend = AdminAuth(secret_key=settings.security.SECRET_KEY)
 admin = Admin(
     app=app,
