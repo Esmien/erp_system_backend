@@ -43,12 +43,6 @@ class RegisterService:
             RoleDoesNotExistsError - присваиваемая роль не найдена
         """
         async with self.uow:
-            # Проверка на существование пользователя с переданным email
-            is_user_exists = await self.uow.register.check_user_exists(user_in=user_in)
-            if is_user_exists:
-                logger.info(f"Пользователь {user_in.email} уже зарегистрирован.")
-                raise UserExistsError("Пользователь с таким email уже зарегистрирован!")
-
             # Защита от присвоения несуществующей роли
             role_id = await self.uow.register.get_role_id(role_name=role_name)
             # Проблема на стороне сервера, роль не найдена
@@ -66,9 +60,11 @@ class RegisterService:
                 is_active=True,
             )
 
-            registered_user: UserDTO = await self.uow.register.register_user(
-                new_user_dto
-            )
+            registered_user = await self.uow.register.register_user(new_user_dto)
+
+            if not registered_user:
+                logger.info(f"Пользователь {user_in.email} уже зарегистрирован.")
+                raise UserExistsError("Пользователь с таким email уже зарегистрирован!")
 
             # Регистрируем
             await self.uow.commit()

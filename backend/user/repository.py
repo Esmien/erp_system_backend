@@ -1,19 +1,20 @@
 from typing import Any
 
 from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from backend.core.enums import RoleName
 from backend.user.models import User, Role
-from backend.user.schemas import UserRegister, UserDTO, UserCreateDTO
+from backend.user.schemas import UserDTO, UserCreateDTO
 
 
 class RegisterRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def register_user(self, user_to_register: UserCreateDTO) -> UserDTO:
+    async def register_user(self, user_to_register: UserCreateDTO) -> UserDTO | None:
         """
         Регистрирует пользователя после всех проверок
 
@@ -23,31 +24,28 @@ class RegisterRepository:
         Returns:
             Модель зарегистрированного пользователя с подгруженной ролью
         """
-        new_user = User(**user_to_register.model_dump(exclude_none=True))
-        self.session.add(instance=new_user)
-        await self.session.flush()
+        stmt = (
+            insert(User)
+            .values(**user_to_register.model_dump(exclude_none=True))
+            .on_conflict_do_nothing(index_elements=[User.email])
+            .returning(User.id)
+        )
+
+        # Если email уникальный, то получим ID пользователя, если нет - None
+        new_user_id = await self.session.scalar(statement=stmt)
+
+        if not new_user_id:
+            return None
 
         # Подгружаем роль пользователя
-        stmt = (
-            select(User).where(User.id == new_user.id).options(selectinload(User.role))
+        stmt_select = (
+            select(User).where(User.id == new_user_id).options(selectinload(User.role))
         )
-        result = await self.session.execute(statement=stmt)
-        user_with_role = result.scalar_one()
+
+        result_select = await self.session.execute(stmt_select)
+        user_with_role = result_select.scalar_one()
 
         return UserDTO.model_validate(obj=user_with_role)
-
-    async def check_user_exists(self, user_in: UserRegister) -> bool:
-        """
-        Проверяет по email, зарегистрирован ли пользователь
-        Args:
-            user_in - Pydantic-модель пользователя для регистрации
-
-        Returns:
-            True - если пользователь существует, False - если нет
-        """
-        stmt = select(User).where(User.email == user_in.email)
-        result = await self.session.execute(statement=stmt)
-        return result.scalar_one_or_none() is not None
 
     async def get_role_id(self, role_name: RoleName) -> int | None:
         """
