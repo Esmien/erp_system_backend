@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -24,5 +24,5 @@ def sample_comment():
         task_id=1,
         author_id=2,
         text="Тестовый комментарий",
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )

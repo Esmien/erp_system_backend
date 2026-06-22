@@ -1,12 +1,13 @@
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
 
 from backend.api.dependencies.evaluations import EvaluationCreateBody
 from backend.core.enums import (
-    TaskStatus,
     TASK_NOT_FOUND,
-    BusinessElementName,
     Action,
+    BusinessElementName,
+    TaskStatus,
 )
 from backend.evaluation.schemas import (
     EvaluationCreate,
@@ -14,9 +15,9 @@ from backend.evaluation.schemas import (
 )
 from backend.exceptions import (
     AccessDeniedError,
-    TaskNotCompletedError,
-    TaskDoesNotExistError,
     TaskAlreadyEvaluatedError,
+    TaskDoesNotExistError,
+    TaskNotCompletedError,
 )
 from backend.rbac.schemas import AccessContextDTO
 
@@ -28,9 +29,7 @@ async def test_evaluate_task_access_denied(eval_service, test_user):
     evaluation_in = EvaluationCreate(value=5, comment="Test")
 
     with pytest.raises(AccessDeniedError):
-        await eval_service.evaluate_task(
-            task_id=1, evaluation_in=evaluation_in, user=test_user
-        )
+        await eval_service.evaluate_task(task_id=1, evaluation_in=evaluation_in, user=test_user)
 
 
 async def test_evaluate_task_not_completed(eval_service, mock_uow, test_user):
@@ -41,9 +40,7 @@ async def test_evaluate_task_not_completed(eval_service, mock_uow, test_user):
     evaluation_in = EvaluationCreate(value=5)
 
     with pytest.raises(TaskNotCompletedError, match="Задача еще не выполнена"):
-        await eval_service.evaluate_task(
-            task_id=1, evaluation_in=evaluation_in, user=test_user
-        )
+        await eval_service.evaluate_task(task_id=1, evaluation_in=evaluation_in, user=test_user)
 
 
 async def test_evaluate_task_success(eval_service, mock_uow, test_user):
@@ -56,9 +53,7 @@ async def test_evaluate_task_success(eval_service, mock_uow, test_user):
 
     evaluation_in = EvaluationCreate(value=5, comment="Good")
 
-    result = await eval_service.evaluate_task(
-        task_id=1, evaluation_in=evaluation_in, user=test_user
-    )
+    result = await eval_service.evaluate_task(task_id=1, evaluation_in=evaluation_in, user=test_user)
 
     mock_uow.commit.assert_awaited_once()
     assert result == "saved_evaluation_mock"
@@ -80,9 +75,7 @@ async def test_get_my_statistics(eval_service, mock_uow, test_user):
     result = await eval_service.get_my_statistics(user=test_user)
 
     # Проверяем, что UoW был вызван с правильным ID и вернул нужный DTO
-    mock_uow.evaluations.get_user_statistics.assert_awaited_once_with(
-        user_id=test_user.id
-    )
+    mock_uow.evaluations.get_user_statistics.assert_awaited_once_with(user_id=test_user.id)
     assert result.average_evaluation == 4.8
     assert result.tasks_evaluated_count == 10
 
@@ -93,9 +86,7 @@ async def test_evaluate_task_not_found(eval_service, mock_uow, test_user):
     evaluation_in = EvaluationCreateBody(value=5)
 
     with pytest.raises(TaskDoesNotExistError, match=TASK_NOT_FOUND):
-        await eval_service.evaluate_task(
-            task_id=999, evaluation_in=evaluation_in, user=test_user
-        )
+        await eval_service.evaluate_task(task_id=999, evaluation_in=evaluation_in, user=test_user)
 
 
 async def test_evaluate_task_already_evaluated(eval_service, mock_uow, test_user):
@@ -109,9 +100,7 @@ async def test_evaluate_task_already_evaluated(eval_service, mock_uow, test_user
     evaluation_in = EvaluationCreateBody(value=5)
 
     with pytest.raises(TaskAlreadyEvaluatedError, match="Эта задача уже оценена"):
-        await eval_service.evaluate_task(
-            task_id=1, evaluation_in=evaluation_in, user=test_user
-        )
+        await eval_service.evaluate_task(task_id=1, evaluation_in=evaluation_in, user=test_user)
 
 
 async def test_get_evaluation_task_not_found(eval_service, mock_uow, test_user):

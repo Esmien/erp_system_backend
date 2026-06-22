@@ -1,4 +1,5 @@
 from redis.asyncio import Redis, from_url
+
 from backend.core.config import settings
 
 # Глобальная переменная для хранения пула соединений
@@ -8,9 +9,7 @@ redis_client: Redis | None = None
 async def init_redis() -> None:
     """Инициализирует подключение к Redis"""
     global redis_client
-    redis_client = from_url(
-        settings.redis.redis_url, encoding="utf-8", decode_responses=True
-    )
+    redis_client = from_url(settings.redis.redis_url, encoding="utf-8", decode_responses=True)
 
 
 def get_redis() -> Redis:

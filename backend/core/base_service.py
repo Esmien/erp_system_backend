@@ -1,10 +1,11 @@
 from abc import ABC, abstractmethod
-from typing import TypeVar, Generic, Any
+from typing import Any, TypeVar
+
 from pydantic import BaseModel
 
 from backend.core.base_repository import BaseRepository
-from backend.core.uow import IUnitOfWork
 from backend.core.enums import Action, BusinessElementName
+from backend.core.uow import IUnitOfWork
 from backend.rbac.schemas import AccessContextDTO
 from backend.rbac.service import RbacService
 from backend.user.schemas import UserDTO
@@ -12,7 +13,7 @@ from backend.user.schemas import UserDTO
 DTOType = TypeVar("DTOType", bound=BaseModel)
 
 
-class BaseService(ABC, Generic[DTOType]):
+class BaseService[DTOType: BaseModel](ABC):
     def __init__(self, uow: IUnitOfWork, rbac_service: RbacService):
         self.uow = uow
         self.rbac = rbac_service
@@ -76,17 +77,13 @@ class BaseService(ABC, Generic[DTOType]):
             await self.uow.commit()
             return obj
 
-    async def update(
-        self, obj_id: int, update_data: dict[str, Any], user: UserDTO
-    ) -> DTOType:
+    async def update(self, obj_id: int, update_data: dict[str, Any], user: UserDTO) -> DTOType:
         """Универсальное обновление"""
         async with self.uow:
             obj = await self.get_or_raise(obj_id=obj_id)
             await self.check_permissions(user=user, action=Action.UPDATE, obj=obj)
 
-            updated_obj = await self.repository.update(
-                obj_id=obj_id, update_data=update_data
-            )
+            updated_obj = await self.repository.update(obj_id=obj_id, update_data=update_data)
             if not updated_obj:
                 raise self.not_found_exception
 

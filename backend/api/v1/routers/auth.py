@@ -7,10 +7,8 @@ from backend.api.dependencies.reg_and_auth import (
     AuthServiceDepends,
     RegisterServiceDepends,
 )
-
-from backend.user.schemas import UserRead, Token, UserRegister, UserChangeStatus
 from backend.core.utils.error_schemas import ErrorResponseSchema
-
+from backend.user.schemas import Token, UserChangeStatus, UserRead, UserRegister
 
 router = APIRouter(prefix="/auth", tags=["Аутентификация"])
 

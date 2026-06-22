@@ -1,9 +1,10 @@
 # Для аннотаций во избежание циклических импортов
 from __future__ import annotations
-from typing import TYPE_CHECKING
 
 from datetime import datetime
-from sqlalchemy import String, Text, DateTime, func
+from typing import TYPE_CHECKING
+
+from sqlalchemy import DateTime, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.core.database.engine import Base
@@ -22,9 +23,7 @@ class Team(Base):
     __tablename__ = "teams"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(
-        String(100), unique=True, nullable=False, comment="Название команды"
-    )
+    name: Mapped[str] = mapped_column(String(100), unique=True, nullable=False, comment="Название команды")
     description: Mapped[str | None] = mapped_column(Text, comment="Описание команды")
     invite_code: Mapped[str] = mapped_column(
         String(6),

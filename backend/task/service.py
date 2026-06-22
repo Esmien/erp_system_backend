@@ -2,28 +2,28 @@ from typing import Literal
 
 from loguru import logger
 
-from backend.api.dependencies.pagination import PaginationParams, Page
+from backend.api.dependencies.pagination import Page, PaginationParams
 from backend.core.base_service import BaseService
 from backend.core.enums import (
-    TaskStatus,
     TASK_NOT_FOUND,
-    BusinessElementName,
     Action,
+    BusinessElementName,
+    TaskStatus,
+)
+from backend.exceptions import (
+    TaskDoesNotExistError,
+    TeamDoesNotExistError,
+    UserDoesNotExistError,
 )
 from backend.rbac.schemas import AccessContextDTO
 from backend.task.repository import TaskRepository
 from backend.task.schemas import (
-    TaskCreate,
-    TaskUpdate,
-    TaskRead,
     TaskChangeStatus,
+    TaskCreate,
+    TaskRead,
+    TaskUpdate,
 )
 from backend.user.schemas import UserDTO
-from backend.exceptions import (
-    TaskDoesNotExistError,
-    UserDoesNotExistError,
-    TeamDoesNotExistError,
-)
 
 
 class TaskService(BaseService[TaskRead]):
@@ -77,9 +77,7 @@ class TaskService(BaseService[TaskRead]):
 
         if scope == "team":
             if not user.team_id:
-                raise TeamDoesNotExistError(
-                    f"Пользователь {user.email} не состоит в команде"
-                )
+                raise TeamDoesNotExistError(f"Пользователь {user.email} не состоит в команде")
             team_id_filter = user.team_id
 
         async with self.uow:
@@ -127,19 +125,13 @@ class TaskService(BaseService[TaskRead]):
                 error_msg="Вы не можете создавать задачи",
             )
 
-            new_task = await self.repository.create(
-                **task_in.model_dump(), author_id=author.id
-            )
+            new_task = await self.repository.create(**task_in.model_dump(), author_id=author.id)
             await self.uow.commit()
 
-        logger.info(
-            f"Задача '{new_task.title}' успешно создана пользователем {author.email}"
-        )
+        logger.info(f"Задача '{new_task.title}' успешно создана пользователем {author.email}")
         return new_task
 
-    async def update_task(
-        self, task_id: int, update_data: TaskUpdate, user: UserDTO
-    ) -> TaskRead:
+    async def update_task(self, task_id: int, update_data: TaskUpdate, user: UserDTO) -> TaskRead:
         """
         Обновляет задачу с проверкой прав
 
@@ -177,13 +169,9 @@ class TaskService(BaseService[TaskRead]):
             if executor_id is not None:
                 executor = await self.uow.auth.get_user_and_role_by_user_id(executor_id)
                 if not executor:
-                    raise UserDoesNotExistError(
-                        "Попытка назначить несуществующего исполнителя"
-                    )
+                    raise UserDoesNotExistError("Попытка назначить несуществующего исполнителя")
 
-            updated_task = await self.repository.update(
-                obj_id=task_id, update_data=update_dict
-            )
+            updated_task = await self.repository.update(obj_id=task_id, update_data=update_dict)
             # Если что-то пошло не так на стороне репозитория
             if not updated_task:
                 raise self.not_found_exception
@@ -193,9 +181,7 @@ class TaskService(BaseService[TaskRead]):
         logger.info(f"Задача ID {task_id} обновлена пользователем {user.email}")
         return updated_task
 
-    async def change_status(
-        self, task_id: int, new_status: TaskChangeStatus, user: UserDTO
-    ) -> TaskRead:
+    async def change_status(self, task_id: int, new_status: TaskChangeStatus, user: UserDTO) -> TaskRead:
         """
         Меняет статус задачи (Task.status)
 
@@ -221,9 +207,7 @@ class TaskService(BaseService[TaskRead]):
                 error_msg="Вы не можете изменить статус этой задачи",
             )
 
-            updated_task = await self.repository.update(
-                obj_id=task_id, update_data=new_status.model_dump()
-            )
+            updated_task = await self.repository.update(obj_id=task_id, update_data=new_status.model_dump())
 
             # Если что-то пошло не так на стороне репозитория
             if not updated_task:

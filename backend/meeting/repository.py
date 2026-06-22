@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import select, and_, or_
+from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -16,13 +16,9 @@ from backend.user.models import User
 
 class MeetingRepository(BaseRepository[Meeting, MeetingReadWithParticipants]):
     def __init__(self, session: AsyncSession):
-        super().__init__(
-            session=session, model=Meeting, dto=MeetingReadWithParticipants
-        )
+        super().__init__(session=session, model=Meeting, dto=MeetingReadWithParticipants)
 
-    async def _get_instance(
-        self, obj_id: int, for_update: bool = False
-    ) -> Meeting | None:
+    async def _get_instance(self, obj_id: int, for_update: bool = False) -> Meeting | None:
         """
         Переопределение метода базового класса.
         Все CRUD теперь подтягивают участников через selectinload
@@ -34,11 +30,7 @@ class MeetingRepository(BaseRepository[Meeting, MeetingReadWithParticipants]):
         Returns:
             ORM-модель встречи со списком участников или None, если встреча не нашлась
         """
-        stmt = (
-            select(self.model)
-            .where(self.model.id == obj_id)
-            .options(selectinload(self.model.participants))
-        )
+        stmt = select(self.model).where(self.model.id == obj_id).options(selectinload(self.model.participants))
 
         if for_update:
             stmt = stmt.with_for_update()
@@ -86,9 +78,7 @@ class MeetingRepository(BaseRepository[Meeting, MeetingReadWithParticipants]):
         result = await self.session.execute(statement=stmt)
         return list(result.scalars().all())
 
-    async def create_meeting(
-        self, meeting_in: MeetingCreateDTO
-    ) -> MeetingReadWithParticipants:
+    async def create_meeting(self, meeting_in: MeetingCreateDTO) -> MeetingReadWithParticipants:
         """
         Создает новую встречу
 
@@ -234,7 +224,4 @@ class MeetingRepository(BaseRepository[Meeting, MeetingReadWithParticipants]):
         result = await self.session.execute(statement=stmt)
         meetings = result.scalars().all()
 
-        return [
-            MeetingReadWithParticipants.model_validate(obj=meeting)
-            for meeting in meetings
-        ]
+        return [MeetingReadWithParticipants.model_validate(obj=meeting) for meeting in meetings]

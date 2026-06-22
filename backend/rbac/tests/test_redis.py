@@ -20,9 +20,7 @@ async def test_get_rule_cache_miss_saves_to_redis(
     mock_uow.rbac.get_access_rule.return_value = dummy_rule
 
     # Вызываем метод
-    result = await rbac_service._get_rule(
-        role_id=1, business_element_name=BusinessElementName.TASKS
-    )
+    result = await rbac_service._get_rule(role_id=1, business_element_name=BusinessElementName.TASKS)
 
     # Проверки
     assert result == dummy_rule
@@ -31,9 +29,7 @@ async def test_get_rule_cache_miss_saves_to_redis(
     mock_redis.get.assert_called_once_with("rbac:rule:1:tasks")
 
     # Убеждаемся, что мы сходили в БД
-    mock_uow.rbac.get_access_rule.assert_called_once_with(
-        role_id=1, business_element_name=BusinessElementName.TASKS
-    )
+    mock_uow.rbac.get_access_rule.assert_called_once_with(role_id=1, business_element_name=BusinessElementName.TASKS)
 
     # Убеждаемся, что данные были записаны в кэш с правильным ключом
     mock_redis.setex.assert_called_once()
@@ -56,9 +52,7 @@ async def test_get_rule_cache_hit_bypasses_db(
     mock_redis.get.return_value = dummy_rule.model_dump_json()
 
     # Вызываем метод
-    result = await rbac_service._get_rule(
-        role_id=1, business_element_name=BusinessElementName.TASKS
-    )
+    result = await rbac_service._get_rule(role_id=1, business_element_name=BusinessElementName.TASKS)
 
     # Проверки
     # Убеждаемся, что Pydantic-модель корректно собралась из строки
@@ -74,9 +68,7 @@ async def test_get_rule_cache_hit_bypasses_db(
     mock_redis.setex.assert_not_called()
 
 
-async def test_get_rule_not_found_in_db(
-    rbac_service: RbacService, mock_uow: AsyncMock, mock_redis: AsyncMock
-):
+async def test_get_rule_not_found_in_db(rbac_service: RbacService, mock_uow: AsyncMock, mock_redis: AsyncMock):
     """
     Сценарий 3: Промах кэша, и в БД такого правила тоже нет.
     Ожидаем: кэш не перезаписывается пустым значением.
@@ -84,9 +76,7 @@ async def test_get_rule_not_found_in_db(
     mock_redis.get.return_value = None
     mock_uow.rbac.get_access_rule.return_value = None
 
-    result = await rbac_service._get_rule(
-        role_id=999, business_element_name=BusinessElementName.TASKS
-    )
+    result = await rbac_service._get_rule(role_id=999, business_element_name=BusinessElementName.TASKS)
 
     assert result is None
     mock_redis.get.assert_called_once()

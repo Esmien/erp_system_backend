@@ -1,10 +1,10 @@
-from sqladmin import ModelView
 from fastapi import Request
+from sqladmin import ModelView
 
+from backend.task.models import Task
+from backend.team.models import Team
 from backend.team.service import TeamService
 from backend.user.models import User
-from backend.team.models import Team
-from backend.task.models import Task
 
 
 class UserAdmin(ModelView, model=User):
@@ -42,9 +42,7 @@ class TeamAdmin(ModelView, model=Team):
     form_excluded_columns = [Team.invite_code, Team.created_at]
     column_searchable_list = [Team.name]
 
-    async def on_model_change(
-        self, data: dict, model: Team, is_created: bool, request: Request
-    ) -> None:
+    async def on_model_change(self, data: dict, model: Team, is_created: bool, request: Request) -> None:
         if is_created:
             data["invite_code"] = TeamService.generate_invite_code()
 

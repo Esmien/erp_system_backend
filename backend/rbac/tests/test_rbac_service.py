@@ -1,7 +1,8 @@
 import pytest
+
 from backend.core.enums import BusinessElementName
-from backend.rbac.schemas import AccessRuleDTO, AccessContextDTO
 from backend.core.policies import AccessLevel
+from backend.rbac.schemas import AccessContextDTO, AccessRuleDTO
 
 
 @pytest.mark.parametrize(
@@ -33,17 +34,11 @@ from backend.core.policies import AccessLevel
         (False, "read", None, None, False),  # Правила нет в БД
     ],
 )
-async def test_check_permission(
-    rbac_service, mock_uow, rule_exists, action, rule_access, context, expected_result
-):
+async def test_check_permission(rbac_service, mock_uow, rule_exists, action, rule_access, context, expected_result):
     if rule_exists:
         # Если проверяем неизвестное действие, кладем в базу валидное (например, "read"),
         # чтобы неизвестного действия там точно не оказалось.
-        policy_dict = (
-            {"read": rule_access}
-            if action == "unknown_action"
-            else {action: rule_access}
-        )
+        policy_dict = {"read": rule_access} if action == "unknown_action" else {action: rule_access}
 
         rule_data = {
             "id": 1,

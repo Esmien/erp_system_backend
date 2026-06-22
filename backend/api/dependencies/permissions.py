@@ -4,13 +4,12 @@ import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 
+from backend.api.dependencies.reg_and_auth import AuthServiceDepends
 from backend.core.config import settings
 from backend.exceptions import (
     UserDoesNotExistError,
     UserNotActiveError,
 )
-
-from backend.api.dependencies.reg_and_auth import AuthServiceDepends
 from backend.user.schemas import UserDTO
 
 # Извлекает Bearer-токен из заголовка Authorization
@@ -52,14 +51,14 @@ async def get_current_user(
         if user_id is None:
             raise credentials_exception
     except jwt.InvalidTokenError:
-        raise credentials_exception
+        raise credentials_exception from None
 
     # Проверяем, активен ли пользователь (is_active=True)
     try:
         user = await auth_service.get_active_user_by_id(user_id=int(user_id))
         return user
     except (UserDoesNotExistError, UserNotActiveError):
-        raise credentials_exception
+        raise credentials_exception from None
 
 
 CurrentUserDepends = Annotated[UserDTO, Depends(get_current_user)]

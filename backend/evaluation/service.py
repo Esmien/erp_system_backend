@@ -1,21 +1,21 @@
 from backend.core.base_service import BaseService
 from backend.core.enums import (
-    BusinessElementName,
     Action,
+    BusinessElementName,
     TaskStatus,
 )
 from backend.evaluation.repository import EvaluationRepository
-from backend.exceptions import (
-    TaskDoesNotExistError,
-    TaskAlreadyEvaluatedError,
-    TaskNotCompletedError,
-    EvaluationDoesNotExistError,
-)
 from backend.evaluation.schemas import (
     EvaluationCreate,
-    EvaluationRead,
     EvaluationCreateDTO,
+    EvaluationRead,
     UserStatisticsRead,
+)
+from backend.exceptions import (
+    EvaluationDoesNotExistError,
+    TaskAlreadyEvaluatedError,
+    TaskDoesNotExistError,
+    TaskNotCompletedError,
 )
 from backend.rbac.schemas import AccessContextDTO
 from backend.task.schemas import TaskRead
@@ -43,9 +43,7 @@ class EvaluationService(BaseService[EvaluationRead]):
 
         return task
 
-    async def evaluate_task(
-        self, task_id: int, evaluation_in: EvaluationCreate, user: UserDTO
-    ) -> EvaluationRead:
+    async def evaluate_task(self, task_id: int, evaluation_in: EvaluationCreate, user: UserDTO) -> EvaluationRead:
         """
         Выставляет оценку к задаче
 
@@ -95,9 +93,7 @@ class EvaluationService(BaseService[EvaluationRead]):
 
             return saved_eval
 
-    async def get_evaluation(
-        self, task_id: int, user: UserDTO
-    ) -> EvaluationRead | None:
+    async def get_evaluation(self, task_id: int, user: UserDTO) -> EvaluationRead | None:
         """
         Получает оценку к задаче
 
@@ -116,9 +112,7 @@ class EvaluationService(BaseService[EvaluationRead]):
             task = await self._get_task(task_id=task_id)
 
             # Проверяем причастность юзера к задаче
-            is_participant = (task.author_id == user.id) or (
-                task.executor_id == user.id
-            )
+            is_participant = (task.author_id == user.id) or (task.executor_id == user.id)
             context = AccessContextDTO(is_participant=is_participant)
 
             # Проверяем права на чтение с учетом контекста

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, status, Depends
+from fastapi import APIRouter, Depends, status
 
 from backend.api.dependencies.evaluations import EvaluationServiceDepends
 from backend.api.dependencies.permissions import CurrentUserDepends, get_current_user
@@ -71,9 +71,7 @@ async def update_my_info(
     Обновляет личные данные пользователя
     Можно передать только те поля, которые нужно изменить (например, только name)
     """
-    updated_user = await service.update_profile(
-        user=current_user, update_data=update_data
-    )
+    updated_user = await service.update_profile(user=current_user, update_data=update_data)
     return updated_user
 
 

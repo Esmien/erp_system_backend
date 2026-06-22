@@ -1,33 +1,31 @@
 from loguru import logger
 
-from backend.core.enums import RoleName, BusinessElementName, Action
-from backend.core.uow import IUnitOfWork
-from backend.rbac.schemas import AccessContextDTO
-from backend.rbac.service import RbacService
-from backend.user.schemas import Token, UserRegister, UserUpdate, UserCreateDTO, UserDTO
-from backend.exceptions import (
-    UserExistsError,
-    UserNotActiveError,
-    UserDoesNotExistError,
-    RoleDoesNotExistError,
-    UserAlreadyActiveError,
-    InvalidPasswordError,
-    BadCredentialsError,
-)
+from backend.core.enums import Action, BusinessElementName, RoleName
 from backend.core.security import (
-    verify_password,
     create_access_token,
     get_password_hash,
+    verify_password,
 )
+from backend.core.uow import IUnitOfWork
+from backend.exceptions import (
+    BadCredentialsError,
+    InvalidPasswordError,
+    RoleDoesNotExistError,
+    UserAlreadyActiveError,
+    UserDoesNotExistError,
+    UserExistsError,
+    UserNotActiveError,
+)
+from backend.rbac.schemas import AccessContextDTO
+from backend.rbac.service import RbacService
+from backend.user.schemas import Token, UserCreateDTO, UserDTO, UserRegister, UserUpdate
 
 
 class RegisterService:
     def __init__(self, uow: IUnitOfWork):
         self.uow = uow
 
-    async def register_user(
-        self, user_in: UserRegister, role_name: RoleName = RoleName.USER
-    ) -> UserDTO:
+    async def register_user(self, user_in: UserRegister, role_name: RoleName = RoleName.USER) -> UserDTO:
         """
         Регистрирует пользователя, присваивая ему роль
 
@@ -48,9 +46,7 @@ class RegisterService:
             # Проблема на стороне сервера, роль не найдена
             if not role_id:
                 logger.error(f"Ошибка! Роль {role_name} не найдена.")
-                raise RoleDoesNotExistError(
-                    "Запрашиваемая роль не найдена, обратитесь в поддержку"
-                )
+                raise RoleDoesNotExistError("Запрашиваемая роль не найдена, обратитесь в поддержку")
 
             # Собираем модель пользователя со всеми полями
             new_user_dto = UserCreateDTO(
@@ -68,9 +64,7 @@ class RegisterService:
 
             # Регистрируем
             await self.uow.commit()
-            logger.info(
-                f"Пользователь ID: {registered_user.id}, Email: {registered_user.email} зарегистрирован"
-            )
+            logger.info(f"Пользователь ID: {registered_user.id}, Email: {registered_user.email} зарегистрирован")
             return registered_user
 
 
@@ -106,12 +100,10 @@ class AuthService:
             raise BadCredentialsError("Неверный логин или пароль")
 
         try:
-            await verify_password(
-                plain_password=password, hashed_password=user.hashed_password
-            )
+            await verify_password(plain_password=password, hashed_password=user.hashed_password)
         except InvalidPasswordError:
             logger.info(f"Введен неверный пароль для пользователя {email}.")
-            raise BadCredentialsError("Неверный логин или пароль")
+            raise BadCredentialsError("Неверный логин или пароль") from None
 
         return user
 
@@ -223,9 +215,7 @@ class UserService:
         update_dict = update_data.model_dump(exclude_unset=True)
 
         if not update_dict:
-            logger.info(
-                f"Нет данных для обновления пользователя ID: {user.id}, Email: {user.email}."
-            )
+            logger.info(f"Нет данных для обновления пользователя ID: {user.id}, Email: {user.email}.")
             return user
 
         async with self.uow:
@@ -238,21 +228,15 @@ class UserService:
                 error_msg="Недостаточно прав для обновления профиля",
             )
 
-            updated_user = await self.uow.users.update_user(
-                user_id=user.id, update_dict=update_dict
-            )
+            updated_user = await self.uow.users.update_user(user_id=user.id, update_dict=update_dict)
 
             if not updated_user:
-                logger.info(
-                    f"Не найден пользователь для обновления, ID: {user.id}, Email: {user.email}."
-                )
+                logger.info(f"Не найден пользователь для обновления, ID: {user.id}, Email: {user.email}.")
                 raise UserDoesNotExistError
 
             await self.uow.commit()
 
-        logger.info(
-            f"Пользователь ID: {user.id}, Email: {user.email} успешно обновлен."
-        )
+        logger.info(f"Пользователь ID: {user.id}, Email: {user.email} успешно обновлен.")
         return updated_user
 
     async def soft_delete_profile(self, user: UserDTO) -> None:
@@ -278,12 +262,10 @@ class UserService:
             deactivated_user = await self.uow.users.soft_delete_user(user_id=user.id)
 
             if not deactivated_user:
-                logger.info(
-                    f"Не найден пользователь для удаления, ID: {user.id}, Email: {user.email}."
-                )
+                logger.info(f"Не найден пользователь для удаления, ID: {user.id}, Email: {user.email}.")
                 raise UserDoesNotExistError
 
             await self.uow.commit()
             logger.info(
-                f"Пользователь ID: {deactivated_user.id}, Email: {deactivated_user.email} успешно удален (деактивирован)."
+                f"Пользователь ID: {deactivated_user.id}, Email: {deactivated_user.email} успешно деактивирован."
             )

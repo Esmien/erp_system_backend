@@ -1,15 +1,15 @@
 import pytest
 
-from backend.core.enums import BusinessElementName, Action
+from backend.core.enums import Action, BusinessElementName
+from backend.exceptions import (
+    AccessDeniedError,
+    TeamAlreadyExistError,
+    TeamDoesNotExistError,
+    UserAlreadyInTeamError,
+)
+from backend.rbac.schemas import AccessContextDTO
 from backend.team.schemas import TeamCreate, TeamRead, TeamWithMembersRead
 from backend.user.schemas import UserDTO
-from backend.rbac.schemas import AccessContextDTO
-from backend.exceptions import (
-    TeamDoesNotExistError,
-    TeamAlreadyExistError,
-    UserAlreadyInTeamError,
-    AccessDeniedError,
-)
 
 
 def test_generate_invite_code(team_service):
@@ -24,13 +24,9 @@ def test_generate_invite_code(team_service):
     "team_exists, expected_exception",
     [(True, None), (False, TeamDoesNotExistError)],
 )
-async def test_get_team(
-    team_service, mock_uow, team_exists, expected_exception, mock_user
-):
+async def test_get_team(team_service, mock_uow, team_exists, expected_exception, mock_user):
     if team_exists:
-        mock_uow.teams.get_by_id.return_value = TeamWithMembersRead(
-            id=1, name="Test", invite_code="111111", members=[]
-        )
+        mock_uow.teams.get_by_id.return_value = TeamWithMembersRead(id=1, name="Test", invite_code="111111", members=[])
     else:
         mock_uow.teams.get_by_id.return_value = None
 
@@ -52,9 +48,7 @@ async def test_get_team(
 
 
 async def test_get_team_access_denied(team_service, mock_uow, mock_user):
-    team_service.rbac.enforce_permission.side_effect = AccessDeniedError(
-        "Недостаточно прав"
-    )
+    team_service.rbac.enforce_permission.side_effect = AccessDeniedError("Недостаточно прав")
     with pytest.raises(AccessDeniedError):
         await team_service.get_team(team_id=1, user=mock_user)
 
@@ -68,9 +62,7 @@ async def test_create_team(team_service, mock_uow, name_exists, mock_user):
         with pytest.raises(TeamAlreadyExistError):
             await team_service.create_team(team_in=team_in, user=mock_user)
     else:
-        mock_uow.teams.create.return_value = TeamRead(
-            id=1, name="Test Team", invite_code="FREE00"
-        )
+        mock_uow.teams.create.return_value = TeamRead(id=1, name="Test Team", invite_code="FREE00")
 
         result = await team_service.create_team(team_in=team_in, user=mock_user)
 
@@ -94,9 +86,7 @@ async def test_create_team(team_service, mock_uow, name_exists, mock_user):
         (None, True, None),
     ],
 )
-async def test_join_team(
-    team_service, mock_uow, user_team_id, code_exists, expected_exception
-):
+async def test_join_team(team_service, mock_uow, user_team_id, code_exists, expected_exception):
     user = UserDTO(
         id=1,
         email="test@test.com",
@@ -108,9 +98,7 @@ async def test_join_team(
     )
 
     if code_exists:
-        mock_uow.teams.get_team_model_by_field.return_value = TeamRead(
-            id=1, name="Team", invite_code="111111"
-        )
+        mock_uow.teams.get_team_model_by_field.return_value = TeamRead(id=1, name="Team", invite_code="111111")
     else:
         mock_uow.teams.get_team_model_by_field.return_value = None
 

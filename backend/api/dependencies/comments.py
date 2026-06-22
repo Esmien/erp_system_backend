@@ -4,13 +4,11 @@ from fastapi import Body, Depends
 
 from backend.api.dependencies.rbac import RbacServiceDepends
 from backend.api.dependencies.uow import UowDepends
-from backend.comment.service import CommentService
 from backend.comment.schemas import CommentCreate, CommentUpdate
+from backend.comment.service import CommentService
 
 
-def get_comment_service(
-    uow: UowDepends, rbac_service: RbacServiceDepends
-) -> CommentService:
+def get_comment_service(uow: UowDepends, rbac_service: RbacServiceDepends) -> CommentService:
     """
     Провайдер сервиса задач для инъекции в Annotated.
     """

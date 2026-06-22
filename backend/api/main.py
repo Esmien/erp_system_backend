@@ -8,21 +8,20 @@ from loguru import logger
 from sqladmin import Admin
 
 from backend.admin.security import AdminAuth
-from backend.admin.views import UserAdmin, TeamAdmin, TaskAdmin
+from backend.admin.views import TaskAdmin, TeamAdmin, UserAdmin
 from backend.api.exception_handlers import setup_exception_handlers
-from backend.core.config import settings
 from backend.api.v1.routers.auth import router as auth_router
-from backend.api.v1.routers.teams import router as teams_router
-from backend.api.v1.routers.users import router as users_router
-from backend.api.v1.routers.tasks import router as tasks_router
+from backend.api.v1.routers.calendar import router as calendar_router
 from backend.api.v1.routers.comments import router as comments_router
 from backend.api.v1.routers.evaluations import router as evaluations_router
 from backend.api.v1.routers.meetings import router as meetings_router
-from backend.api.v1.routers.calendar import router as calendar_router
+from backend.api.v1.routers.tasks import router as tasks_router
+from backend.api.v1.routers.teams import router as teams_router
+from backend.api.v1.routers.users import router as users_router
+from backend.core.config import settings
 from backend.core.database.engine import engine
-from backend.core.database.redis import init_redis, close_redis
+from backend.core.database.redis import close_redis, init_redis
 from backend.core.logger import setup_logger
-
 
 if settings.sentry_conf.ENABLED:
     sentry_sdk.init(

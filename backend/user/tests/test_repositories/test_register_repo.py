@@ -1,6 +1,5 @@
-from sqlalchemy import select
-
 import pytest
+from sqlalchemy import select
 
 from backend.core.enums import RoleName
 from backend.user.models import Role
@@ -36,9 +35,7 @@ async def test_get_role_id(register_repo, db_session, role_name, is_valid):
         ("admin@admin.com", False),
     ],
 )
-async def test_register_user(
-    register_repo, user_in, checking_email, is_success_expected
-):
+async def test_register_user(register_repo, user_in, checking_email, is_success_expected):
     user_in.email = checking_email
 
     new_user = UserCreateDTO(

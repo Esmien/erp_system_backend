@@ -1,8 +1,8 @@
-from typing import TypeVar, Generic, Any
+from typing import Any, TypeVar
 
 from loguru import logger
 from pydantic import BaseModel
-from sqlalchemy import select, func, Select
+from sqlalchemy import Select, func, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -10,10 +10,8 @@ ModelType = TypeVar("ModelType")
 DTOType = TypeVar("DTOType", bound=BaseModel)
 
 
-class BaseRepository(Generic[ModelType, DTOType]):
-    def __init__(
-        self, model: type[ModelType], dto: type[DTOType], session: AsyncSession
-    ):
+class BaseRepository[ModelType, DTOType: BaseModel]:
+    def __init__(self, model: type[ModelType], dto: type[DTOType], session: AsyncSession):
         self.model = model
         self.dto = dto
         self.session = session
@@ -87,18 +85,14 @@ class BaseRepository(Generic[ModelType, DTOType]):
         await self.session.delete(instance=instance)
         await self.session.flush()
 
-    async def _paginate_statement(
-        self, stmt: Select, offset: int, limit: int
-    ) -> tuple[list[DTOType], int]:
+    async def _paginate_statement(self, stmt: Select, offset: int, limit: int) -> tuple[list[DTOType], int]:
         """
         Универсальный обработчик пагинации для любых, даже самых сложных запросов.
         Принимает готовый Select-запрос, считает total и отдает страницу с DTO.
         """
         try:
             # Считаем общее количество записей, игнорируя сортировку (чтобы не тормозило)
-            count_stmt = stmt.with_only_columns(func.count(self.model.id)).order_by(
-                None
-            )
+            count_stmt = stmt.with_only_columns(func.count(self.model.id)).order_by(None)
             total = await self.session.scalar(count_stmt) or 0
 
             # Навешиваем пагинацию на исходный запрос
@@ -115,15 +109,11 @@ class BaseRepository(Generic[ModelType, DTOType]):
             return dtos, total
         except SQLAlchemyError as e:
             # Логируем контекст (на какой модели упало)
-            logger.error(
-                f"Ошибка выполнения сложного запроса пагинации для модели {self.model.__name__}: {e}"
-            )
+            logger.error(f"Ошибка выполнения сложного запроса пагинации для модели {self.model.__name__}: {e}")
             # Пробрасываем ошибку дальше, чтобы ее поймал наш глобальный sqlalchemy_exception_handler
             raise
 
-    async def get_paginated(
-        self, offset: int, limit: int, **filters
-    ) -> tuple[list[DTOType], int]:
+    async def get_paginated(self, offset: int, limit: int, **filters) -> tuple[list[DTOType], int]:
         """Универсальная пагинация с возвратом DTO и общего количества"""
         # Считаем тотал
         count_stmt = select(func.count()).select_from(self.model).filter_by(**filters)

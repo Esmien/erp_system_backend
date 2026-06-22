@@ -1,8 +1,8 @@
-from fastapi import APIRouter, status, Depends
+from fastapi import APIRouter, Depends, status
 
 from backend.api.dependencies.evaluations import (
-    EvaluationServiceDepends,
     EvaluationCreateBody,
+    EvaluationServiceDepends,
 )
 from backend.api.dependencies.permissions import CurrentUserDepends, get_current_user
 from backend.core.utils.error_schemas import ErrorResponseSchema
@@ -40,9 +40,7 @@ async def evaluate_task(
     Если нет прав - 403 Forbidden
     Если задача не существует - 404 Not Found
     """
-    evaluation = await service.evaluate_task(
-        task_id=task_id, evaluation_in=evaluation_in, user=user
-    )
+    evaluation = await service.evaluate_task(task_id=task_id, evaluation_in=evaluation_in, user=user)
     return evaluation
 
 

@@ -5,9 +5,9 @@ import pytest
 
 from backend.core.enums import AccessLevel
 from backend.exceptions import (
-    MeetingOverlapError,
-    MeetingDoesNotExistError,
     AccessDeniedError,
+    MeetingDoesNotExistError,
+    MeetingOverlapError,
 )
 from backend.meeting.schemas import (
     MeetingCreate,
@@ -37,9 +37,7 @@ class TestMeetingService:
         mock_uow.meetings.create_meeting.assert_called_once()
         mock_uow.commit.assert_called_once()
 
-    async def test_create_meeting_with_overlap(
-        self, meeting_service, mock_uow, mock_user_for_meeting
-    ):
+    async def test_create_meeting_with_overlap(self, meeting_service, mock_uow, mock_user_for_meeting):
         meeting_in = MeetingCreate(
             theme="Синхронизация бэкенда",
             datetime_start=datetime.now(),
@@ -71,15 +69,11 @@ class TestMeetingService:
         mock_rbac_service.get_list_access_level.return_value = AccessLevel.ALL
         mock_uow.meetings.get_meetings.return_value = ([], 0)
 
-        await meeting_service.get_all_meetings(
-            user=mock_user_for_meeting, params=params
-        )
+        await meeting_service.get_all_meetings(user=mock_user_for_meeting, params=params)
 
         mock_rbac_service.get_list_access_level.assert_called_once()
         # При ALL фильтр по юзеру отключается
-        mock_uow.meetings.get_meetings.assert_called_once_with(
-            user_id=None, offset=params.offset, limit=params.limit
-        )
+        mock_uow.meetings.get_meetings.assert_called_once_with(user_id=None, offset=params.offset, limit=params.limit)
 
     async def test_get_all_meetings_participant_access(
         self,
@@ -93,9 +87,7 @@ class TestMeetingService:
         mock_rbac_service.get_list_access_level.return_value = AccessLevel.PARTICIPANT
         mock_uow.meetings.get_meetings.return_value = ([], 0)
 
-        await meeting_service.get_all_meetings(
-            user=mock_user_for_meeting, params=params
-        )
+        await meeting_service.get_all_meetings(user=mock_user_for_meeting, params=params)
 
         mock_rbac_service.get_list_access_level.assert_called_once()
         # При PARTICIPANT должен передаваться ID пользователя для фильтрации
@@ -112,21 +104,15 @@ class TestMeetingService:
         params,
     ):
         # Имитируем ситуацию, когда RBAC выбрасывает ошибку прав доступа
-        mock_rbac_service.get_list_access_level.side_effect = AccessDeniedError(
-            "У вас нет прав для просмотра встреч"
-        )
+        mock_rbac_service.get_list_access_level.side_effect = AccessDeniedError("У вас нет прав для просмотра встреч")
 
         with pytest.raises(AccessDeniedError):
-            await meeting_service.get_all_meetings(
-                user=mock_user_for_meeting, params=params
-            )
+            await meeting_service.get_all_meetings(user=mock_user_for_meeting, params=params)
 
         # Убеждаемся, что до БД запрос даже не дошел
         mock_uow.meetings.get_meetings.assert_not_called()
 
-    async def test_update_meeting_success(
-        self, meeting_service, mock_uow, mock_user_for_meeting, expected_meeting
-    ):
+    async def test_update_meeting_success(self, meeting_service, mock_uow, mock_user_for_meeting, expected_meeting):
         meeting_id = 1
         update_data = MeetingUpdate(theme="Новая тема встречи")
 
@@ -135,18 +121,12 @@ class TestMeetingService:
         mock_uow.meetings.get_by_id.return_value = expected_meeting
         mock_uow.meetings.update_meeting.return_value = expected_meeting
 
-        await meeting_service.update_meeting(
-            meeting_id, update_data, mock_user_for_meeting
-        )
+        await meeting_service.update_meeting(meeting_id, update_data, mock_user_for_meeting)
 
-        mock_uow.meetings.update_meeting.assert_called_once_with(
-            meeting_id=meeting_id, data_for_update=ANY
-        )
+        mock_uow.meetings.update_meeting.assert_called_once_with(meeting_id=meeting_id, data_for_update=ANY)
         mock_uow.commit.assert_called_once()
 
-    async def test_delete_meeting_not_found(
-        self, meeting_service, mock_uow, mock_user_for_meeting
-    ):
+    async def test_delete_meeting_not_found(self, meeting_service, mock_uow, mock_user_for_meeting):
         mock_uow.meetings.get_by_id.return_value = None
 
         with pytest.raises(MeetingDoesNotExistError):

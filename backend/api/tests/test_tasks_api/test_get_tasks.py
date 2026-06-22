@@ -31,9 +31,7 @@ async def test_get_tasks_by_filters(client):
     await client.post("/api/v1/tasks/", json=task_1)
     await client.post("/api/v1/tasks/", json=task_2)
 
-    response_done = await client.get(
-        f"/api/v1/tasks/?scope=all&task_status={TaskStatus.DONE}"
-    )
+    response_done = await client.get(f"/api/v1/tasks/?scope=all&task_status={TaskStatus.DONE}")
     assert response_done.status_code == 200
 
     data = response_done.json()

@@ -69,6 +69,4 @@ async def test_get_meeting_forbidden(client, app):
     response = await client.get(f"/api/v1/meetings/{meeting_id}/")
 
     assert response.status_code == 403
-    assert (
-        "вы не можете получить данные этой встречи" in response.json()["detail"].lower()
-    )
+    assert "вы не можете получить данные этой встречи" in response.json()["detail"].lower()

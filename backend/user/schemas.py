@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field, model_validator, ConfigDict
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
 
 from backend.exceptions import PasswordsMismatchError
 
@@ -36,12 +36,8 @@ class UserRead(UserBase):
 class UserRegister(UserBase):
     """Схема с полями для регистрации и валидацией пароля"""
 
-    password: str = Field(
-        ..., min_length=3, max_length=72, examples=["secret_password"]
-    )
-    repeat_password: str = Field(
-        ..., min_length=3, max_length=72, examples=["secret_password"]
-    )
+    password: str = Field(..., min_length=3, max_length=72, examples=["secret_password"])
+    repeat_password: str = Field(..., min_length=3, max_length=72, examples=["secret_password"])
     model_config = ConfigDict(extra="forbid")
 
     @model_validator(mode="after")

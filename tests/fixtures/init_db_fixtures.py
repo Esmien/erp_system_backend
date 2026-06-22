@@ -1,15 +1,15 @@
 import pytest
 from sqlalchemy import text
 
-from backend.core.enums import TaskStatus
 from backend.core.database.engine import Base
 from backend.core.database.init_db import init_basic_data
+from backend.core.enums import TaskStatus
 from backend.core.security import get_password_hash
 from backend.task.models import Task
 from backend.team.models import Team
 from tests.fixtures.environment_setup import (
-    fixture_engine,
     fixture_async_session_maker,
+    fixture_engine,
 )
 
 TEAM_NAME = "Dummy name"
@@ -46,22 +46,16 @@ async def prepare_data():
     # 2.1 Очищаем только транзакционные таблицы, исключая статические справочники
     async with fixture_engine.begin() as conn:
         exclude_tables = {"roles", "business_elements", "access_rules"}
-        tables_to_truncate = [
-            t for t in Base.metadata.tables.keys() if t not in exclude_tables
-        ]
+        tables_to_truncate = [t for t in Base.metadata.tables if t not in exclude_tables]
 
         if tables_to_truncate:
             table_names = ", ".join(tables_to_truncate)
             # RESTART IDENTITY сбросит счетчики ID для юзеров и задач
-            await conn.execute(
-                text(f"TRUNCATE {table_names} RESTART IDENTITY CASCADE;")
-            )
+            await conn.execute(text(f"TRUNCATE {table_names} RESTART IDENTITY CASCADE;"))
 
     # 2.2 Заливаем "чистые" дефолтные данные
     async with fixture_async_session_maker() as session:
-        await init_basic_data(
-            session=session, password_hasher=_get_cached_password_hash
-        )
+        await init_basic_data(session=session, password_hasher=_get_cached_password_hash)
         team = Team(name=TEAM_NAME, invite_code=TEAM_CODE)
         task = Task(
             title="Дефолтная тестовая задача",

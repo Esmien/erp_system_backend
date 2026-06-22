@@ -1,7 +1,7 @@
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 
 from backend.core.config import settings
@@ -15,9 +15,7 @@ class Base(DeclarativeBase):
 engine = create_async_engine(settings.db.database_url, echo=False)
 
 # Фабрика асинхронных сессий БД
-async_session_maker = async_sessionmaker(
-    bind=engine, expire_on_commit=False, autoflush=False
-)
+async_session_maker = async_sessionmaker(bind=engine, expire_on_commit=False, autoflush=False)
 
 
 @asynccontextmanager

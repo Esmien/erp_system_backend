@@ -5,15 +5,15 @@ from loguru import logger
 
 from backend.core.base_service import BaseService
 from backend.core.config import settings
-from backend.core.enums import BusinessElementName, Action
-from backend.rbac.schemas import AccessContextDTO
-from backend.team.repository import TeamRepository
-from backend.team.schemas import TeamCreate, TeamWithMembersRead, TeamRead
+from backend.core.enums import Action, BusinessElementName
 from backend.exceptions import (
-    TeamDoesNotExistError,
     TeamAlreadyExistError,
+    TeamDoesNotExistError,
     UserAlreadyInTeamError,
 )
+from backend.rbac.schemas import AccessContextDTO
+from backend.team.repository import TeamRepository
+from backend.team.schemas import TeamCreate, TeamRead, TeamWithMembersRead
 from backend.user.schemas import UserDTO
 
 
@@ -72,9 +72,7 @@ class TeamService(BaseService[TeamWithMembersRead]):
                 error_msg="Вы не можете посмотреть данные этой команды",
             )
 
-        logger.info(
-            f"Успешно получены данные команды ID: {team.id}, Название: {team.name}."
-        )
+        logger.info(f"Успешно получены данные команды ID: {team.id}, Название: {team.name}.")
         return team
 
     async def create_team(self, team_in: TeamCreate, user: UserDTO) -> TeamRead:
@@ -100,9 +98,7 @@ class TeamService(BaseService[TeamWithMembersRead]):
             )
 
             # Проверяем существование команды, чтобы избежать дубликатов
-            team_by_name = await self.repository.get_team_model_by_field(
-                field="name", value=team_in.name
-            )
+            team_by_name = await self.repository.get_team_model_by_field(field="name", value=team_in.name)
 
             if team_by_name:
                 logger.info(f"Команда с названием {team_in.name} уже существует.")
@@ -112,19 +108,13 @@ class TeamService(BaseService[TeamWithMembersRead]):
             # Если совпадений в Бд не найдено, то цикл завершается
             while True:
                 code = self.generate_invite_code()
-                team_by_code = await self.repository.get_team_model_by_field(
-                    field="invite_code", value=code
-                )
+                team_by_code = await self.repository.get_team_model_by_field(field="invite_code", value=code)
 
                 if not team_by_code:
-                    logger.info(
-                        f"Инвайт код для команды {team_in.name} успешно сгенерирован."
-                    )
+                    logger.info(f"Инвайт код для команды {team_in.name} успешно сгенерирован.")
                     break
 
-            created_team = await self.repository.create(
-                **team_in.model_dump(), invite_code=code
-            )
+            created_team = await self.repository.create(**team_in.model_dump(), invite_code=code)
 
             await self.uow.commit()
 
@@ -148,16 +138,12 @@ class TeamService(BaseService[TeamWithMembersRead]):
         """
         # Проверка на присутствие в какой-нибудь команде
         if user.team_id is not None:
-            logger.info(
-                f"Пользователь ID: {user.id}, Email: {user.email} уже состоит в команде ID: {user.team_id}."
-            )
+            logger.info(f"Пользователь ID: {user.id}, Email: {user.email} уже состоит в команде ID: {user.team_id}.")
             raise UserAlreadyInTeamError("Вы уже состоите в команде")
 
         async with self.uow:
             # Ищем команду по инвайт коду и вступаем, если все ок
-            team = await self.repository.get_team_model_by_field(
-                field="invite_code", value=invite_code
-            )
+            team = await self.repository.get_team_model_by_field(field="invite_code", value=invite_code)
 
             if not team:
                 logger.info(f"Инвайт код {invite_code} не найден.")

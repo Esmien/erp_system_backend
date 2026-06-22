@@ -5,7 +5,7 @@ import pytest
 from backend.meeting.repository import MeetingRepository
 from backend.meeting.schemas import MeetingCreate, MeetingReadWithParticipants
 from backend.meeting.service import MeetingService
-from backend.user.schemas import UserDTO, RoleDTO
+from backend.user.schemas import RoleDTO, UserDTO
 
 
 @pytest.fixture

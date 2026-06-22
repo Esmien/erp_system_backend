@@ -33,9 +33,7 @@ async def test_repository_get_user_statistics_empty(eval_repo, test_user_db):
     assert stats.tasks_evaluated_count == 0
 
 
-async def test_repository_get_user_statistics_calculated(
-    eval_repo, db_session, test_user_db
-):
+async def test_repository_get_user_statistics_calculated(eval_repo, db_session, test_user_db):
     # 1. Создаем две задачи, где наш тестовый юзер — исполнитель
     task1 = Task(
         title="T1",

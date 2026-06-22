@@ -1,6 +1,6 @@
 from datetime import date
 
-from sqlalchemy import select, or_, and_
+from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.core.base_repository import BaseRepository
@@ -40,19 +40,13 @@ class TaskRepository(BaseRepository[Task, TaskRead]):
             stmt = stmt.where(Task.status == task_status)
 
         if user_id:
-            stmt = stmt.where(
-                or_(Task.author_id == user_id, Task.executor_id == user_id)
-            )
+            stmt = stmt.where(or_(Task.author_id == user_id, Task.executor_id == user_id))
         elif team_id:
-            stmt = stmt.join(User, Task.executor_id == User.id).where(
-                User.team_id == team_id
-            )
+            stmt = stmt.join(User, Task.executor_id == User.id).where(User.team_id == team_id)
 
         return await self._paginate_statement(stmt=stmt, limit=limit, offset=offset)
 
-    async def get_tasks_by_date_range(
-        self, user_id: int, start_date: date, end_date: date
-    ) -> list[TaskRead]:
+    async def get_tasks_by_date_range(self, user_id: int, start_date: date, end_date: date) -> list[TaskRead]:
         """
         Возвращает все доступные пользователю задачи за выбранный период
 

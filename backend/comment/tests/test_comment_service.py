@@ -6,9 +6,7 @@ from backend.core.enums import RoleName
 from backend.exceptions import AccessDeniedError, TaskDoesNotExistError
 
 
-async def test_add_comment_success(
-    comment_service, mock_uow, mock_user_author, sample_task, sample_comment
-):
+async def test_add_comment_success(comment_service, mock_uow, mock_user_author, sample_task, sample_comment):
     # Имитируем найденную задачу
     mock_uow.tasks.get_by_id.return_value = sample_task
     # Имитируем успешное создание комментария в БД
@@ -17,9 +15,7 @@ async def test_add_comment_success(
     comment_in = CommentCreate(text="Тестовый комментарий")
 
     # Автор задачи оставляет комментарий
-    result = await comment_service.add_comment(
-        task_id=1, user=mock_user_author, comment_in=comment_in
-    )
+    result = await comment_service.add_comment(task_id=1, user=mock_user_author, comment_in=comment_in)
 
     assert result.text == "Тестовый комментарий"
     mock_uow.comments.create.assert_called_once_with(
@@ -28,9 +24,7 @@ async def test_add_comment_success(
     mock_uow.commit.assert_called_once()
 
 
-async def test_add_comment_access_denied(
-    comment_service, mock_uow, mock_user_stranger, sample_task
-):
+async def test_add_comment_access_denied(comment_service, mock_uow, mock_user_stranger, sample_task):
     # Имитируем найденную задачу
     mock_uow.tasks.get_task_by_id.return_value = sample_task
     comment_service.rbac.enforce_permission.side_effect = AccessDeniedError
@@ -38,9 +32,7 @@ async def test_add_comment_access_denied(
 
     # Пользователь без прав (не автор, не исполнитель, не админ) пытается оставить коммент
     with pytest.raises(AccessDeniedError):
-        await comment_service.add_comment(
-            task_id=1, user=mock_user_stranger, comment_in=comment_in
-        )
+        await comment_service.add_comment(task_id=1, user=mock_user_stranger, comment_in=comment_in)
 
     mock_uow.comments.create_comment.assert_not_called()
 
@@ -51,9 +43,7 @@ async def test_add_comment_task_not_found(comment_service, mock_uow, mock_user_a
     comment_in = CommentCreate(text="Коммент в пустоту")
 
     with pytest.raises(TaskDoesNotExistError):
-        await comment_service.add_comment(
-            task_id=999, user=mock_user_author, comment_in=comment_in
-        )
+        await comment_service.add_comment(task_id=999, user=mock_user_author, comment_in=comment_in)
 
 
 async def test_permissions_as_executor_and_manager(
@@ -87,9 +77,7 @@ async def test_permissions_as_executor_and_manager(
     )
 
 
-async def test_get_task_comments_success(
-    comment_service, mock_uow, sample_task, sample_comment, mock_user_author
-):
+async def test_get_task_comments_success(comment_service, mock_uow, sample_task, sample_comment, mock_user_author):
     mock_uow.tasks.get_by_id.return_value = sample_task
     mock_uow.comments.get_comments_by_task_id.return_value = ([sample_comment], 1)
     sample_task.executor_id = mock_user_author.id
@@ -110,12 +98,8 @@ async def test_get_task_comments_success(
     )
 
 
-@pytest.mark.parametrize(
-    "is_task, exc", [(True, AccessDeniedError), (False, TaskDoesNotExistError)]
-)
-async def test_get_task_comments_with_exc(
-    comment_service, mock_uow, sample_task, mock_user_stranger, is_task, exc
-):
+@pytest.mark.parametrize("is_task, exc", [(True, AccessDeniedError), (False, TaskDoesNotExistError)])
+async def test_get_task_comments_with_exc(comment_service, mock_uow, sample_task, mock_user_stranger, is_task, exc):
     if is_task:
         mock_uow.tasks.get_by_id.return_value = sample_task
         comment_service.rbac.enforce_permission.side_effect = AccessDeniedError
@@ -130,8 +114,6 @@ async def test_get_task_comments_with_exc(
     params = PaginationParams(page=1, size=20)
 
     with pytest.raises(exc):
-        await comment_service.get_task_comments(
-            task_id=sample_task.id, user=mock_user_stranger, params=params
-        )
+        await comment_service.get_task_comments(task_id=sample_task.id, user=mock_user_stranger, params=params)
 
     mock_uow.comments.get_comments_by_task_id.assert_not_awaited()

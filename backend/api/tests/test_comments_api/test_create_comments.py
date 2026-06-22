@@ -28,7 +28,4 @@ async def test_add_comment_forbidden(client, app):
     comment_data = {"text": "Попытка прокомментировать чужую задачу"}
     response = await client.post("/api/v1/tasks/1/comments/", json=comment_data)
     assert response.status_code == 403
-    assert (
-        response.json().get("detail").lower()
-        == "вы не можете оставлять комментарии к этой задаче"
-    )
+    assert response.json().get("detail").lower() == "вы не можете оставлять комментарии к этой задаче"

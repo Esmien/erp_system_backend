@@ -1,17 +1,17 @@
 import pytest
 
 from backend.core.enums import TaskStatus
-from backend.task.schemas import (
-    TaskRead,
-    TaskCreate,
-    TaskUpdate,
-    TaskChangeStatus,
-)
 from backend.exceptions import (
-    TaskDoesNotExistError,
     AccessDeniedError,
+    TaskDoesNotExistError,
     TeamDoesNotExistError,
     UserDoesNotExistError,
+)
+from backend.task.schemas import (
+    TaskChangeStatus,
+    TaskCreate,
+    TaskRead,
+    TaskUpdate,
 )
 
 
@@ -32,9 +32,7 @@ async def test_get_task_not_found(task_service, mock_uow, mock_user_author):
         await task_service.get(obj_id=999, user=mock_user_author)
 
 
-async def test_get_task_access_denied(
-    task_service, mock_uow, sample_task, mock_user_stranger
-):
+async def test_get_task_access_denied(task_service, mock_uow, sample_task, mock_user_stranger):
     mock_uow.tasks.get_by_id.return_value = sample_task
     task_service.rbac.enforce_permission.side_effect = AccessDeniedError
 
@@ -49,9 +47,7 @@ async def test_create_task(task_service, mock_uow, mock_user_author, sample_task
     result = await task_service.create_task(task_in=task_in, author=mock_user_author)
 
     assert result.title == "Тест"
-    mock_uow.tasks.create.assert_called_once_with(
-        **task_in.model_dump(), author_id=mock_user_author.id
-    )
+    mock_uow.tasks.create.assert_called_once_with(**task_in.model_dump(), author_id=mock_user_author.id)
     mock_uow.commit.assert_called_once()
 
 
@@ -63,22 +59,16 @@ async def test_create_task_access_denied(task_service, mock_user_author):
         await task_service.create_task(task_in=task_in, author=mock_user_author)
 
 
-async def test_update_task_access_denied(
-    task_service, mock_uow, mock_user_stranger, sample_task
-):
+async def test_update_task_access_denied(task_service, mock_uow, mock_user_stranger, sample_task):
     mock_uow.tasks.get_by_id.return_value = sample_task
     update_data = TaskUpdate(title="Взлом")
     task_service.rbac.enforce_permission.side_effect = AccessDeniedError
 
     with pytest.raises(AccessDeniedError):
-        await task_service.update_task(
-            task_id=1, update_data=update_data, user=mock_user_stranger
-        )
+        await task_service.update_task(task_id=1, update_data=update_data, user=mock_user_stranger)
 
 
-async def test_update_task_success(
-    task_service, mock_uow, mock_user_author, sample_task
-):
+async def test_update_task_success(task_service, mock_uow, mock_user_author, sample_task):
     mock_uow.tasks.get_by_id.return_value = sample_task
 
     updated_task_read = TaskRead(**sample_task.model_dump())
@@ -86,17 +76,13 @@ async def test_update_task_success(
     mock_uow.tasks.update.return_value = updated_task_read
 
     update_data = TaskUpdate(title="Обновлено")
-    result = await task_service.update_task(
-        task_id=1, update_data=update_data, user=mock_user_author
-    )
+    result = await task_service.update_task(task_id=1, update_data=update_data, user=mock_user_author)
 
     assert result.title == "Обновлено"
     mock_uow.commit.assert_called_once()
 
 
-async def test_delete_task_success(
-    task_service, mock_uow, mock_user_author, sample_task
-):
+async def test_delete_task_success(task_service, mock_uow, mock_user_author, sample_task):
     mock_uow.tasks.get_by_id.return_value = sample_task
 
     await task_service.delete(obj_id=1, user=mock_user_author)
@@ -105,15 +91,11 @@ async def test_delete_task_success(
     mock_uow.commit.assert_called_once()
 
 
-async def test_get_filtered_tasks_team_scope(
-    task_service, mock_uow, mock_user_author, params
-):
+async def test_get_filtered_tasks_team_scope(task_service, mock_uow, mock_user_author, params):
     mock_user_author.team_id = 1
     mock_uow.tasks.get_tasks_with_filters.return_value = ([], 0)
 
-    tasks = await task_service.get_filtered_tasks(
-        user=mock_user_author, scope="team", task_status=None, params=params
-    )
+    tasks = await task_service.get_filtered_tasks(user=mock_user_author, scope="team", task_status=None, params=params)
     assert tasks.items == []
     mock_uow.tasks.get_tasks_with_filters.assert_called_once_with(
         user_id=None,
@@ -124,103 +106,71 @@ async def test_get_filtered_tasks_team_scope(
     )
 
 
-async def test_get_filtered_tasks_team_scope_no_team(
-    task_service, mock_uow, mock_user_author, params
-):
+async def test_get_filtered_tasks_team_scope_no_team(task_service, mock_uow, mock_user_author, params):
     mock_user_author.team_id = None
 
     with pytest.raises(TeamDoesNotExistError):
-        await task_service.get_filtered_tasks(
-            user=mock_user_author, scope="team", task_status=None, params=params
-        )
+        await task_service.get_filtered_tasks(user=mock_user_author, scope="team", task_status=None, params=params)
 
 
-async def test_get_filtered_tasks_all_scope_success(
-    task_service, mock_uow, mock_user_author, params
-):
+async def test_get_filtered_tasks_all_scope_success(task_service, mock_uow, mock_user_author, params):
     mock_uow.tasks.get_tasks_with_filters.return_value = ([], 0)
 
-    tasks = await task_service.get_filtered_tasks(
-        user=mock_user_author, scope="all", task_status=None, params=params
-    )
+    tasks = await task_service.get_filtered_tasks(user=mock_user_author, scope="all", task_status=None, params=params)
     assert tasks.items == []
 
 
-async def test_get_filtered_tasks_all_scope_access_denied(
-    task_service, mock_uow, mock_user_author, params
-):
+async def test_get_filtered_tasks_all_scope_access_denied(task_service, mock_uow, mock_user_author, params):
     task_service.rbac.enforce_permission.side_effect = AccessDeniedError
 
     with pytest.raises(AccessDeniedError):
-        await task_service.get_filtered_tasks(
-            user=mock_user_author, scope="all", task_status=None, params=params
-        )
+        await task_service.get_filtered_tasks(user=mock_user_author, scope="all", task_status=None, params=params)
 
 
-async def test_update_task_empty_dict(
-    task_service, mock_uow, mock_user_author, sample_task
-):
+async def test_update_task_empty_dict(task_service, mock_uow, mock_user_author, sample_task):
     mock_uow.tasks.get_by_id.return_value = sample_task
     update_data = TaskUpdate()
 
-    result = await task_service.update_task(
-        task_id=1, update_data=update_data, user=mock_user_author
-    )
+    result = await task_service.update_task(task_id=1, update_data=update_data, user=mock_user_author)
 
     assert result == sample_task
     mock_uow.tasks.update_task.assert_not_called()
 
 
-async def test_update_task_invalid_executor(
-    task_service, mock_uow, mock_user_author, sample_task
-):
+async def test_update_task_invalid_executor(task_service, mock_uow, mock_user_author, sample_task):
     mock_uow.tasks.get_by_id.return_value = sample_task
     mock_uow.auth.get_user_and_role_by_user_id.return_value = None
     update_data = TaskUpdate(executor_id=999)
 
     with pytest.raises(UserDoesNotExistError):
-        await task_service.update_task(
-            task_id=1, update_data=update_data, user=mock_user_author
-        )
+        await task_service.update_task(task_id=1, update_data=update_data, user=mock_user_author)
 
 
-async def test_update_task_repo_fails(
-    task_service, mock_uow, mock_user_author, sample_task
-):
+async def test_update_task_repo_fails(task_service, mock_uow, mock_user_author, sample_task):
     mock_uow.tasks.get_by_id.return_value = sample_task
     mock_uow.tasks.update.return_value = None
     update_data = TaskUpdate(title="Test")
 
     with pytest.raises(TaskDoesNotExistError):
-        await task_service.update_task(
-            task_id=1, update_data=update_data, user=mock_user_author
-        )
+        await task_service.update_task(task_id=1, update_data=update_data, user=mock_user_author)
 
 
-async def test_change_status_success(
-    task_service, mock_uow, mock_user_author, sample_task
-):
+async def test_change_status_success(task_service, mock_uow, mock_user_author, sample_task):
     mock_uow.tasks.get_by_id.return_value = sample_task
     mock_uow.tasks.update.return_value = sample_task
     new_status = TaskChangeStatus(status=TaskStatus.DONE)
 
-    result = await task_service.change_status(
-        task_id=1, new_status=new_status, user=mock_user_author
-    )
+    result = await task_service.change_status(task_id=1, new_status=new_status, user=mock_user_author)
     assert result == sample_task
 
 
-async def test_change_status_access_denied(
-    task_service, mock_uow, mock_user_stranger, sample_task
-):
+async def test_change_status_access_denied(task_service, mock_uow, mock_user_stranger, sample_task):
     mock_uow.tasks.get_task_by_id.return_value = sample_task
     task_service.rbac.enforce_permission.side_effect = AccessDeniedError
     new_status = TaskChangeStatus(status=TaskStatus.DONE)
 
     with pytest.raises(AccessDeniedError):
-        await task_service.change_status(
-            task_id=1, new_status=new_status, user=mock_user_stranger
-        )
+        await task_service.change_status(task_id=1, new_status=new_status, user=mock_user_stranger)
 
 
 async def test_change_status_task_not_found(task_service, mock_uow, mock_user_author):
@@ -228,9 +178,7 @@ async def test_change_status_task_not_found(task_service, mock_uow, mock_user_au
     new_status = TaskChangeStatus(status=TaskStatus.DONE)
 
     with pytest.raises(TaskDoesNotExistError):
-        await task_service.change_status(
-            task_id=1, new_status=new_status, user=mock_user_author
-        )
+        await task_service.change_status(task_id=1, new_status=new_status, user=mock_user_author)
 
 
 async def test_delete_task_not_found(task_service, mock_uow, mock_user_author):
@@ -239,14 +187,10 @@ async def test_delete_task_not_found(task_service, mock_uow, mock_user_author):
         await task_service.delete(obj_id=999, user=mock_user_author)
 
 
-async def test_get_filtered_tasks_my_scope(
-    task_service, mock_uow, mock_user_author, params
-):
+async def test_get_filtered_tasks_my_scope(task_service, mock_uow, mock_user_author, params):
     mock_uow.tasks.get_tasks_with_filters.return_value = ([], 0)
 
-    tasks = await task_service.get_filtered_tasks(
-        user=mock_user_author, scope="my", task_status=None, params=params
-    )
+    tasks = await task_service.get_filtered_tasks(user=mock_user_author, scope="my", task_status=None, params=params)
 
     assert tasks.items == []
     mock_uow.tasks.get_tasks_with_filters.assert_called_once_with(
@@ -258,26 +202,18 @@ async def test_get_filtered_tasks_my_scope(
     )
 
 
-async def test_change_status_repo_fails(
-    task_service, mock_uow, mock_user_author, sample_task
-):
+async def test_change_status_repo_fails(task_service, mock_uow, mock_user_author, sample_task):
     mock_uow.tasks.get_by_id.return_value = sample_task
     mock_uow.tasks.update.return_value = None
     new_status = TaskChangeStatus(status=TaskStatus.DONE)
 
     with pytest.raises(TaskDoesNotExistError):
-        await task_service.change_status(
-            task_id=1, new_status=new_status, user=mock_user_author
-        )
+        await task_service.change_status(task_id=1, new_status=new_status, user=mock_user_author)
 
 
-async def test_update_task_not_found_initially(
-    task_service, mock_uow, mock_user_author
-):
+async def test_update_task_not_found_initially(task_service, mock_uow, mock_user_author):
     update_data = TaskUpdate(title="Попытка обновления")
     mock_uow.tasks.get_by_id.return_value = None
 
     with pytest.raises(TaskDoesNotExistError):
-        await task_service.update_task(
-            task_id=999, update_data=update_data, user=mock_user_author
-        )
+        await task_service.update_task(task_id=999, update_data=update_data, user=mock_user_author)

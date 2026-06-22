@@ -1,20 +1,18 @@
-from fastapi import APIRouter, status, Depends
+from fastapi import APIRouter, Depends, status
 
 from backend.api.dependencies.permissions import (
     CurrentUserDepends,
     get_current_user,
 )
 from backend.api.dependencies.teams import (
-    TeamServiceDepends,
     TeamCreateBody,
     TeamJoinBody,
+    TeamServiceDepends,
 )
 from backend.core.utils.error_schemas import ErrorResponseSchema
-from backend.team.schemas import TeamWithMembersRead, TeamRead
+from backend.team.schemas import TeamRead, TeamWithMembersRead
 
-router = APIRouter(
-    prefix="/teams", tags=["Команды"], dependencies=[Depends(get_current_user)]
-)
+router = APIRouter(prefix="/teams", tags=["Команды"], dependencies=[Depends(get_current_user)])
 
 
 @router.get(
@@ -31,7 +29,9 @@ router = APIRouter(
     },
 )
 async def get_team(
-    team_id: int, service: TeamServiceDepends, current_user: CurrentUserDepends
+    team_id: int,
+    service: TeamServiceDepends,
+    current_user: CurrentUserDepends,
 ):
     """
     Возвращает данные команды и список её участников

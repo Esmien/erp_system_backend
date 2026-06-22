@@ -1,8 +1,8 @@
-from typing import TypeVar, Protocol, Literal
+from typing import Literal, Protocol, TypeVar
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload, Mapped
+from sqlalchemy.orm import Mapped, selectinload
 from sqlalchemy.orm.attributes import set_committed_value
 
 from backend.core.base_repository import BaseRepository
@@ -34,17 +34,11 @@ class TeamRepository(BaseRepository[Team, TeamWithMembersRead]):
         Returns:
             ORM-модель команды со списком участников или None, если не нашлась
         """
-        stmt = (
-            select(self.model)
-            .where(self.model.id == obj_id)
-            .options(selectinload(self.model.members))
-        )
+        stmt = select(self.model).where(self.model.id == obj_id).options(selectinload(self.model.members))
         result = await self.session.execute(statement=stmt)
         return result.scalar_one_or_none()
 
-    async def _get_obj_model_by_id(
-        self, class_: type[ModelT], obj_id: int, for_update: bool = False
-    ) -> ModelT | None:
+    async def _get_obj_model_by_id(self, class_: type[ModelT], obj_id: int, for_update: bool = False) -> ModelT | None:
         """
         Получает из БД инстанс алхимии по ID и переданному классу модели
 
@@ -58,9 +52,7 @@ class TeamRepository(BaseRepository[Team, TeamWithMembersRead]):
         """
         return await self.session.get(class_, obj_id, with_for_update=for_update)
 
-    async def get_team_model_by_field(
-        self, field: Literal["name", "invite_code"], value: str
-    ) -> TeamRead | None:
+    async def get_team_model_by_field(self, field: Literal["name", "invite_code"], value: str) -> TeamRead | None:
         """
         Получает команду по параметру поиска
 
@@ -106,9 +98,7 @@ class TeamRepository(BaseRepository[Team, TeamWithMembersRead]):
         """
         # Прокидываем флаг для блокировки транзакции
         # для защиты от попыток добавить пользователя в 2 команды одновременно
-        user = await self._get_obj_model_by_id(
-            class_=User, obj_id=user_id, for_update=True
-        )
+        user = await self._get_obj_model_by_id(class_=User, obj_id=user_id, for_update=True)
         team = await self._get_obj_model_by_id(class_=Team, obj_id=team_id)
 
         if not user:

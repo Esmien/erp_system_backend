@@ -1,5 +1,7 @@
 import sys
+
 from loguru import logger
+
 from backend.core.config import settings
 
 
@@ -15,7 +17,10 @@ def setup_logger():
         sys.stdout,
         level=settings.logger.LOG_LEVEL,
         colorize=True,
-        format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
+        format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | "
+        "<level>{level: <8}</level> | "
+        "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - "
+        "<level>{message}</level>",
     )
 
     # Вывод в файл с ротацией

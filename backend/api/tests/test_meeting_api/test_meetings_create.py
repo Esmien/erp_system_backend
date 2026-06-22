@@ -1,5 +1,4 @@
-from datetime import datetime, timezone, timedelta
-
+from datetime import UTC, datetime, timedelta
 
 from backend.api.tests.test_meeting_api.utils import get_future_times
 
@@ -23,7 +22,7 @@ async def test_create_meeting_success(client):
 
 
 async def test_create_meeting_past_time_validation(client):
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     start = (now - timedelta(days=1)).isoformat()
     end = now.isoformat()
 
