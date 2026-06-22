@@ -1,12 +1,12 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
-from backend.core.enums import TaskStatus, RoleName
+from backend.core.enums import RoleName, TaskStatus
 from backend.task.repository import TaskRepository
 from backend.task.schemas import TaskCreate, TaskRead
 from backend.task.service import TaskService
-from backend.user.schemas import UserDTO, RoleDTO
+from backend.user.schemas import RoleDTO, UserDTO
 
 
 @pytest.fixture
@@ -63,5 +63,5 @@ def sample_task():
         status=TaskStatus.OPEN,
         author_id=1,
         executor_id=None,
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )

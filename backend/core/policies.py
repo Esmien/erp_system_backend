@@ -1,6 +1,5 @@
-from backend.core.enums import RoleName, BusinessElementName, AccessLevel
+from backend.core.enums import AccessLevel, BusinessElementName, RoleName
 from backend.rbac.schemas import AccessRules
-
 
 FULL_ACCESS = AccessRules(
     create=AccessLevel.ALL,
@@ -23,9 +22,7 @@ DEFAULT_POLICIES = {
         BusinessElementName.TASKS: FULL_ACCESS | {"change_status": AccessLevel.ALL},
         BusinessElementName.COMMENTS: FULL_ACCESS,
         BusinessElementName.TEAMS: FULL_ACCESS,
-        BusinessElementName.USERS: AccessRules(read=AccessLevel.ALL).model_dump(
-            exclude_none=True
-        ),
+        BusinessElementName.USERS: AccessRules(read=AccessLevel.ALL).model_dump(exclude_none=True),
         BusinessElementName.EVALUATIONS: FULL_ACCESS,
         BusinessElementName.MEETINGS: FULL_ACCESS,
     },
@@ -44,17 +41,13 @@ DEFAULT_POLICIES = {
             update=AccessLevel.AUTHOR,
             delete=AccessLevel.AUTHOR,
         ).model_dump(exclude_none=True),
-        BusinessElementName.TEAMS: AccessRules(read=AccessLevel.PARTICIPANT).model_dump(
-            exclude_none=True
-        ),
+        BusinessElementName.TEAMS: AccessRules(read=AccessLevel.PARTICIPANT).model_dump(exclude_none=True),
         BusinessElementName.USERS: AccessRules(
             read=AccessLevel.ALL,
             update=AccessLevel.AUTHOR,
             delete=AccessLevel.AUTHOR,
         ).model_dump(exclude_none=True),
-        BusinessElementName.EVALUATIONS: AccessRules(
-            read=AccessLevel.PARTICIPANT
-        ).model_dump(exclude_none=True),
+        BusinessElementName.EVALUATIONS: AccessRules(read=AccessLevel.PARTICIPANT).model_dump(exclude_none=True),
         BusinessElementName.MEETINGS: AccessRules(
             create=AccessLevel.ALL,
             read=AccessLevel.PARTICIPANT,

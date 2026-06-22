@@ -1,12 +1,11 @@
 from loguru import logger
 
-from backend.api.dependencies.pagination import PaginationParams, Page
+from backend.api.dependencies.pagination import Page, PaginationParams
 from backend.core.base_service import BaseService
-
-from backend.core.enums import BusinessElementName, Action, AccessLevel
+from backend.core.enums import AccessLevel, Action, BusinessElementName
 from backend.exceptions import (
-    MeetingOverlapError,
     MeetingDoesNotExistError,
+    MeetingOverlapError,
     UnknownAccessLevelError,
 )
 from backend.meeting.repository import MeetingRepository
@@ -34,18 +33,14 @@ class MeetingService(BaseService[MeetingReadWithParticipants]):
     def not_found_exception(self) -> Exception:
         return MeetingDoesNotExistError("Встреча не найдена")
 
-    def build_abac_context(
-        self, obj: MeetingReadWithParticipants, user: UserDTO
-    ) -> AccessContextDTO:
+    def build_abac_context(self, obj: MeetingReadWithParticipants, user: UserDTO) -> AccessContextDTO:
         is_participant = any(p.id == user.id for p in obj.participants)
         return AccessContextDTO(
             is_author=obj.author_id == user.id,
             is_participant=is_participant or (obj.author_id == user.id),
         )
 
-    async def create_meeting(
-        self, meeting_in: MeetingCreate, author: UserDTO
-    ) -> MeetingReadWithParticipants:
+    async def create_meeting(self, meeting_in: MeetingCreate, author: UserDTO) -> MeetingReadWithParticipants:
         """
         Создает новую встречу с проверкой накладок по времени.
 
@@ -68,43 +63,29 @@ class MeetingService(BaseService[MeetingReadWithParticipants]):
             if meeting_in.participant_ids:
                 ids_to_check = list(set(meeting_in.participant_ids + [author.id]))
 
-                overlapping_users = (
-                    await self.uow.meetings.get_overlapping_participants(
-                        participant_ids=ids_to_check,
-                        starts_on=meeting_in.datetime_start,
-                        ends_on=meeting_in.datetime_end,
-                    )
+                overlapping_users = await self.uow.meetings.get_overlapping_participants(
+                    participant_ids=ids_to_check,
+                    starts_on=meeting_in.datetime_start,
+                    ends_on=meeting_in.datetime_end,
                 )
 
                 # Если есть конфликты, отменяем создание
                 if overlapping_users:
-                    logger.info(
-                        f"Конфликт времени у пользователей с ID: {overlapping_users}"
-                    )
-                    raise MeetingOverlapError(
-                        f"Участники с ID {overlapping_users} заняты в это время."
-                    )
+                    logger.info(f"Конфликт времени у пользователей с ID: {overlapping_users}")
+                    raise MeetingOverlapError(f"Участники с ID {overlapping_users} заняты в это время.")
 
             # Формируем полную DTO для сохранения (добавляем автора)
-            new_meeting_dto = MeetingCreateDTO(
-                **meeting_in.model_dump(), author_id=author.id
-            )
+            new_meeting_dto = MeetingCreateDTO(**meeting_in.model_dump(), author_id=author.id)
 
             # Сохраняем в БД
-            new_meeting = await self.repository.create_meeting(
-                meeting_in=new_meeting_dto
-            )
+            new_meeting = await self.repository.create_meeting(meeting_in=new_meeting_dto)
 
             await self.uow.commit()
 
-        logger.info(
-            f"Встреча '{new_meeting.theme}' успешно создана пользователем {author.email}"
-        )
+        logger.info(f"Встреча '{new_meeting.theme}' успешно создана пользователем {author.email}")
         return new_meeting
 
-    async def get_all_meetings(
-        self, user: UserDTO, params: PaginationParams
-    ) -> Page[MeetingReadWithParticipants]:
+    async def get_all_meetings(self, user: UserDTO, params: PaginationParams) -> Page[MeetingReadWithParticipants]:
         """
         Получает все доступные пользователю встречи
 
@@ -144,9 +125,7 @@ class MeetingService(BaseService[MeetingReadWithParticipants]):
 
             return Page.create(items=meetings, total=total, params=params)
 
-    async def get_meeting_with_participants(
-        self, meeting_id: int, user: UserDTO
-    ) -> MeetingReadWithParticipants:
+    async def get_meeting_with_participants(self, meeting_id: int, user: UserDTO) -> MeetingReadWithParticipants:
         """
         Получает встречу со списком участников
 
@@ -211,9 +190,7 @@ class MeetingService(BaseService[MeetingReadWithParticipants]):
             # Собираем DTO для передачи в репозиторий
             update_dto = MeetingUpdateDTO(**update_dict)
             # Обновляем встречу
-            updated_meeting = await self.repository.update_meeting(
-                meeting_id=meeting_id, data_for_update=update_dto
-            )
+            updated_meeting = await self.repository.update_meeting(meeting_id=meeting_id, data_for_update=update_dto)
 
             # Если на стороне репо что-то пошло не так, сообщаем, что встреча  не найдена
             if not updated_meeting:

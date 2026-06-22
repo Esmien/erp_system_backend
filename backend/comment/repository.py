@@ -10,9 +10,7 @@ class CommentRepository(BaseRepository[Comment, CommentRead]):
     def __init__(self, session: AsyncSession):
         super().__init__(session=session, model=Comment, dto=CommentRead)
 
-    async def get_comments_by_task_id(
-        self, task_id: int, offset: int, limit: int
-    ) -> tuple[list[CommentRead], int]:
+    async def get_comments_by_task_id(self, task_id: int, offset: int, limit: int) -> tuple[list[CommentRead], int]:
         """
         Получает все комментарии к задаче, отсортированные по времени создания
 
@@ -24,10 +22,6 @@ class CommentRepository(BaseRepository[Comment, CommentRead]):
         Returns:
             Пагинированный список комментариев к задаче и общее количество комментов
         """
-        stmt = (
-            select(Comment)
-            .where(Comment.task_id == task_id)
-            .order_by(Comment.created_at.asc())
-        )
+        stmt = select(Comment).where(Comment.task_id == task_id).order_by(Comment.created_at.asc())
 
         return await self._paginate_statement(stmt=stmt, offset=offset, limit=limit)

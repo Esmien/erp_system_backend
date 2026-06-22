@@ -1,5 +1,5 @@
 import pytest
-from httpx import AsyncClient, ASGITransport
+from httpx import ASGITransport, AsyncClient
 
 from backend.api.dependencies.redis import get_redis
 from backend.api.main import app as main_app
@@ -20,9 +20,7 @@ def app(mock_redis):
 @pytest.fixture
 async def client(app):
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as ac:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         yield ac
         await ac.aclose()
 

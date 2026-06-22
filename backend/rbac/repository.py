@@ -9,9 +9,7 @@ class RbacRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get_access_rule(
-        self, role_id: int, business_element_name: str
-    ) -> AccessRuleDTO | None:
+    async def get_access_rule(self, role_id: int, business_element_name: str) -> AccessRuleDTO | None:
         """
         Возвращает правило доступа для указанной роли на указанный ресурс.
 

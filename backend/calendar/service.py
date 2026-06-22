@@ -1,8 +1,8 @@
 import calendar
-from datetime import date, datetime, time, timezone
+from datetime import UTC, date, datetime, time
 
-from backend.core.uow import IUnitOfWork
 from backend.calendar.schemas import CalendarResponse
+from backend.core.uow import IUnitOfWork
 from backend.user.schemas import UserDTO
 
 
@@ -40,8 +40,8 @@ class CalendarService:
             end_date = date(year, month, last_day)
 
         # Вычисляем границы для типа datetime с UTC (для Встреч)
-        start_dt = datetime.combine(start_date, time.min, tzinfo=timezone.utc)
-        end_dt = datetime.combine(end_date, time.max, tzinfo=timezone.utc)
+        start_dt = datetime.combine(start_date, time.min, tzinfo=UTC)
+        end_dt = datetime.combine(end_date, time.max, tzinfo=UTC)
 
         async with self.uow:
             # Получаем встречи и задачи

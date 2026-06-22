@@ -1,11 +1,10 @@
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import bcrypt
-from datetime import datetime, timedelta, timezone
-
 import jwt
-from loguru import logger
 from fastapi.concurrency import run_in_threadpool
+from loguru import logger
 
 from backend.core.config import settings
 from backend.exceptions import InvalidPasswordError
@@ -31,9 +30,7 @@ async def verify_password(plain_password: str, hashed_password: str) -> bool:
     # Превращаем хеш пароля в набор байтов
     hashed_password_bytes = hashed_password.encode(encoding="utf-8")
     # Сравниваем байты
-    is_password_valid = await run_in_threadpool(
-        bcrypt.checkpw, password_bytes, hashed_password_bytes
-    )
+    is_password_valid = await run_in_threadpool(bcrypt.checkpw, password_bytes, hashed_password_bytes)
 
     if not is_password_valid:
         raise InvalidPasswordError
@@ -63,9 +60,7 @@ async def get_password_hash(password: str) -> str:
     return hashed_password.decode("utf-8")
 
 
-def create_access_token(
-    data: dict[str, Any], expires_delta: timedelta | None = None
-) -> str:
+def create_access_token(data: dict[str, Any], expires_delta: timedelta | None = None) -> str:
     """
     Создает JWT токен.
 
@@ -79,7 +74,7 @@ def create_access_token(
 
     # Спасаем исходный словарь от мутаций
     curr_data = data.copy()
-    expires_time = datetime.now(tz=timezone.utc)
+    expires_time = datetime.now(tz=UTC)
 
     # Если время жизни токена не задано, берем дефолтное
     if expires_delta:

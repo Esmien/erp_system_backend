@@ -1,5 +1,5 @@
 from sqlalchemy import NullPool, select
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.orm import selectinload
 
 from backend.api.dependencies.permissions import get_current_user
@@ -13,18 +13,12 @@ TEST_DB_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/test_busine
 
 fixture_engine = create_async_engine(TEST_DB_URL, echo=False, poolclass=NullPool)
 
-fixture_async_session_maker = async_sessionmaker(
-    bind=fixture_engine, expire_on_commit=False, autoflush=False
-)
+fixture_async_session_maker = async_sessionmaker(bind=fixture_engine, expire_on_commit=False, autoflush=False)
 
 
 async def override_get_admin_user():
     async with fixture_async_session_maker() as session:
-        stmt = (
-            select(User)
-            .where(User.email == "admin@admin.com")
-            .options(selectinload(User.role))
-        )
+        stmt = select(User).where(User.email == "admin@admin.com").options(selectinload(User.role))
         result = await session.execute(stmt)
         user = result.scalar_one_or_none()
         return UserDTO.model_validate(user) if user else None
@@ -33,11 +27,7 @@ async def override_get_admin_user():
 async def override_get_regular_user():
     """Вспомогательная функция для переключения на обычного пользователя без прав"""
     async with fixture_async_session_maker() as session:
-        stmt = (
-            select(User)
-            .where(User.email == "user@user.com")
-            .options(selectinload(User.role))
-        )
+        stmt = select(User).where(User.email == "user@user.com").options(selectinload(User.role))
         result = await session.execute(stmt)
         user_model = result.scalar_one_or_none()
         return UserDTO.model_validate(user_model) if user_model else None

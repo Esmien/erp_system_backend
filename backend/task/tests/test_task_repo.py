@@ -47,9 +47,7 @@ async def test_get_tasks_with_filters_status_and_user(task_repo, task_in):
     """Покрываем строки фильтрации по status и user_id"""
     await task_repo.create(**task_in.model_dump(), author_id=1)
 
-    tasks, total = await task_repo.get_tasks_with_filters(
-        offset=0, limit=20, user_id=1, task_status=TaskStatus.OPEN
-    )
+    tasks, total = await task_repo.get_tasks_with_filters(offset=0, limit=20, user_id=1, task_status=TaskStatus.OPEN)
     assert len(tasks) >= 1
 
 

@@ -1,6 +1,6 @@
+from sqlalchemy import BigInteger, ForeignKey, String
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import BigInteger, String, ForeignKey
 
 from backend.core.database.engine import Base
 
@@ -11,9 +11,7 @@ class BusinessElement(Base):
     __tablename__ = "business_elements"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    name: Mapped[str] = mapped_column(
-        String(255), unique=True, nullable=False, comment="Название бизнес-сущности"
-    )
+    name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, comment="Название бизнес-сущности")
 
 
 class AccessRule(Base):

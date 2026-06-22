@@ -1,6 +1,6 @@
 import pytest
 
-from backend.exceptions import UserExistsError, RoleDoesNotExistError
+from backend.exceptions import RoleDoesNotExistError, UserExistsError
 
 
 @pytest.mark.parametrize("exc", [None, UserExistsError, RoleDoesNotExistError])

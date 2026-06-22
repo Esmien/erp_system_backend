@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Depends, status
 
 from backend.api.dependencies.meetings import (
-    MeetingServiceDepends,
     MeetingCreateBody,
+    MeetingServiceDepends,
     MeetingUpdateBody,
 )
 from backend.api.dependencies.pagination import Page, PaginationParamsDepends
-from backend.api.dependencies.permissions import get_current_user, CurrentUserDepends
+from backend.api.dependencies.permissions import CurrentUserDepends, get_current_user
 from backend.core.utils.error_schemas import ErrorResponseSchema
 from backend.meeting.schemas import MeetingReadWithParticipants
 
@@ -55,9 +55,7 @@ async def get_meeting_details(
     """
     Получает детали встречи
     """
-    return await service.get_meeting_with_participants(
-        meeting_id=meeting_id, user=current_user
-    )
+    return await service.get_meeting_with_participants(meeting_id=meeting_id, user=current_user)
 
 
 @router.post(
@@ -109,9 +107,7 @@ async def update_meeting(
     """
     Обновляет данные встречи
     """
-    return await service.update_meeting(
-        meeting_id=meeting_id, update_data=meeting_update, user=current_user
-    )
+    return await service.update_meeting(meeting_id=meeting_id, update_data=meeting_update, user=current_user)
 
 
 @router.delete(

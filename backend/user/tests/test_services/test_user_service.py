@@ -20,20 +20,14 @@ from backend.user.schemas import UserUpdate
         ({}, False),
     ],
 )
-async def test_update_profile(
-    user_service, mock_uow, user_to_update, update_data_dict, expected_to_call_repo
-):
+async def test_update_profile(user_service, mock_uow, user_to_update, update_data_dict, expected_to_call_repo):
     update_schema = UserUpdate(**update_data_dict)
     mock_uow.users.update_user.return_value = user_to_update
 
-    result = await user_service.update_profile(
-        user=user_to_update, update_data=update_schema
-    )
+    result = await user_service.update_profile(user=user_to_update, update_data=update_schema)
 
     if expected_to_call_repo:
-        mock_uow.users.update_user.assert_called_once_with(
-            user_id=user_to_update.id, update_dict=update_data_dict
-        )
+        mock_uow.users.update_user.assert_called_once_with(user_id=user_to_update.id, update_dict=update_data_dict)
     else:
         mock_uow.users.update_user.assert_not_called()
 
@@ -53,9 +47,7 @@ async def test_update_profile_not_found(user_service, mock_uow, user_to_update):
     mock_uow.users.update_user.return_value = None  # Имитируем, что юзер пропал из БД
 
     with pytest.raises(UserDoesNotExistError):
-        await user_service.update_profile(
-            user=user_to_update, update_data=update_schema
-        )
+        await user_service.update_profile(user=user_to_update, update_data=update_schema)
 
 
 async def test_soft_delete_profile_not_found(user_service, mock_uow, user_to_update):

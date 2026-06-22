@@ -3,14 +3,14 @@ from unittest.mock import patch
 import pytest
 
 from backend.exceptions import (
+    BadCredentialsError,
     InvalidPasswordError,
+    UserAlreadyActiveError,
     UserDoesNotExistError,
     UserNotActiveError,
-    UserAlreadyActiveError,
-    BadCredentialsError,
 )
 from backend.user.models import User
-from backend.user.schemas import UserDTO, Token
+from backend.user.schemas import Token, UserDTO
 
 
 @pytest.mark.parametrize(
@@ -25,9 +25,7 @@ from backend.user.schemas import UserDTO, Token
     ],
 )
 @patch("backend.user.service.verify_password")
-async def test_auth_check_creds(
-    mock_verify_password, mock_uow, auth_service, email, plain_password, exc
-):
+async def test_auth_check_creds(mock_verify_password, mock_uow, auth_service, email, plain_password, exc):
     testing_user = None
 
     if exc == BadCredentialsError:
@@ -46,15 +44,11 @@ async def test_auth_check_creds(
         with pytest.raises(exc):
             await auth_service.check_users_creds(email=email, password=plain_password)
     else:
-        result = await auth_service.check_users_creds(
-            email=email, password=plain_password
-        )
+        result = await auth_service.check_users_creds(email=email, password=plain_password)
 
         assert result == testing_user
 
-        mock_verify_password.assert_called_once_with(
-            plain_password=plain_password, hashed_password="fake_hash"
-        )
+        mock_verify_password.assert_called_once_with(plain_password=plain_password, hashed_password="fake_hash")
 
 
 @pytest.mark.parametrize(
@@ -65,9 +59,7 @@ async def test_auth_check_creds(
         (False, True, None),  # Успешная активация
     ],
 )
-async def test_activate_user(
-    auth_service, mock_uow, is_active, uow_returns_user, expected_exc
-):
+async def test_activate_user(auth_service, mock_uow, is_active, uow_returns_user, expected_exc):
     user = UserDTO(
         id=1,
         email="test@test.com",
@@ -125,9 +117,7 @@ def test_get_auth_token(auth_service, is_active, expected_exc):
         (True, True, None),  # Успех
     ],
 )
-async def test_get_active_user_by_id(
-    auth_service, mock_uow, uow_returns_user, is_active, expected_exc
-):
+async def test_get_active_user_by_id(auth_service, mock_uow, uow_returns_user, is_active, expected_exc):
     if uow_returns_user:
         user = UserDTO(
             id=1,

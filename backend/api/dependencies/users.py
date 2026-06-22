@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import Depends, Body
+from fastapi import Body, Depends
 
 from backend.api.dependencies.rbac import RbacServiceDepends
 from backend.api.dependencies.uow import UowDepends

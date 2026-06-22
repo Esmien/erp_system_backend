@@ -1,5 +1,4 @@
 from pydantic import BaseModel, ConfigDict, Field
-from typing import List
 
 from backend.user.schemas import UserRead
 
@@ -23,7 +22,7 @@ class TeamRead(TeamBase):
 class TeamWithMembersRead(TeamRead):
     """Схема для отправки клиенту ВМЕСТЕ с участниками команды"""
 
-    members: List[UserRead] = Field(default_factory=list)
+    members: list[UserRead] = Field(default_factory=list)
 
 
 class TeamCreate(TeamBase):

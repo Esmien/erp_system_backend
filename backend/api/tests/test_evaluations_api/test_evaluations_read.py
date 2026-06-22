@@ -3,9 +3,7 @@ from tests.fixtures.environment_setup import override_get_regular_user
 
 
 async def test_get_evaluation_success(client, closed_task_id, evaluation_data):
-    await client.post(
-        f"/api/v1/tasks/{closed_task_id}/evaluation/", json=evaluation_data
-    )
+    await client.post(f"/api/v1/tasks/{closed_task_id}/evaluation/", json=evaluation_data)
 
     response = await client.get(f"/api/v1/tasks/{closed_task_id}/evaluation/")
     data = response.json()
@@ -34,9 +32,7 @@ async def test_get_evaluation_task_not_found(client):
 
 async def test_get_evaluation_forbidden(client, closed_task_id, evaluation_data, app):
     # Ставим оценку под админом
-    await client.post(
-        f"/api/v1/tasks/{closed_task_id}/evaluation/", json=evaluation_data
-    )
+    await client.post(f"/api/v1/tasks/{closed_task_id}/evaluation/", json=evaluation_data)
 
     app.dependency_overrides[get_current_user] = override_get_regular_user
 

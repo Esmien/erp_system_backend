@@ -52,7 +52,4 @@ async def test_update_foreign_meeting_forbidden(client, app):
     update_data = {"theme": "Хак темы"}
     response = await client.patch(f"/api/v1/meetings/{meeting_id}/", json=update_data)
     assert response.status_code == 403
-    assert (
-        "данные встречи может обновить только автор или руководитель"
-        in response.json()["detail"].lower()
-    )
+    assert "данные встречи может обновить только автор или руководитель" in response.json()["detail"].lower()

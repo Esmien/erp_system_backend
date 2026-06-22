@@ -52,9 +52,7 @@ class SentryConfig(BaseModelConfig):
     def check_dsn_if_enabled(self):
         # Если Sentry включен, но DSN пустой — падаем с понятной ошибкой
         if self.ENABLED and not self.DSN:
-            raise ValueError(
-                "Sentry включен, но не задан DSN. Проверьте переменные окружения (.env)"
-            )
+            raise ValueError("Sentry включен, но не задан DSN. Проверьте переменные окружения (.env)")
         return self
 
 

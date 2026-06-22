@@ -1,8 +1,8 @@
-from fastapi import status, APIRouter, Depends
+from fastapi import APIRouter, Depends, status
 
+from backend.api.dependencies.comments import CommentCreateBody, CommentServiceDepends
 from backend.api.dependencies.pagination import Page, PaginationParamsDepends
 from backend.api.dependencies.permissions import CurrentUserDepends, get_current_user
-from backend.api.dependencies.comments import CommentCreateBody, CommentServiceDepends
 from backend.comment.schemas import CommentRead
 from backend.core.utils.error_schemas import ErrorResponseSchema
 
@@ -59,7 +59,5 @@ async def add_comment(
     """
     Добавляет комментарий к задаче.
     """
-    new_comment = await service.add_comment(
-        task_id=task_id, user=user, comment_in=comment_in
-    )
+    new_comment = await service.add_comment(task_id=task_id, user=user, comment_in=comment_in)
     return new_comment

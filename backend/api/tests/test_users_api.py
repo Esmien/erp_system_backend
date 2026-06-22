@@ -52,14 +52,10 @@ async def test_get_my_statistics_with_data(client, closed_task_json, evaluation_
     assert task_create_response.status_code == 201
     task_id = task_create_response.json()["id"]
 
-    update_response = await client.patch(
-        f"/api/v1/tasks/{task_id}/", json={"executor_id": my_id}
-    )
+    update_response = await client.patch(f"/api/v1/tasks/{task_id}/", json={"executor_id": my_id})
     assert update_response.status_code == 200
 
-    eval_response = await client.post(
-        f"/api/v1/tasks/{task_id}/evaluation/", json=evaluation_data
-    )
+    eval_response = await client.post(f"/api/v1/tasks/{task_id}/evaluation/", json=evaluation_data)
     assert eval_response.status_code == 201
 
     stats_response = await client.get("/api/v1/users/me/statistics/")

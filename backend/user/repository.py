@@ -6,8 +6,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from backend.core.enums import RoleName
-from backend.user.models import User, Role
-from backend.user.schemas import UserDTO, UserCreateDTO
+from backend.user.models import Role, User
+from backend.user.schemas import UserCreateDTO, UserDTO
 
 
 class RegisterRepository:
@@ -38,9 +38,7 @@ class RegisterRepository:
             return None
 
         # Подгружаем роль пользователя
-        stmt_select = (
-            select(User).where(User.id == new_user_id).options(selectinload(User.role))
-        )
+        stmt_select = select(User).where(User.id == new_user_id).options(selectinload(User.role))
 
         result_select = await self.session.execute(stmt_select)
         user_with_role = result_select.scalar_one()
@@ -68,9 +66,7 @@ class AuthRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def _get_user_model_by_email(
-        self, user_email: str, for_update: bool = False
-    ) -> User | None:
+    async def _get_user_model_by_email(self, user_email: str, for_update: bool = False) -> User | None:
         """
         Вспомогательный метод для получения модели пользователя
 
@@ -133,9 +129,7 @@ class AuthRepository:
             Обновленная модель пользователя с is_active=True или None, если пользователь не существует
         """
         # Защищаем через for_update от одновременных попыток изменить статус
-        user = await self._get_user_model_by_email(
-            user_email=user_email, for_update=True
-        )
+        user = await self._get_user_model_by_email(user_email=user_email, for_update=True)
 
         if not user:
             return None
@@ -164,9 +158,7 @@ class UserRepository:
         result = await self.session.execute(statement=stmt)
         return result.scalar_one_or_none()
 
-    async def update_user(
-        self, user_id: int, update_dict: dict[str, Any]
-    ) -> UserDTO | None:
+    async def update_user(self, user_id: int, update_dict: dict[str, Any]) -> UserDTO | None:
         """
         Обновляет данные пользователя (имя, фамилия, отчество)
 

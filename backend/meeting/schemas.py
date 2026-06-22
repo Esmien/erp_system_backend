@@ -1,5 +1,6 @@
-from datetime import datetime, timezone
-from pydantic import BaseModel, ConfigDict, model_validator, Field
+from datetime import UTC, datetime
+
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from backend.core.enums import MeetingStatus
 from backend.exceptions import DatetimeMismatchError
@@ -18,9 +19,7 @@ class MeetingBase(BaseModel):
         default=MeetingStatus.PENDING,
         description="Статус встречи: Ожидается(PENDING), в процессе(IN_PROCESS), завершена(ENDS), отменена(CANCELED)",
     )
-    participant_ids: list[int] = Field(
-        default_factory=list, description="ID участников"
-    )
+    participant_ids: list[int] = Field(default_factory=list, description="ID участников")
 
 
 class MeetingCreate(MeetingBase):
@@ -33,32 +32,28 @@ class MeetingCreate(MeetingBase):
         Нельзя выбрать дату в прошлом, а также указать дату/время завершения встречи раньше,
         чем начало
         """
-        now = datetime.now(timezone.utc).replace(second=0, microsecond=0)
+        now = datetime.now(UTC).replace(second=0, microsecond=0)
 
         # Конвертируем в UTC, если таймзона передана, иначе просто ставим метку UTC
         start_tz = (
-            self.datetime_start.replace(tzinfo=timezone.utc)
+            self.datetime_start.replace(tzinfo=UTC)
             if self.datetime_start.tzinfo is None
-            else self.datetime_start.astimezone(timezone.utc)
+            else self.datetime_start.astimezone(UTC)
         )
         end_tz = (
-            self.datetime_end.replace(tzinfo=timezone.utc)
+            self.datetime_end.replace(tzinfo=UTC)
             if self.datetime_end.tzinfo is None
-            else self.datetime_end.astimezone(timezone.utc)
+            else self.datetime_end.astimezone(UTC)
         )
 
         # Ограничиваем точность до минут
         start_tz = start_tz.replace(second=0, microsecond=0)
 
         if start_tz < now:
-            raise DatetimeMismatchError(
-                "Встреча не может начаться раньше текущего времени"
-            )
+            raise DatetimeMismatchError("Встреча не может начаться раньше текущего времени")
 
         if end_tz <= start_tz:
-            raise DatetimeMismatchError(
-                "Встреча не может окончиться раньше или одновременно с началом"
-            )
+            raise DatetimeMismatchError("Встреча не может окончиться раньше или одновременно с началом")
 
         return self
 
@@ -86,44 +81,38 @@ class MeetingUpdate(BaseModel):
     datetime_start: datetime | None = None
     datetime_end: datetime | None = None
     status: MeetingStatus | None = None
-    participant_ids: list[int] | None = Field(
-        default=None, description="Новый список ID участников"
-    )
+    participant_ids: list[int] | None = Field(default=None, description="Новый список ID участников")
 
     @model_validator(mode="after")
     def validate_datetime(self):
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         # Если передана дата начала, проверяем её на актуальность
         if self.datetime_start is not None:
             start_tz = (
-                self.datetime_start.replace(tzinfo=timezone.utc)
+                self.datetime_start.replace(tzinfo=UTC)
                 if self.datetime_start.tzinfo is None
-                else self.datetime_start.astimezone(timezone.utc)
+                else self.datetime_start.astimezone(UTC)
             )
             if start_tz < now:
-                raise DatetimeMismatchError(
-                    "Встреча не может начаться раньше текущего времени"
-                )
+                raise DatetimeMismatchError("Встреча не может начаться раньше текущего времени")
 
         # Проверяем, обе ли даты переданы и проверяем их на соответствие правилам:
         # начало не может быть позже завершения
         if self.datetime_start is not None and self.datetime_end is not None:
             start_tz = (
-                self.datetime_start.replace(tzinfo=timezone.utc)
+                self.datetime_start.replace(tzinfo=UTC)
                 if self.datetime_start.tzinfo is None
-                else self.datetime_start.astimezone(timezone.utc)
+                else self.datetime_start.astimezone(UTC)
             )
             end_tz = (
-                self.datetime_end.replace(tzinfo=timezone.utc)
+                self.datetime_end.replace(tzinfo=UTC)
                 if self.datetime_end.tzinfo is None
-                else self.datetime_end.astimezone(timezone.utc)
+                else self.datetime_end.astimezone(UTC)
             )
 
             if end_tz <= start_tz:
-                raise DatetimeMismatchError(
-                    "Встреча не может окончиться раньше или одновременно с началом"
-                )
+                raise DatetimeMismatchError("Встреча не может окончиться раньше или одновременно с началом")
 
         return self
 

@@ -1,16 +1,16 @@
 import asyncio
-from typing import Callable
+from collections.abc import Callable
 
 from loguru import logger
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.core.database.engine import async_session_maker
+from backend.core.enums import BusinessElementName, RoleName
 from backend.core.policies import DEFAULT_POLICIES
 from backend.core.security import get_password_hash
-from backend.core.enums import RoleName, BusinessElementName
-from backend.user.models import User, Role
-from backend.rbac.models import BusinessElement, AccessRule
+from backend.rbac.models import AccessRule, BusinessElement
+from backend.user.models import Role, User
 
 
 async def get_or_create(session, model, **kwargs):
@@ -27,9 +27,7 @@ async def get_or_create(session, model, **kwargs):
     return instance
 
 
-async def init_basic_data(
-    session: AsyncSession, password_hasher: Callable = get_password_hash
-):
+async def init_basic_data(session: AsyncSession, password_hasher: Callable = get_password_hash):
     roles_map = {}
     for role_name in RoleName:
         role = await get_or_create(session, Role, name=role_name)

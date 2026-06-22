@@ -1,6 +1,7 @@
-import pytest
 from unittest.mock import patch
+
 import jwt
+import pytest
 from fastapi import HTTPException
 
 from backend.api.dependencies.permissions import get_current_user
@@ -24,9 +25,7 @@ TEST_ALGO = "HS256"
     ],
 )
 @patch("backend.api.dependencies.permissions.settings")
-async def test_get_current_user(
-    mock_settings, auth_service_mock, token_payload, expected_exception
-):
+async def test_get_current_user(mock_settings, auth_service_mock, token_payload, expected_exception):
     mock_settings.security.SECRET_KEY = TEST_SECRET
     mock_settings.security.ALGORITHM = TEST_ALGO
 
@@ -56,13 +55,9 @@ async def test_get_current_user(
         auth_service_mock.get_active_user_by_id.assert_called_once_with(user_id=1)
 
 
-@pytest.mark.parametrize(
-    "service_exception", [UserDoesNotExistError, UserNotActiveError]
-)
+@pytest.mark.parametrize("service_exception", [UserDoesNotExistError, UserNotActiveError])
 @patch("backend.api.dependencies.permissions.settings")
-async def test_get_current_user_service_errors(
-    mock_settings, auth_service_mock, valid_token, service_exception
-):
+async def test_get_current_user_service_errors(mock_settings, auth_service_mock, valid_token, service_exception):
     mock_settings.security.SECRET_KEY = TEST_SECRET
     mock_settings.security.ALGORITHM = TEST_ALGO
 

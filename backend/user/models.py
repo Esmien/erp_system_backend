@@ -1,21 +1,21 @@
 # Для аннотаций во избежание циклических импортов
 from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import BigInteger, String, ForeignKey, Boolean, CheckConstraint
+from sqlalchemy import BigInteger, Boolean, CheckConstraint, ForeignKey, String
 from sqlalchemy import Enum as SQLEnum
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from backend.core.enums import RoleName
 from backend.core.database.engine import Base
-
+from backend.core.enums import RoleName
 
 # Для аннотаций во избежание циклических импортов
 if TYPE_CHECKING:
-    from backend.team.models import Team
-    from backend.task.models import Task
     from backend.comment.models import Comment
     from backend.meeting.models import Meeting
+    from backend.task.models import Task
+    from backend.team.models import Team
 
 
 class User(Base):
@@ -41,44 +41,26 @@ class User(Base):
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
 
     # Блок основных столбцов
-    email: Mapped[str] = mapped_column(
-        String, unique=True, comment="Электронная почта/логин пользователя"
-    )
-    hashed_password: Mapped[str] = mapped_column(
-        String, comment="Зашифрованный хэшем пароль"
-    )
-    name: Mapped[str] = mapped_column(
-        String(20), nullable=False, comment="Имя пользователя"
-    )
-    surname: Mapped[str | None] = mapped_column(
-        String(30), nullable=True, comment="Отчество пользователя"
-    )
-    last_name: Mapped[str | None] = mapped_column(
-        String(35), nullable=True, comment="Фамилия пользователя"
-    )
+    email: Mapped[str] = mapped_column(String, unique=True, comment="Электронная почта/логин пользователя")
+    hashed_password: Mapped[str] = mapped_column(String, comment="Зашифрованный хэшем пароль")
+    name: Mapped[str] = mapped_column(String(20), nullable=False, comment="Имя пользователя")
+    surname: Mapped[str | None] = mapped_column(String(30), nullable=True, comment="Отчество пользователя")
+    last_name: Mapped[str | None] = mapped_column(String(35), nullable=True, comment="Фамилия пользователя")
 
-    is_active: Mapped[bool] = mapped_column(
-        Boolean, default=True, index=True, comment="Статус активности (True/False)"
-    )
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, index=True, comment="Статус активности (True/False)")
 
     # Блок связей
-    role_id: Mapped[int] = mapped_column(
-        ForeignKey("roles.id"), index=True, comment="ID роли пользователя"
-    )
+    role_id: Mapped[int] = mapped_column(ForeignKey("roles.id"), index=True, comment="ID роли пользователя")
     team_id: Mapped[int | None] = mapped_column(
         ForeignKey("teams.id", ondelete="SET NULL"),
         index=True,
         comment="ID команды, в которой состоит пользователь",
     )
-    role: Mapped["Role"] = relationship(back_populates="users", lazy="selectin")
+    role: Mapped[Role] = relationship(back_populates="users", lazy="selectin")
     team: Mapped[Team | None] = relationship(back_populates="members")
 
-    created_tasks: Mapped[list[Task]] = relationship(
-        foreign_keys="[Task.author_id]", back_populates="author"
-    )
-    got_tasks: Mapped[list[Task]] = relationship(
-        foreign_keys="[Task.executor_id]", back_populates="executor"
-    )
+    created_tasks: Mapped[list[Task]] = relationship(foreign_keys="[Task.author_id]", back_populates="author")
+    got_tasks: Mapped[list[Task]] = relationship(foreign_keys="[Task.executor_id]", back_populates="executor")
     comments: Mapped[list[Comment]] = relationship(back_populates="author")
     created_meetings: Mapped[list[Meeting]] = relationship(back_populates="author")
     participant_meetings: Mapped[list[Meeting]] = relationship(
@@ -116,12 +98,10 @@ class Role(Base):
         unique=True,
         comment="Название роли",
     )
-    users: Mapped[list["User"]] = relationship(back_populates="role", lazy="selectin")
+    users: Mapped[list[User]] = relationship(back_populates="role", lazy="selectin")
 
     # Создаем кастомные констрейты в Postgres
-    __table_args__ = (
-        CheckConstraint(f"name IN ({ALLOWED_ROLES})", name="check_valid_role_name"),
-    )
+    __table_args__ = (CheckConstraint(f"name IN ({ALLOWED_ROLES})", name="check_valid_role_name"),)
 
     def __str__(self) -> str:
         return f"ID роли: {self.id}, название: {self.name}"

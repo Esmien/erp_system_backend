@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 
-from backend.task.schemas import TaskRead
 from backend.meeting.schemas import MeetingReadWithParticipants
+from backend.task.schemas import TaskRead
 
 
 class CalendarResponse(BaseModel):

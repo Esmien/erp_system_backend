@@ -1,15 +1,14 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
 
 from datetime import datetime
+from typing import TYPE_CHECKING
 
-from sqlalchemy import String, DateTime, func, ForeignKey, Table, Column
+from sqlalchemy import Column, DateTime, ForeignKey, String, Table, func
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from backend.core.enums import MeetingStatus
 from backend.core.database.engine import Base
-
+from backend.core.enums import MeetingStatus
 
 # Для защиты от циклических импортов
 if TYPE_CHECKING:
@@ -20,9 +19,7 @@ if TYPE_CHECKING:
 meeting_participants = Table(
     "meeting_participants",
     Base.metadata,
-    Column(
-        "meeting_id", ForeignKey("meetings.id", ondelete="CASCADE"), primary_key=True
-    ),
+    Column("meeting_id", ForeignKey("meetings.id", ondelete="CASCADE"), primary_key=True),
     Column("user_id", ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
 )
 
@@ -41,9 +38,7 @@ class Meeting(Base):
     datetime_start: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=func.now(), comment="Начало в", nullable=False
     )
-    datetime_end: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), comment="Окончание в ", nullable=True
-    )
+    datetime_end: Mapped[datetime] = mapped_column(DateTime(timezone=True), comment="Окончание в ", nullable=True)
     status: Mapped[str] = mapped_column(
         # Превращаем питоновский Enum в строчку для БД,
         # чтобы не было конфликтов типов при повторных миграциях
@@ -64,9 +59,7 @@ class Meeting(Base):
         comment="ID автора встречи",
         index=True,
     )
-    author: Mapped[User | None] = relationship(
-        foreign_keys=[author_id], back_populates="created_meetings"
-    )
+    author: Mapped[User | None] = relationship(foreign_keys=[author_id], back_populates="created_meetings")
 
     # Связь с участниками
     participants: Mapped[list[User]] = relationship(

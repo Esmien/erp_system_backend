@@ -1,30 +1,30 @@
-from fastapi import Request, status, FastAPI
+from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from loguru import logger
 from sqlalchemy.exc import SQLAlchemyError
 
 from backend.exceptions import (
-    UserDoesNotExistError,
-    TaskDoesNotExistError,
-    TeamDoesNotExistError,
-    RoleDoesNotExistError,
     AccessDeniedError,
-    UserNotActiveError,
-    TeamAlreadyExistError,
-    UserAlreadyInTeamError,
-    UserExistsError,
-    UserAlreadyActiveError,
     BadCredentialsError,
-    PasswordsMismatchError,
-    TaskAlreadyEvaluatedError,
-    TaskNotCompletedError,
-    MeetingOverlapError,
-    MeetingDoesNotExistError,
-    DatetimeMismatchError,
-    UnknownAccessLevelError,
-    InvalidPasswordError,
     CommentDoesNotExistsError,
+    DatetimeMismatchError,
     EvaluationDoesNotExistError,
+    InvalidPasswordError,
+    MeetingDoesNotExistError,
+    MeetingOverlapError,
+    PasswordsMismatchError,
+    RoleDoesNotExistError,
+    TaskAlreadyEvaluatedError,
+    TaskDoesNotExistError,
+    TaskNotCompletedError,
+    TeamAlreadyExistError,
+    TeamDoesNotExistError,
+    UnknownAccessLevelError,
+    UserAlreadyActiveError,
+    UserAlreadyInTeamError,
+    UserDoesNotExistError,
+    UserExistsError,
+    UserNotActiveError,
 )
 
 
@@ -77,8 +77,7 @@ def sqlalchemy_exception_handler(request: Request, exc: Exception) -> JSONRespon
     """
     # Пишем в лог метод, URL и саму ошибку для дебага
     logger.error(
-        f"Database error occurred while processing {request.method} {request.url.path} "
-        f"\nException details: {repr(exc)}"
+        f"Database error occurred while processing {request.method} {request.url.path} \nException details: {repr(exc)}"
     )
 
     # Отдаем клиенту безопасный стандартизированный ответ

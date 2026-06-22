@@ -5,9 +5,9 @@ from sqlalchemy import select
 
 from backend.core.security import get_password_hash
 from backend.user.models import User
-from backend.user.repository import RegisterRepository, AuthRepository, UserRepository
-from backend.user.schemas import UserRegister, UserDTO
-from backend.user.service import RegisterService, AuthService, UserService
+from backend.user.repository import AuthRepository, RegisterRepository, UserRepository
+from backend.user.schemas import UserDTO, UserRegister
+from backend.user.service import AuthService, RegisterService, UserService
 
 HASHED_PASSWORD = asyncio.run(get_password_hash("test"))
 

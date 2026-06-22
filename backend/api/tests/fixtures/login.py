@@ -1,7 +1,7 @@
 import jwt
 import pytest
 
-from backend.api.tests.test_permissions import TEST_SECRET, TEST_ALGO
+from backend.api.tests.test_permissions import TEST_ALGO, TEST_SECRET
 
 
 @pytest.fixture

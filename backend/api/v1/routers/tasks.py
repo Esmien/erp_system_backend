@@ -1,14 +1,14 @@
-from fastapi import APIRouter, status, Depends
+from fastapi import APIRouter, Depends, status
 
-from backend.api.dependencies.pagination import PaginationParamsDepends, Page
+from backend.api.dependencies.pagination import Page, PaginationParamsDepends
 from backend.api.dependencies.permissions import CurrentUserDepends, get_current_user
 from backend.api.dependencies.tasks import (
-    TaskServiceDepends,
-    TaskCreateBody,
-    TaskUpdateBody,
     TaskChangeStatusBody,
-    TaskStatusFilterQuery,
+    TaskCreateBody,
     TaskScopeFilterQuery,
+    TaskServiceDepends,
+    TaskStatusFilterQuery,
+    TaskUpdateBody,
 )
 from backend.core.utils.error_schemas import ErrorResponseSchema
 from backend.task.schemas import TaskRead
@@ -68,9 +68,7 @@ async def get_tasks_by_filter(
     """
     Возвращает список задач с учетом фильтров
     """
-    return await service.get_filtered_tasks(
-        user=current_user, scope=scope, task_status=task_status, params=params
-    )
+    return await service.get_filtered_tasks(user=current_user, scope=scope, task_status=task_status, params=params)
 
 
 @router.post(
@@ -122,9 +120,7 @@ async def update_task(
     """
     Обновляет задачу (только руководитель или автор)
     """
-    updated_task = await service.update_task(
-        task_id=task_id, update_data=update_data, user=current_user
-    )
+    updated_task = await service.update_task(task_id=task_id, update_data=update_data, user=current_user)
     return updated_task
 
 
@@ -150,9 +146,7 @@ async def change_status(
     """
     Обновляет статус задачи (исполнитель, автор или руководитель)
     """
-    updated_task = await service.change_status(
-        task_id=task_id, new_status=new_status, user=current_user
-    )
+    updated_task = await service.change_status(task_id=task_id, new_status=new_status, user=current_user)
     return updated_task
 
 

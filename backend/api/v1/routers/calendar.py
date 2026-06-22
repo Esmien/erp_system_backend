@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, status
 
 from backend.api.dependencies.calendar import CalendarServiceDepends, DateRangeDepends
-from backend.api.dependencies.permissions import get_current_user, CurrentUserDepends
+from backend.api.dependencies.permissions import CurrentUserDepends, get_current_user
 from backend.calendar.schemas import CalendarResponse
 
 router = APIRouter(

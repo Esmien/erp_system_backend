@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -8,7 +8,7 @@ from backend.meeting.schemas import MeetingCreate, MeetingUpdate
 
 def test_meeting_create_valid_dates():
     """Успешное создание схемы с валидными датами"""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     start = now + timedelta(hours=1)
     end = start + timedelta(hours=1)
 
@@ -26,13 +26,13 @@ def test_meeting_create_valid_dates():
     "start, end, exc_msg",
     [
         (
-            datetime.now(timezone.utc) - timedelta(hours=1),
-            datetime.now(timezone.utc) + timedelta(hours=1),
+            datetime.now(UTC) - timedelta(hours=1),
+            datetime.now(UTC) + timedelta(hours=1),
             "Встреча не может начаться раньше текущего времени",
         ),
         (
-            datetime.now(timezone.utc) + timedelta(hours=2),
-            datetime.now(timezone.utc) + timedelta(hours=1),
+            datetime.now(UTC) + timedelta(hours=2),
+            datetime.now(UTC) + timedelta(hours=1),
             "Встреча не может окончиться раньше или одновременно с началом",
         ),
     ],
