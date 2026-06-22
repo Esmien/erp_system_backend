@@ -1,3 +1,4 @@
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -43,12 +44,27 @@ class InviteCodeConfig(BaseModelConfig):
     CODE_LENGTH: int = 6
 
 
+class SentryConfig(BaseModelConfig):
+    ENABLED: bool = False
+    DSN: str = ""
+
+    @model_validator(mode="after")
+    def check_dsn_if_enabled(self):
+        # Если Sentry включен, но DSN пустой — падаем с понятной ошибкой
+        if self.ENABLED and not self.DSN:
+            raise ValueError(
+                "Sentry включен, но не задан DSN. Проверьте переменные окружения (.env)"
+            )
+        return self
+
+
 class Settings(BaseModelConfig):
     db: DatabaseConfig = DatabaseConfig()
     redis: RedisConfig = RedisConfig()
     inv_code: InviteCodeConfig = InviteCodeConfig()
     logger: LoggerConfig = LoggerConfig()
     security: SecurityConfig = SecurityConfig()
+    sentry_conf: SentryConfig = SentryConfig()
 
 
 settings = Settings()
