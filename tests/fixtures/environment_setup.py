@@ -1,10 +1,7 @@
 from sqlalchemy import NullPool, select
-from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import selectinload
 
-from backend.api.dependencies.permissions import get_current_user
-from backend.api.dependencies.uow import get_uow
-from backend.api.main import app
 from backend.core.uow import UnitOfWork
 from backend.user.models import User
 from backend.user.schemas import UserDTO
@@ -34,14 +31,16 @@ async def override_get_regular_user():
 
 
 class TestUnitOfWork(UnitOfWork):
-    def __init__(self):
-        super().__init__()
-        self.session_factory = fixture_async_session_maker
+    def __init__(self, session: AsyncSession):
+        super().__init__(session=session)
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        pass
 
 
-def override_get_uow():
-    return TestUnitOfWork()
+def override_get_uow(db_session):
+    return TestUnitOfWork(session=db_session)
 
 
-app.dependency_overrides[get_uow] = override_get_uow
-app.dependency_overrides[get_current_user] = override_get_admin_user
+# app.dependency_overrides[get_uow] = override_get_uow
+# app.dependency_overrides[get_current_user] = override_get_admin_user

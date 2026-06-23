@@ -61,37 +61,36 @@ class EvaluationService(BaseService[EvaluationRead]):
             TaskAlreadyEvaluatedError - если оценка уже стоит
             TaskDoesNotCompletedError - если задача еще не завершена
         """
-        async with self.uow:
-            # Проверяем глобальные права на выставление оценок
-            await self.check_permissions(
-                user=user,
-                action=Action.CREATE,
-                error_msg="Недостаточно прав для оценки задачи",
-            )
+        # Проверяем глобальные права на выставление оценок
+        await self.check_permissions(
+            user=user,
+            action=Action.CREATE,
+            error_msg="Недостаточно прав для оценки задачи",
+        )
 
-            # Проверяем, существует ли задача
-            task = await self._get_task(task_id=task_id)
+        # Проверяем, существует ли задача
+        task = await self._get_task(task_id=task_id)
 
-            if task.status is not TaskStatus.DONE:
-                raise TaskNotCompletedError("Задача еще не выполнена")
+        if task.status is not TaskStatus.DONE:
+            raise TaskNotCompletedError("Задача еще не выполнена")
 
-            # Проверяем, не оценена ли задача уже
-            existing_eval = await self.repository.get_by_task_id(task_id)
-            if existing_eval:
-                raise TaskAlreadyEvaluatedError("Эта задача уже оценена")
+        # Проверяем, не оценена ли задача уже
+        existing_eval = await self.repository.get_by_task_id(task_id)
+        if existing_eval:
+            raise TaskAlreadyEvaluatedError("Эта задача уже оценена")
 
-            # Сохраняем
-            new_eval = EvaluationCreateDTO(
-                value=evaluation_in.value,
-                comment=evaluation_in.comment,
-                task_id=task_id,
-                evaluator_id=user.id,
-            )
-            saved_eval = await self.repository.create(**new_eval.model_dump())
+        # Сохраняем
+        new_eval = EvaluationCreateDTO(
+            value=evaluation_in.value,
+            comment=evaluation_in.comment,
+            task_id=task_id,
+            evaluator_id=user.id,
+        )
+        saved_eval = await self.repository.create(**new_eval.model_dump())
 
-            await self.uow.commit()
+        await self.uow.commit()
 
-            return saved_eval
+        return saved_eval
 
     async def get_evaluation(self, task_id: int, user: UserDTO) -> EvaluationRead | None:
         """
@@ -108,25 +107,24 @@ class EvaluationService(BaseService[EvaluationRead]):
             TaskDoesNotExistsError - если не найдена задача
             AccessDeniedError - если нет прав на просмотр оценки
         """
-        async with self.uow:
-            task = await self._get_task(task_id=task_id)
+        task = await self._get_task(task_id=task_id)
 
-            # Проверяем причастность юзера к задаче
-            is_participant = (task.author_id == user.id) or (task.executor_id == user.id)
-            context = AccessContextDTO(is_participant=is_participant)
+        # Проверяем причастность юзера к задаче
+        is_participant = (task.author_id == user.id) or (task.executor_id == user.id)
+        context = AccessContextDTO(is_participant=is_participant)
 
-            # Проверяем права на чтение с учетом контекста
-            await self.rbac.enforce_permission(
-                user=user,
-                business_element_name=BusinessElementName.EVALUATIONS,
-                action=Action.READ,
-                context=context,
-                error_msg="У вас нет прав для просмотра этой оценки",
-            )
+        # Проверяем права на чтение с учетом контекста
+        await self.rbac.enforce_permission(
+            user=user,
+            business_element_name=BusinessElementName.EVALUATIONS,
+            action=Action.READ,
+            context=context,
+            error_msg="У вас нет прав для просмотра этой оценки",
+        )
 
-            evaluation = await self.repository.get_by_task_id(task_id)
+        evaluation = await self.repository.get_by_task_id(task_id)
 
-            return evaluation
+        return evaluation
 
     async def get_my_statistics(self, user: UserDTO) -> UserStatisticsRead:
         """
@@ -138,5 +136,4 @@ class EvaluationService(BaseService[EvaluationRead]):
         Returns:
             Статистика текущего пользователя
         """
-        async with self.uow:
-            return await self.repository.get_user_statistics(user_id=user.id)
+        return await self.repository.get_user_statistics(user_id=user.id)

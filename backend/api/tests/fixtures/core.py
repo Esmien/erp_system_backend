@@ -1,5 +1,4 @@
 import pytest
-from httpx import ASGITransport, AsyncClient
 
 from backend.api.dependencies.redis import get_redis
 from backend.api.main import app as main_app
@@ -15,14 +14,6 @@ def app(mock_redis):
 
     # Очищаем переопределения после теста
     main_app.dependency_overrides.pop(get_redis, None)
-
-
-@pytest.fixture
-async def client(app):
-
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
-        yield ac
-        await ac.aclose()
 
 
 @pytest.fixture(autouse=True)

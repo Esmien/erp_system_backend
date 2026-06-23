@@ -80,24 +80,23 @@ class TaskService(BaseService[TaskRead]):
                 raise TeamDoesNotExistError(f"Пользователь {user.email} не состоит в команде")
             team_id_filter = user.team_id
 
-        async with self.uow:
-            # Проверяем права
-            await self.rbac.enforce_permission(
-                user=user,
-                business_element_name=BusinessElementName.TASKS,
-                action=Action.READ,
-                context=context,
-                error_msg="Недостаточно прав для просмотра всех задач",
-            )
+        # Проверяем права
+        await self.rbac.enforce_permission(
+            user=user,
+            business_element_name=BusinessElementName.TASKS,
+            action=Action.READ,
+            context=context,
+            error_msg="Недостаточно прав для просмотра всех задач",
+        )
 
-            # Собираем отфильтрованные по скоупам таски
-            tasks, total = await self.repository.get_tasks_with_filters(
-                offset=params.offset,
-                limit=params.limit,
-                user_id=user_id_filter,
-                team_id=team_id_filter,
-                task_status=task_status,
-            )
+        # Собираем отфильтрованные по скоупам таски
+        tasks, total = await self.repository.get_tasks_with_filters(
+            offset=params.offset,
+            limit=params.limit,
+            user_id=user_id_filter,
+            team_id=team_id_filter,
+            task_status=task_status,
+        )
 
         if not tasks:
             logger.info("Задачи не найдены.")
@@ -118,15 +117,14 @@ class TaskService(BaseService[TaskRead]):
         Raises:
             AccessDeniedError - если нет прав для создания задачи
         """
-        async with self.uow:
-            await self.check_permissions(
-                user=author,
-                action=Action.CREATE,
-                error_msg="Вы не можете создавать задачи",
-            )
+        await self.check_permissions(
+            user=author,
+            action=Action.CREATE,
+            error_msg="Вы не можете создавать задачи",
+        )
 
-            new_task = await self.repository.create(**task_in.model_dump(), author_id=author.id)
-            await self.uow.commit()
+        new_task = await self.repository.create(**task_in.model_dump(), author_id=author.id)
+        await self.uow.commit()
 
         logger.info(f"Задача '{new_task.title}' успешно создана пользователем {author.email}")
         return new_task
@@ -154,29 +152,28 @@ class TaskService(BaseService[TaskRead]):
             # Если обновлять нечего, просто возвращаем текущую задачу
             return await self.get(obj_id=task_id, user=user)
 
-        async with self.uow:
-            task = await self.get_or_raise(obj_id=task_id)
+        task = await self.get_or_raise(obj_id=task_id)
 
-            await self.check_permissions(
-                user=user,
-                action=Action.UPDATE,
-                obj=task,
-                error_msg="Вы не можете редактировать эту задачу",
-            )
+        await self.check_permissions(
+            user=user,
+            action=Action.UPDATE,
+            obj=task,
+            error_msg="Вы не можете редактировать эту задачу",
+        )
 
-            # Проверяем существование пользователя для назначения исполнителем
-            executor_id = update_dict.get("executor_id")
-            if executor_id is not None:
-                executor = await self.uow.auth.get_user_and_role_by_user_id(executor_id)
-                if not executor:
-                    raise UserDoesNotExistError("Попытка назначить несуществующего исполнителя")
+        # Проверяем существование пользователя для назначения исполнителем
+        executor_id = update_dict.get("executor_id")
+        if executor_id is not None:
+            executor = await self.uow.auth.get_user_and_role_by_user_id(executor_id)
+            if not executor:
+                raise UserDoesNotExistError("Попытка назначить несуществующего исполнителя")
 
-            updated_task = await self.repository.update(obj_id=task_id, update_data=update_dict)
-            # Если что-то пошло не так на стороне репозитория
-            if not updated_task:
-                raise self.not_found_exception
+        updated_task = await self.repository.update(obj_id=task_id, update_data=update_dict)
+        # Если что-то пошло не так на стороне репозитория
+        if not updated_task:
+            raise self.not_found_exception
 
-            await self.uow.commit()
+        await self.uow.commit()
 
         logger.info(f"Задача ID {task_id} обновлена пользователем {user.email}")
         return updated_task
@@ -197,23 +194,22 @@ class TaskService(BaseService[TaskRead]):
             AccessDeniedError - если нет прав на изменение статуса
             TaskDoesNotExistsError - если задача не найдена
         """
-        async with self.uow:
-            task = await self.get_or_raise(obj_id=task_id)
+        task = await self.get_or_raise(obj_id=task_id)
 
-            await self.check_permissions(
-                user=user,
-                action=Action.CHANGE_STATUS,
-                obj=task,
-                error_msg="Вы не можете изменить статус этой задачи",
-            )
+        await self.check_permissions(
+            user=user,
+            action=Action.CHANGE_STATUS,
+            obj=task,
+            error_msg="Вы не можете изменить статус этой задачи",
+        )
 
-            updated_task = await self.repository.update(obj_id=task_id, update_data=new_status.model_dump())
+        updated_task = await self.repository.update(obj_id=task_id, update_data=new_status.model_dump())
 
-            # Если что-то пошло не так на стороне репозитория
-            if not updated_task:
-                raise TaskDoesNotExistError(TASK_NOT_FOUND)
+        # Если что-то пошло не так на стороне репозитория
+        if not updated_task:
+            raise TaskDoesNotExistError(TASK_NOT_FOUND)
 
-            await self.uow.commit()
+        await self.uow.commit()
 
         logger.info(f"Задаче ID {task_id} присвоен статус {updated_task.status}")
         return updated_task

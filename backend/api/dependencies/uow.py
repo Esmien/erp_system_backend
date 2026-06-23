@@ -1,3 +1,4 @@
+from collections.abc import AsyncGenerator
 from typing import Annotated
 
 from fastapi import Depends
@@ -5,9 +6,11 @@ from fastapi import Depends
 from backend.core.uow import IUnitOfWork, UnitOfWork
 
 
-def get_uow() -> IUnitOfWork:
+async def get_uow() -> AsyncGenerator[IUnitOfWork]:
     """Провайдер UnitOfWork для инъекции зависимостей"""
-    return UnitOfWork()
+    uow = UnitOfWork()
+    async with uow:
+        yield uow
 
 
 UowDepends = Annotated[IUnitOfWork, Depends(get_uow)]

@@ -51,36 +51,35 @@ class MeetingService(BaseService[MeetingReadWithParticipants]):
         Returns:
             Свежесозданная встреча со списком участников
         """
-        async with self.uow:
-            # Проверка прав на создание встреч
-            await self.check_permissions(
-                user=author,
-                action=Action.CREATE,
-                error_msg="Вы не можете создать встречу",
+        # Проверка прав на создание встреч
+        await self.check_permissions(
+            user=author,
+            action=Action.CREATE,
+            error_msg="Вы не можете создать встречу",
+        )
+
+        # Проверяем накладки по времени
+        if meeting_in.participant_ids:
+            ids_to_check = list(set(meeting_in.participant_ids + [author.id]))
+
+            overlapping_users = await self.uow.meetings.get_overlapping_participants(
+                participant_ids=ids_to_check,
+                starts_on=meeting_in.datetime_start,
+                ends_on=meeting_in.datetime_end,
             )
 
-            # Проверяем накладки по времени
-            if meeting_in.participant_ids:
-                ids_to_check = list(set(meeting_in.participant_ids + [author.id]))
+            # Если есть конфликты, отменяем создание
+            if overlapping_users:
+                logger.info(f"Конфликт времени у пользователей с ID: {overlapping_users}")
+                raise MeetingOverlapError(f"Участники с ID {overlapping_users} заняты в это время.")
 
-                overlapping_users = await self.uow.meetings.get_overlapping_participants(
-                    participant_ids=ids_to_check,
-                    starts_on=meeting_in.datetime_start,
-                    ends_on=meeting_in.datetime_end,
-                )
+        # Формируем полную DTO для сохранения (добавляем автора)
+        new_meeting_dto = MeetingCreateDTO(**meeting_in.model_dump(), author_id=author.id)
 
-                # Если есть конфликты, отменяем создание
-                if overlapping_users:
-                    logger.info(f"Конфликт времени у пользователей с ID: {overlapping_users}")
-                    raise MeetingOverlapError(f"Участники с ID {overlapping_users} заняты в это время.")
+        # Сохраняем в БД
+        new_meeting = await self.repository.create_meeting(meeting_in=new_meeting_dto)
 
-            # Формируем полную DTO для сохранения (добавляем автора)
-            new_meeting_dto = MeetingCreateDTO(**meeting_in.model_dump(), author_id=author.id)
-
-            # Сохраняем в БД
-            new_meeting = await self.repository.create_meeting(meeting_in=new_meeting_dto)
-
-            await self.uow.commit()
+        await self.uow.commit()
 
         logger.info(f"Встреча '{new_meeting.theme}' успешно создана пользователем {author.email}")
         return new_meeting
@@ -99,31 +98,30 @@ class MeetingService(BaseService[MeetingReadWithParticipants]):
         Raises:
             UnknownAccessLevelError - если уровень доступа не описан в политиках, проблема сервера
         """
-        async with self.uow:
-            # Проверяем глобальные права на просмотр встреч
-            access_level = await self.rbac.get_list_access_level(
-                user=user,
-                business_element_name=BusinessElementName.MEETINGS,
-                action=Action.READ,
-                error_msg="У вас нет прав для просмотра встреч",
-            )
+        # Проверяем глобальные права на просмотр встреч
+        access_level = await self.rbac.get_list_access_level(
+            user=user,
+            business_element_name=BusinessElementName.MEETINGS,
+            action=Action.READ,
+            error_msg="У вас нет прав для просмотра встреч",
+        )
 
-            # Если нет ограничений (руководитель, например) - отдаем все встречи без привязки к личному ID
-            if access_level == AccessLevel.ALL:
-                filter_user_id = None
-            # Если проверка вернула требование причастности, добавляем личный ID в фильтрацию
-            elif access_level in (AccessLevel.PARTICIPANT, AccessLevel.AUTHOR):
-                filter_user_id = user.id
-            # Если же вернулись неизвестные права - проблема сервера
-            else:
-                raise UnknownAccessLevelError("Неизвестный уровень доступа")
+        # Если нет ограничений (руководитель, например) - отдаем все встречи без привязки к личному ID
+        if access_level == AccessLevel.ALL:
+            filter_user_id = None
+        # Если проверка вернула требование причастности, добавляем личный ID в фильтрацию
+        elif access_level in (AccessLevel.PARTICIPANT, AccessLevel.AUTHOR):
+            filter_user_id = user.id
+        # Если же вернулись неизвестные права - проблема сервера
+        else:
+            raise UnknownAccessLevelError("Неизвестный уровень доступа")
 
-            # Пагинируем
-            meetings, total = await self.uow.meetings.get_meetings(
-                offset=params.offset, limit=params.limit, user_id=filter_user_id
-            )
+        # Пагинируем
+        meetings, total = await self.uow.meetings.get_meetings(
+            offset=params.offset, limit=params.limit, user_id=filter_user_id
+        )
 
-            return Page.create(items=meetings, total=total, params=params)
+        return Page.create(items=meetings, total=total, params=params)
 
     async def get_meeting_with_participants(self, meeting_id: int, user: UserDTO) -> MeetingReadWithParticipants:
         """
@@ -139,18 +137,17 @@ class MeetingService(BaseService[MeetingReadWithParticipants]):
         Raises:
             MeetingDoesNotExistsError - если встреча не нашлась по ID
         """
-        async with self.uow:
-            meeting = await self.get_or_raise(obj_id=meeting_id)
-            if not meeting:
-                raise self.not_found_exception
+        meeting = await self.get_or_raise(obj_id=meeting_id)
+        if not meeting:
+            raise self.not_found_exception
 
-            await self.check_permissions(
-                user=user,
-                action=Action.READ,
-                error_msg="Вы не можете получить данные этой встречи",
-            )
+        await self.check_permissions(
+            user=user,
+            action=Action.READ,
+            error_msg="Вы не можете получить данные этой встречи",
+        )
 
-            return meeting
+        return meeting
 
     async def update_meeting(
         self, meeting_id: int, update_data: MeetingUpdate, user: UserDTO
@@ -172,30 +169,29 @@ class MeetingService(BaseService[MeetingReadWithParticipants]):
         # Сериализуем DTO для удобной работы
         update_dict = update_data.model_dump(exclude_unset=True)
 
-        async with self.uow:
-            meeting = await self.get_or_raise(obj_id=meeting_id)
+        meeting = await self.get_or_raise(obj_id=meeting_id)
 
-            # Если данных для обновления нет, просто возвращаем исходную встречу
-            if not update_dict:
-                return meeting
+        # Если данных для обновления нет, просто возвращаем исходную встречу
+        if not update_dict:
+            return meeting
 
-            # Проверяем права на обновление
-            await self.check_permissions(
-                user=user,
-                action=Action.UPDATE,
-                obj=meeting,
-                error_msg="Данные встречи может обновить только автор или руководитель",
-            )
+        # Проверяем права на обновление
+        await self.check_permissions(
+            user=user,
+            action=Action.UPDATE,
+            obj=meeting,
+            error_msg="Данные встречи может обновить только автор или руководитель",
+        )
 
-            # Собираем DTO для передачи в репозиторий
-            update_dto = MeetingUpdateDTO(**update_dict)
-            # Обновляем встречу
-            updated_meeting = await self.repository.update_meeting(meeting_id=meeting_id, data_for_update=update_dto)
+        # Собираем DTO для передачи в репозиторий
+        update_dto = MeetingUpdateDTO(**update_dict)
+        # Обновляем встречу
+        updated_meeting = await self.repository.update_meeting(meeting_id=meeting_id, data_for_update=update_dto)
 
-            # Если на стороне репо что-то пошло не так, сообщаем, что встреча  не найдена
-            if not updated_meeting:
-                raise self.not_found_exception
+        # Если на стороне репо что-то пошло не так, сообщаем, что встреча  не найдена
+        if not updated_meeting:
+            raise self.not_found_exception
 
-            await self.uow.commit()
+        await self.uow.commit()
 
-            return updated_meeting
+        return updated_meeting

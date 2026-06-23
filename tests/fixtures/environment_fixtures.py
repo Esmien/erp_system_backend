@@ -1,10 +1,16 @@
+from collections.abc import AsyncGenerator
 from unittest.mock import AsyncMock, MagicMock
 
+import httpx
 import pytest
-import pytest_asyncio
+from httpx import ASGITransport
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.api.dependencies.pagination import PaginationParams
-from tests.fixtures.environment_setup import fixture_async_session_maker
+from backend.api.dependencies.permissions import get_current_user
+from backend.api.dependencies.uow import get_uow
+from backend.core.uow import IUnitOfWork
+from tests.fixtures.environment_setup import TestUnitOfWork, fixture_async_session_maker, override_get_admin_user
 
 
 @pytest.fixture
@@ -14,10 +20,41 @@ def mock_redis():
     return mock
 
 
-@pytest_asyncio.fixture
+@pytest.fixture
 async def db_session():
     async with fixture_async_session_maker() as session:
         yield session
+
+
+@pytest.fixture
+async def uow(db_session: AsyncSession) -> TestUnitOfWork:
+    """Создает тестовый UoW с реальной тестовой сессией БД"""
+    return TestUnitOfWork(session=db_session)
+
+
+@pytest.fixture
+async def client(db_session: AsyncSession, app) -> AsyncGenerator[httpx.AsyncClient, None]:
+    """
+    Создает тестовый HTTP-клиент с подмененными зависимостями:
+    - UoW использует тестовую сессию БД
+    - get_current_user возвращает админа
+    """
+
+    # Создаем фабрику для override_get_uow, которая замыкает db_session
+    async def override_uow_factory() -> IUnitOfWork:
+        return TestUnitOfWork(session=db_session)
+
+    # Подменяем зависимости
+    app.dependency_overrides[get_uow] = override_uow_factory
+    app.dependency_overrides[get_current_user] = override_get_admin_user
+
+    async with httpx.AsyncClient(
+        transport=ASGITransport(app=app),  # <-- ИСПОЛЬЗУЙ ЭТО
+        base_url="http://test",
+    ) as ac:
+        yield ac
+
+    app.dependency_overrides.clear()
 
 
 @pytest.fixture

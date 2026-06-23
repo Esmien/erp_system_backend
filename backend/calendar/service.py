@@ -43,17 +43,16 @@ class CalendarService:
         start_dt = datetime.combine(start_date, time.min, tzinfo=UTC)
         end_dt = datetime.combine(end_date, time.max, tzinfo=UTC)
 
-        async with self.uow:
-            # Получаем встречи и задачи
-            tasks_items = await self.uow.tasks.get_tasks_by_date_range(
-                user_id=user.id,
-                start_date=start_date,
-                end_date=end_date,
-            )
-            meetings_items = await self.uow.meetings.get_meetings_by_date_range(
-                user_id=user.id,
-                start_date=start_dt,
-                end_date=end_dt,
-            )
+        # Получаем встречи и задачи
+        tasks_items = await self.uow.tasks.get_tasks_by_date_range(
+            user_id=user.id,
+            start_date=start_date,
+            end_date=end_date,
+        )
+        meetings_items = await self.uow.meetings.get_meetings_by_date_range(
+            user_id=user.id,
+            start_date=start_dt,
+            end_date=end_dt,
+        )
 
         return CalendarResponse(tasks=tasks_items, meetings=meetings_items)

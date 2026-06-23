@@ -47,26 +47,25 @@ class CommentService(BaseService[CommentRead]):
         Returns:
             Модель готового комментария
         """
-        async with self.uow:
-            task = await self._get_task(task_id=task_id)
+        task = await self._get_task(task_id=task_id)
 
-            # Проверяем права на добавление комментария
-            task_context = AccessContextDTO(
-                is_author=task.author_id == user.id,
-                is_participant=(task.author_id == user.id) or (task.executor_id == user.id),
-            )
-            await self.rbac.enforce_permission(
-                user=user,
-                business_element_name=BusinessElementName.COMMENTS,
-                action=Action.CREATE,
-                context=task_context,
-                error_msg="Вы не можете оставлять комментарии к этой задаче",
-            )
+        # Проверяем права на добавление комментария
+        task_context = AccessContextDTO(
+            is_author=task.author_id == user.id,
+            is_participant=(task.author_id == user.id) or (task.executor_id == user.id),
+        )
+        await self.rbac.enforce_permission(
+            user=user,
+            business_element_name=BusinessElementName.COMMENTS,
+            action=Action.CREATE,
+            context=task_context,
+            error_msg="Вы не можете оставлять комментарии к этой задаче",
+        )
 
-            # Если проверка выше прошла успешно - создаем комментарий
-            new_comment = await self.repository.create(task_id=task_id, author_id=user.id, text=comment_in.text)
+        # Если проверка выше прошла успешно - создаем комментарий
+        new_comment = await self.repository.create(task_id=task_id, author_id=user.id, text=comment_in.text)
 
-            await self.uow.commit()
+        await self.uow.commit()
 
         logger.info(f"Пользователь {user.email} оставил комментарий к задаче ID {task_id}")
         return new_comment
@@ -83,24 +82,23 @@ class CommentService(BaseService[CommentRead]):
         Returns:
             Объект страницы (Page), содержащий список комментариев и метаданные пагинации
         """
-        async with self.uow:
-            task = await self._get_task(task_id=task_id)
+        task = await self._get_task(task_id=task_id)
 
-            task_context = AccessContextDTO(
-                is_author=task.author_id == user.id,
-                is_participant=(task.author_id == user.id) or (task.executor_id == user.id),
-            )
-            await self.rbac.enforce_permission(
-                user=user,
-                business_element_name=BusinessElementName.TASKS,
-                action=Action.READ,
-                context=task_context,
-                error_msg="Вы не являетесь участником задачи, комментарии недоступны.",
-            )
+        task_context = AccessContextDTO(
+            is_author=task.author_id == user.id,
+            is_participant=(task.author_id == user.id) or (task.executor_id == user.id),
+        )
+        await self.rbac.enforce_permission(
+            user=user,
+            business_element_name=BusinessElementName.TASKS,
+            action=Action.READ,
+            context=task_context,
+            error_msg="Вы не являетесь участником задачи, комментарии недоступны.",
+        )
 
-            # Получаем комментарии с лимитами
-            comments, total = await self.repository.get_comments_by_task_id(
-                task_id=task_id, offset=params.offset, limit=params.limit
-            )
+        # Получаем комментарии с лимитами
+        comments, total = await self.repository.get_comments_by_task_id(
+            task_id=task_id, offset=params.offset, limit=params.limit
+        )
 
-            return Page.create(items=comments, total=total, params=params)
+        return Page.create(items=comments, total=total, params=params)

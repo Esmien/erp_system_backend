@@ -62,15 +62,14 @@ class TeamService(BaseService[TeamWithMembersRead]):
             AccessDeniedError - если пользователь не в этой команде
             TeamDoesNotExistsError - если команды с таким названием не существует
         """
-        async with self.uow:
-            team = await self.get_or_raise(obj_id=team_id)
-            # Проверка прав - можно только участникам или руководителям
-            await self.check_permissions(
-                user=user,
-                action=Action.READ,
-                obj=team,
-                error_msg="Вы не можете посмотреть данные этой команды",
-            )
+        team = await self.get_or_raise(obj_id=team_id)
+        # Проверка прав - можно только участникам или руководителям
+        await self.check_permissions(
+            user=user,
+            action=Action.READ,
+            obj=team,
+            error_msg="Вы не можете посмотреть данные этой команды",
+        )
 
         logger.info(f"Успешно получены данные команды ID: {team.id}, Название: {team.name}.")
         return team
@@ -89,34 +88,33 @@ class TeamService(BaseService[TeamWithMembersRead]):
             AccessDeniedError - если нет прав на создание команды
             TeamAlreadyExistsError - если команда с таким названием уже существует
         """
-        async with self.uow:
-            # Проверка прав - можно только руководителям
-            await self.check_permissions(
-                user=user,
-                action=Action.CREATE,
-                error_msg="Недостаточно прав для создания команды",
-            )
+        # Проверка прав - можно только руководителям
+        await self.check_permissions(
+            user=user,
+            action=Action.CREATE,
+            error_msg="Недостаточно прав для создания команды",
+        )
 
-            # Проверяем существование команды, чтобы избежать дубликатов
-            team_by_name = await self.repository.get_team_model_by_field(field="name", value=team_in.name)
+        # Проверяем существование команды, чтобы избежать дубликатов
+        team_by_name = await self.repository.get_team_model_by_field(field="name", value=team_in.name)
 
-            if team_by_name:
-                logger.info(f"Команда с названием {team_in.name} уже существует.")
-                raise TeamAlreadyExistError("Команда с таким названием уже существует")
+        if team_by_name:
+            logger.info(f"Команда с названием {team_in.name} уже существует.")
+            raise TeamAlreadyExistError("Команда с таким названием уже существует")
 
-            # Запускаем генерацию инвайт-кода в цикле, чтобы он был уникальным.
-            # Если совпадений в Бд не найдено, то цикл завершается
-            while True:
-                code = self.generate_invite_code()
-                team_by_code = await self.repository.get_team_model_by_field(field="invite_code", value=code)
+        # Запускаем генерацию инвайт-кода в цикле, чтобы он был уникальным.
+        # Если совпадений в Бд не найдено, то цикл завершается
+        while True:
+            code = self.generate_invite_code()
+            team_by_code = await self.repository.get_team_model_by_field(field="invite_code", value=code)
 
-                if not team_by_code:
-                    logger.info(f"Инвайт код для команды {team_in.name} успешно сгенерирован.")
-                    break
+            if not team_by_code:
+                logger.info(f"Инвайт код для команды {team_in.name} успешно сгенерирован.")
+                break
 
-            created_team = await self.repository.create(**team_in.model_dump(), invite_code=code)
+        created_team = await self.repository.create(**team_in.model_dump(), invite_code=code)
 
-            await self.uow.commit()
+        await self.uow.commit()
 
         logger.info(f"Команда {created_team.name} успешно создана.")
         return created_team
@@ -141,16 +139,15 @@ class TeamService(BaseService[TeamWithMembersRead]):
             logger.info(f"Пользователь ID: {user.id}, Email: {user.email} уже состоит в команде ID: {user.team_id}.")
             raise UserAlreadyInTeamError("Вы уже состоите в команде")
 
-        async with self.uow:
-            # Ищем команду по инвайт коду и вступаем, если все ок
-            team = await self.repository.get_team_model_by_field(field="invite_code", value=invite_code)
+        # Ищем команду по инвайт коду и вступаем, если все ок
+        team = await self.repository.get_team_model_by_field(field="invite_code", value=invite_code)
 
-            if not team:
-                logger.info(f"Инвайт код {invite_code} не найден.")
-                raise TeamDoesNotExistError("Команда с таким кодом не найдена")
+        if not team:
+            logger.info(f"Инвайт код {invite_code} не найден.")
+            raise TeamDoesNotExistError("Команда с таким кодом не найдена")
 
-            await self.repository.add_user_to_team(user_id=user.id, team_id=team.id)
-            await self.uow.commit()
+        await self.repository.add_user_to_team(user_id=user.id, team_id=team.id)
+        await self.uow.commit()
 
         logger.info(f"Пользователь ID: {user.id} добавлен в команду ID: {team.id}")
         return team

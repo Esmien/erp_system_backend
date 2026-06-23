@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from types import TracebackType
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from backend.comment.repository import CommentRepository
 from backend.core.database.engine import async_session_maker
 from backend.evaluation.repository import EvaluationRepository
@@ -43,12 +45,8 @@ class IUnitOfWork(ABC):
 class UnitOfWork(IUnitOfWork):
     """Конкретная реализация UoW для SQLAlchemy"""
 
-    def __init__(self):
-        self.session_factory = async_session_maker
-
-    async def __aenter__(self):
-        self.session = self.session_factory()
-
+    def __init__(self, session: AsyncSession | None = None):
+        self.session = session if session is not None else async_session_maker()
         self.users = UserRepository(session=self.session)
         self.auth = AuthRepository(session=self.session)
         self.register = RegisterRepository(session=self.session)
@@ -59,6 +57,7 @@ class UnitOfWork(IUnitOfWork):
         self.evaluations = EvaluationRepository(session=self.session)
         self.meetings = MeetingRepository(session=self.session)
 
+    async def __aenter__(self):
         return self
 
     async def __aexit__(

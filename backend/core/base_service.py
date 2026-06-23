@@ -64,37 +64,33 @@ class BaseService[DTOType: BaseModel](ABC):
 
     async def get(self, obj_id: int, user: UserDTO) -> DTOType:
         """Получение записи по ID с проверкой прав на чтение"""
-        async with self.uow:
-            obj = await self.get_or_raise(obj_id=obj_id)
-            await self.check_permissions(user=user, action=Action.READ, obj=obj)
-            return obj
+        obj = await self.get_or_raise(obj_id=obj_id)
+        await self.check_permissions(user=user, action=Action.READ, obj=obj)
+        return obj
 
     async def create(self, create_data: dict[str, Any], user: UserDTO) -> DTOType:
         """Стандартное создание записи с проверкой прав"""
-        async with self.uow:
-            await self.check_permissions(user=user, action=Action.CREATE)
-            obj = await self.repository.create(**create_data)
-            await self.uow.commit()
-            return obj
+        await self.check_permissions(user=user, action=Action.CREATE)
+        obj = await self.repository.create(**create_data)
+        await self.uow.commit()
+        return obj
 
     async def update(self, obj_id: int, update_data: dict[str, Any], user: UserDTO) -> DTOType:
         """Универсальное обновление"""
-        async with self.uow:
-            obj = await self.get_or_raise(obj_id=obj_id)
-            await self.check_permissions(user=user, action=Action.UPDATE, obj=obj)
+        obj = await self.get_or_raise(obj_id=obj_id)
+        await self.check_permissions(user=user, action=Action.UPDATE, obj=obj)
 
-            updated_obj = await self.repository.update(obj_id=obj_id, update_data=update_data)
-            if not updated_obj:
-                raise self.not_found_exception
+        updated_obj = await self.repository.update(obj_id=obj_id, update_data=update_data)
+        if not updated_obj:
+            raise self.not_found_exception
 
-            await self.uow.commit()
-            return updated_obj
+        await self.uow.commit()
+        return updated_obj
 
     async def delete(self, obj_id: int, user: UserDTO) -> None:
         """Универсальное удаление"""
-        async with self.uow:
-            obj = await self.get_or_raise(obj_id=obj_id)
-            await self.check_permissions(user=user, action=Action.DELETE, obj=obj)
+        obj = await self.get_or_raise(obj_id=obj_id)
+        await self.check_permissions(user=user, action=Action.DELETE, obj=obj)
 
-            await self.repository.delete(obj_id=obj_id)
-            await self.uow.commit()
+        await self.repository.delete(obj_id=obj_id)
+        await self.uow.commit()

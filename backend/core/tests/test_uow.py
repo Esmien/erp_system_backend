@@ -1,13 +1,32 @@
 from unittest.mock import patch
 
-from backend.api.dependencies.uow import get_uow
 from backend.core.uow import UnitOfWork
 
 
-def test_uow_provider():
-    result = get_uow()
+async def test_uow_creation():
+    """Тестирует, что UnitOfWork корректно создается и имеет все репозитории"""
+    uow = UnitOfWork()
 
-    assert type(result) is UnitOfWork
+    # Проверяем наличие сессии
+    assert hasattr(uow, "session")
+    assert uow.session is not None
+
+    # Проверяем наличие всех репозиториев
+    assert hasattr(uow, "tasks")
+    assert hasattr(uow, "users")
+    assert hasattr(uow, "comments")
+    assert hasattr(uow, "teams")
+    assert hasattr(uow, "rbac")
+    assert hasattr(uow, "evaluations")
+    assert hasattr(uow, "meetings")
+    assert hasattr(uow, "auth")
+    assert hasattr(uow, "register")
+
+    # Проверяем, что репозитории используют ту же сессию
+    assert uow.tasks.session is uow.session
+    assert uow.users.session is uow.session
+
+    await uow.session.close()
 
 
 async def test_uow_aenter_aexit_success(mock_session_factory):

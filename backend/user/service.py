@@ -40,32 +40,31 @@ class RegisterService:
             UserExistsError - если пользователь существует
             RoleDoesNotExistsError - присваиваемая роль не найдена
         """
-        async with self.uow:
-            # Защита от присвоения несуществующей роли
-            role_id = await self.uow.register.get_role_id(role_name=role_name)
-            # Проблема на стороне сервера, роль не найдена
-            if not role_id:
-                logger.error(f"Ошибка! Роль {role_name} не найдена.")
-                raise RoleDoesNotExistError("Запрашиваемая роль не найдена, обратитесь в поддержку")
+        # Защита от присвоения несуществующей роли
+        role_id = await self.uow.register.get_role_id(role_name=role_name)
+        # Проблема на стороне сервера, роль не найдена
+        if not role_id:
+            logger.error(f"Ошибка! Роль {role_name} не найдена.")
+            raise RoleDoesNotExistError("Запрашиваемая роль не найдена, обратитесь в поддержку")
 
-            # Собираем модель пользователя со всеми полями
-            new_user_dto = UserCreateDTO(
-                **user_in.model_dump(exclude={"password", "repeat_password"}),
-                hashed_password=await get_password_hash(user_in.password),
-                role_id=role_id,
-                is_active=True,
-            )
+        # Собираем модель пользователя со всеми полями
+        new_user_dto = UserCreateDTO(
+            **user_in.model_dump(exclude={"password", "repeat_password"}),
+            hashed_password=await get_password_hash(user_in.password),
+            role_id=role_id,
+            is_active=True,
+        )
 
-            registered_user = await self.uow.register.register_user(new_user_dto)
+        registered_user = await self.uow.register.register_user(new_user_dto)
 
-            if not registered_user:
-                logger.info(f"Пользователь {user_in.email} уже зарегистрирован.")
-                raise UserExistsError("Пользователь с таким email уже зарегистрирован!")
+        if not registered_user:
+            logger.info(f"Пользователь {user_in.email} уже зарегистрирован.")
+            raise UserExistsError("Пользователь с таким email уже зарегистрирован!")
 
-            # Регистрируем
-            await self.uow.commit()
-            logger.info(f"Пользователь ID: {registered_user.id}, Email: {registered_user.email} зарегистрирован")
-            return registered_user
+        # Регистрируем
+        await self.uow.commit()
+        logger.info(f"Пользователь ID: {registered_user.id}, Email: {registered_user.email} зарегистрирован")
+        return registered_user
 
 
 class AuthService:
@@ -92,8 +91,7 @@ class AuthService:
         Raises:
             BadCredentialsError - если почта или пароль неверные
         """
-        async with self.uow:
-            user = await self.uow.auth.get_user(email=email)
+        user = await self.uow.auth.get_user(email=email)
 
         if not user:
             logger.info(f"Пользователь с Email {email} не найден.")
@@ -126,17 +124,16 @@ class AuthService:
             logger.info(f"Пользователь {user.name} уже активен.")
             raise UserAlreadyActiveError("Пользователь уже активен")
 
-        async with self.uow:
-            activated_user = await self.uow.auth.activate_user(
-                user_email=str(user.email)
-            )  # обернут в str чтобы IDE не ругалась
+        activated_user = await self.uow.auth.activate_user(
+            user_email=str(user.email)
+        )  # обернут в str чтобы IDE не ругалась
 
-            if not activated_user:
-                logger.info(f"Пользователь с {user.email} не существует.")
-                raise UserDoesNotExistError
+        if not activated_user:
+            logger.info(f"Пользователь с {user.email} не существует.")
+            raise UserDoesNotExistError
 
-            await self.uow.commit()
-            logger.info(f"Пользователь {user.name} успешно активирован.")
+        await self.uow.commit()
+        logger.info(f"Пользователь {user.name} успешно активирован.")
 
         return activated_user
 
@@ -177,8 +174,7 @@ class AuthService:
             UserDoesNotExistsError - если пользователь не найден
             UserNotActiveError - если найден, но неактивен
         """
-        async with self.uow:
-            user = await self.uow.auth.get_user_and_role_by_user_id(user_id)
+        user = await self.uow.auth.get_user_and_role_by_user_id(user_id)
 
         if not user:
             logger.info(f"Пользователь с ID {user_id} не найден.")
@@ -218,23 +214,22 @@ class UserService:
             logger.info(f"Нет данных для обновления пользователя ID: {user.id}, Email: {user.email}.")
             return user
 
-        async with self.uow:
-            # Проверка прав - обновлять профили могут либо владельцы, либо руководители
-            await self.rbac.enforce_permission(
-                user=user,
-                business_element_name=BusinessElementName.USERS,
-                action=Action.UPDATE,
-                context=AccessContextDTO(is_author=True),
-                error_msg="Недостаточно прав для обновления профиля",
-            )
+        # Проверка прав - обновлять профили могут либо владельцы, либо руководители
+        await self.rbac.enforce_permission(
+            user=user,
+            business_element_name=BusinessElementName.USERS,
+            action=Action.UPDATE,
+            context=AccessContextDTO(is_author=True),
+            error_msg="Недостаточно прав для обновления профиля",
+        )
 
-            updated_user = await self.uow.users.update_user(user_id=user.id, update_dict=update_dict)
+        updated_user = await self.uow.users.update_user(user_id=user.id, update_dict=update_dict)
 
-            if not updated_user:
-                logger.info(f"Не найден пользователь для обновления, ID: {user.id}, Email: {user.email}.")
-                raise UserDoesNotExistError
+        if not updated_user:
+            logger.info(f"Не найден пользователь для обновления, ID: {user.id}, Email: {user.email}.")
+            raise UserDoesNotExistError
 
-            await self.uow.commit()
+        await self.uow.commit()
 
         logger.info(f"Пользователь ID: {user.id}, Email: {user.email} успешно обновлен.")
         return updated_user
@@ -249,23 +244,20 @@ class UserService:
         Raises:
             UserDoesNotExists - если пользователь не найден
         """
-        async with self.uow:
-            # Проверка прав - удалить можно только свой профиль. Если руководитель, то любой
-            await self.rbac.enforce_permission(
-                user=user,
-                business_element_name=BusinessElementName.USERS,
-                action=Action.DELETE,
-                context=AccessContextDTO(is_author=True),
-                error_msg="Недостаточно прав для удаления профиля",
-            )
+        # Проверка прав - удалить можно только свой профиль. Если руководитель, то любой
+        await self.rbac.enforce_permission(
+            user=user,
+            business_element_name=BusinessElementName.USERS,
+            action=Action.DELETE,
+            context=AccessContextDTO(is_author=True),
+            error_msg="Недостаточно прав для удаления профиля",
+        )
 
-            deactivated_user = await self.uow.users.soft_delete_user(user_id=user.id)
+        deactivated_user = await self.uow.users.soft_delete_user(user_id=user.id)
 
-            if not deactivated_user:
-                logger.info(f"Не найден пользователь для удаления, ID: {user.id}, Email: {user.email}.")
-                raise UserDoesNotExistError
+        if not deactivated_user:
+            logger.info(f"Не найден пользователь для удаления, ID: {user.id}, Email: {user.email}.")
+            raise UserDoesNotExistError
 
-            await self.uow.commit()
-            logger.info(
-                f"Пользователь ID: {deactivated_user.id}, Email: {deactivated_user.email} успешно деактивирован."
-            )
+        await self.uow.commit()
+        logger.info(f"Пользователь ID: {deactivated_user.id}, Email: {deactivated_user.email} успешно деактивирован.")
