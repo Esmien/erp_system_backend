@@ -1,14 +1,14 @@
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Depends, status
 from loguru import logger
 
-from backend.api.dependencies.permissions import CurrentUserDepends
+from backend.api.dependencies.permissions import CredentialsDepends, get_current_user
+from backend.api.dependencies.redis import RedisDepends
 from backend.api.dependencies.reg_and_auth import (
-    AuthFormDepends,
     AuthServiceDepends,
     RegisterServiceDepends,
 )
 from backend.core.utils.error_schemas import ErrorResponseSchema
-from backend.user.schemas import Token, UserChangeStatus, UserRead, UserRegister
+from backend.user.schemas import Token, UserChangeStatus, UserLogin, UserRead, UserRegister
 
 router = APIRouter(prefix="/auth", tags=["Аутентификация"])
 
@@ -36,7 +36,7 @@ async def register_user(
     """
     Регистрирует пользователя, назначая ему по умолчанию роль "user"
     Пользователь существует и активен - 400 Bad Request
-    Роль user не найдена - 503, ошибка на стороне сервера
+    Роль user не найдена - 500, ошибка на стороне сервера
     """
 
     # Прогоняем пайплайн регистрации пользователя:
@@ -60,7 +60,7 @@ async def register_user(
     },
 )
 async def restore_user(
-    form_data: AuthFormDepends,
+    credentials: UserLogin,
     service: AuthServiceDepends,
 ):
     """
@@ -71,7 +71,7 @@ async def restore_user(
 
     # Проверка на корректность кредов и активность.
     # Если креды в порядке и пользователь неактивен, то активируем
-    user = await service.check_users_creds(form_data.username, form_data.password)
+    user = await service.check_users_creds(credentials.username, credentials.password)
     await service.activate_user(user=user)
 
     logger.info(f"Пользователь {user.name} восстановлен")
@@ -95,7 +95,7 @@ async def restore_user(
     },
 )
 async def login(
-    form_data: AuthFormDepends,
+    credentials: UserLogin,
     service: AuthServiceDepends,
 ):
     """
@@ -104,7 +104,7 @@ async def login(
     Пользователь есть, но неактивен - 403 Forbidden
     """
     # Проверяем креды, получаем JWT-токен
-    user = await service.check_users_creds(form_data.username, form_data.password)
+    user = await service.check_users_creds(credentials.username, credentials.password)
     token = service.get_auth_token(user=user)
 
     return token
@@ -114,11 +114,18 @@ async def login(
     path="/logout/",
     status_code=status.HTTP_200_OK,
     summary="Выход из системы",
+    dependencies=[Depends(get_current_user)],
 )
-async def logout(current_user: CurrentUserDepends):
+async def logout(
+    credentials: CredentialsDepends,
+    service: AuthServiceDepends,
+    redis: RedisDepends,
+):
     """
     Выход пользователя из системы
-    Примечание: мы используем JWT, поэтому здесь ничего не делаем
+    При логауте токен добавляется в блэклист
     """
+    # Вытаскиваем токен напрямую из заголовка
+    await service.logout(token=credentials.credentials, redis=redis)
 
     return {"message": "Вы успешно вышли из системы"}

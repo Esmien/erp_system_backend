@@ -7,6 +7,7 @@ pytest_plugins = [
     "backend.api.tests.fixtures.permissions",
     "backend.api.tests.fixtures.tasks",
     "backend.api.tests.fixtures.evaluations",
+    "backend.core.tests.fixtures.core",
     "backend.task.tests.fixtures.task_fixtures",
     "backend.comment.tests.fixtures.comment_fixtures",
     "backend.rbac.tests.fixtures.rbac_fixtures",

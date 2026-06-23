@@ -1,5 +1,10 @@
-from loguru import logger
+from datetime import UTC, datetime
 
+import jwt
+from loguru import logger
+from redis.asyncio import Redis
+
+from backend.core.config import settings
 from backend.core.enums import Action, BusinessElementName, RoleName
 from backend.core.security import (
     create_access_token,
@@ -185,6 +190,40 @@ class AuthService:
 
         logger.info(f"Пользователь с ID {user_id} успешно получен. ({user.email})")
         return user
+
+    @staticmethod
+    async def logout(token: str | None, redis: Redis) -> None:
+        """
+        Разлогинивает пользователя с добавлением JWT в блэклист
+
+        Args:
+            token - JWT-токен из заголовка
+            redis - инстанс Redis для записи токена в него
+        """
+        try:
+            # Декодируем токен
+            payload = jwt.decode(
+                jwt=token,
+                key=settings.security.SECRET_KEY,
+                algorithms=[settings.security.ALGORITHM],
+            )
+            jti = payload.get("jti")
+            exp = payload.get("exp")
+
+            # Вычисляем остаток времени жизни JWT для TTL в блэклисте
+            now = int(datetime.now(tz=UTC).timestamp())
+            ttl = exp - now
+
+            if ttl > 0:
+                # Отправляем в Redis
+                await redis.setex(f"jwt:blacklist:{jti}", ttl, "revoked")
+                logger.debug(f"Токен {jti} успешно добавлен в блэклист на {ttl} сек.")
+
+        except jwt.DecodeError:
+            # Если условие не выполнилось и токен оказался абсолютно "левым"
+            logger.error("Ошибка декодирования токена при попытке логаута")
+
+            return
 
 
 class UserService:

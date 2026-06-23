@@ -33,6 +33,13 @@ class UserRead(UserBase):
     model_config = ConfigDict(from_attributes=True)
 
 
+class UserLogin(BaseModel):
+    """Схема для аутентификации пользователя"""
+
+    username: EmailStr
+    password: str
+
+
 class UserRegister(UserBase):
     """Схема с полями для регистрации и валидацией пароля"""
 

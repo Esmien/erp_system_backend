@@ -1,5 +1,7 @@
+from datetime import UTC, datetime, timedelta
 from unittest.mock import patch
 
+import jwt
 import pytest
 
 from backend.exceptions import (
@@ -138,3 +140,60 @@ async def test_get_active_user_by_id(auth_service, mock_uow, uow_returns_user, i
     else:
         res = await auth_service.get_active_user_by_id(1)
         assert res == user
+
+
+# Константы для мока настроек
+TEST_SECRET = "super_secret_test_key_that_is_at_least_32_bytes_long"
+TEST_ALGO = "HS256"
+
+
+@patch("backend.user.service.settings")
+async def test_logout_success_adds_to_blacklist(mock_settings, mock_redis, auth_service):
+    """Тест: валидный токен успешно добавляется в Redis с правильным TTL"""
+    # 1. Подготавливаем моки
+    mock_settings.security.SECRET_KEY = TEST_SECRET
+    mock_settings.security.ALGORITHM = TEST_ALGO
+
+    # 2. Генерируем тестовый токен, который истекает через 15 минут
+    exp_time = datetime.now(tz=UTC) + timedelta(minutes=15)
+    test_jti = "test-uuid-12345"
+
+    payload = {
+        "sub": "1",
+        "jti": test_jti,
+        "exp": exp_time,
+    }
+    valid_token = jwt.encode(payload, TEST_SECRET, algorithm=TEST_ALGO)
+
+    # 3. Вызываем тестируемый метод
+    await auth_service.logout(token=valid_token, redis=mock_redis)
+
+    # 4. Проверки
+    mock_redis.setex.assert_called_once()
+
+    # Достаем аргументы, с которыми был вызван redis.setex
+    call_args = mock_redis.setex.call_args.args
+    called_key = call_args[0]
+    called_ttl = call_args[1]
+    called_value = call_args[2]
+
+    assert called_key == f"jwt:blacklist:{test_jti}"
+    assert called_value == "revoked"
+    # TTL должен быть около 900 секунд (15 минут), даем погрешность в пару секунд на выполнение теста
+    assert 895 < called_ttl <= 900
+
+
+@patch("backend.user.service.settings")
+async def test_logout_invalid_token_ignored(mock_settings, mock_redis, auth_service):
+    """Тест: при попытке логаута с невалидным токеном Redis не вызывается"""
+    # 1. Подготавливаем моки
+    mock_settings.security.SECRET_KEY = TEST_SECRET
+    mock_settings.security.ALGORITHM = TEST_ALGO
+
+    invalid_token = "some.invalid.jwt_token"
+
+    # 2. Вызываем метод
+    await auth_service.logout(token=invalid_token, redis=mock_redis)
+
+    # 3. Проверяем, что метод не упал с ошибкой и НЕ трогал Redis
+    mock_redis.setex.assert_not_called()

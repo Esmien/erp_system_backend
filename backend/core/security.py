@@ -1,3 +1,4 @@
+import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -84,8 +85,9 @@ def create_access_token(data: dict[str, Any], expires_delta: timedelta | None = 
 
     logger.debug(f"Время жизни токена: {expires_time}")
 
-    # Добавляем время жизни токена в словарь
+    # Добавляем время жизни и ID токена в словарь
     curr_data["exp"] = expires_time
+    curr_data["jti"] = str(uuid.uuid4())
 
     # Собираем токен со всеми необходимыми данными
     return jwt.encode(

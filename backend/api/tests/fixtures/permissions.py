@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -11,3 +11,8 @@ def auth_service_mock():
 @pytest.fixture
 def rbac_service_mock(rbac_service):
     return rbac_service
+
+
+@pytest.fixture
+def mock_creds():
+    return MagicMock()

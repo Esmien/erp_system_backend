@@ -2,8 +2,9 @@ from typing import Annotated
 
 import jwt
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+from backend.api.dependencies.redis import RedisDepends
 from backend.api.dependencies.reg_and_auth import AuthServiceDepends
 from backend.core.config import settings
 from backend.exceptions import (
@@ -12,20 +13,24 @@ from backend.exceptions import (
 )
 from backend.user.schemas import UserDTO
 
-# Извлекает Bearer-токен из заголовка Authorization
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+# Для аутентификации принимаем токен напрямую
+security = HTTPBearer()
+
+CredentialsDepends = Annotated[HTTPAuthorizationCredentials, Depends(security)]
 
 
 async def get_current_user(
     auth_service: AuthServiceDepends,
-    token: str = Depends(oauth2_scheme),
+    redis: RedisDepends,
+    credentials: CredentialsDepends,
 ) -> UserDTO:
     """
     Возвращает текущего активного пользователя по JWT токену
 
     Args:
-        token - JWT токен пользователя
         auth_service - сервисный модуль для работы с аутентификацией
+        redis - DI Redis для проверки JWT на наличие в блэклисте
+        credentials - объект, содержащий извлеченный из заголовков запроса JWT-токен
 
     Returns:
         Модель текущего авторизованного пользователя
@@ -33,11 +38,15 @@ async def get_current_user(
     Raises:
         HTTPException(401) - при невалидном JWT
     """
+    # Локальное кастомное исключение для невалидного токена
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Ошибка валидации токена",
         headers={"WWW-Authenticate": "Bearer"},
     )
+
+    # Достаем токен из заголовка
+    token = credentials.credentials
 
     # Декодируем токен и проверяем его валидность и вытаскиваем id пользователя
     try:
@@ -47,9 +56,21 @@ async def get_current_user(
             algorithms=[settings.security.ALGORITHM],
         )
         user_id = payload.get("sub")
+        jti = payload.get("jti")
 
         if user_id is None:
             raise credentials_exception
+
+        # Проверяем токен на наличие в блэклисте
+        if jti:
+            is_revoked = await redis.get(f"jwt:blacklist:{jti}")
+            if is_revoked:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Токен отозван. Пожалуйста, авторизуйтесь заново.",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
+
     except jwt.InvalidTokenError:
         raise credentials_exception from None
 
