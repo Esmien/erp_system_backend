@@ -40,7 +40,3 @@ class TestUnitOfWork(UnitOfWork):
 
 def override_get_uow(db_session):
     return TestUnitOfWork(session=db_session)
-
-
-# app.dependency_overrides[get_uow] = override_get_uow
-# app.dependency_overrides[get_current_user] = override_get_admin_user

@@ -41,7 +41,7 @@ async def client(db_session: AsyncSession, app) -> AsyncGenerator[httpx.AsyncCli
     """
 
     # Создаем фабрику для override_get_uow, которая замыкает db_session
-    async def override_uow_factory() -> IUnitOfWork:
+    def override_uow_factory() -> IUnitOfWork:
         return TestUnitOfWork(session=db_session)
 
     # Подменяем зависимости
