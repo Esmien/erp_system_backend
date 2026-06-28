@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, status
 from loguru import logger
 
-from backend.api.dependencies.permissions import CredentialsDepends, get_current_user
+from backend.api.dependencies.permissions import CredentialsDepends, CurrentUserDepends, get_current_user
 from backend.api.dependencies.redis import RedisDepends
 from backend.api.dependencies.reg_and_auth import (
     AuthServiceDepends,
@@ -146,7 +146,7 @@ async def telegram_login(
 
 
 @router.post(
-    path="/telegram/link",
+    path="/telegram/link/",
     response_model=Token,
     status_code=status.HTTP_200_OK,
     summary="Привязка Telegram ID к аккаунту",
@@ -171,6 +171,15 @@ async def link_telegram_account(
     )
 
     return service.get_auth_token(user=user)
+
+
+@router.post(path="/telegram/unlink/", status_code=status.HTTP_200_OK, summary="Отвязка ТГ-аккаунта от учетной записи")
+async def unlink_telegram_account(
+    service: AuthServiceDepends,
+    user: CurrentUserDepends,
+):
+    await service.unlink_telegram_account(user=user)
+    return {"message": f"TG аккаунт {user.tg_id} отвязан от учетной записи {user.email}"}
 
 
 @router.post(

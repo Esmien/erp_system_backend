@@ -160,6 +160,11 @@ class AuthService:
 
         return updated_user
 
+    async def unlink_telegram_account(self, user: UserDTO) -> None:
+        await self.uow.users.update_user(user_id=user.id, update_dict={"tg_id": None})
+        await self.uow.commit()
+        logger.info(f"Пользователь {user.email} успешно отвязал ТГ-аккаунт {user.tg_id}")
+
     async def activate_user(self, user: UserDTO) -> UserDTO:
         """
         Активирует аккаунт пользователя
