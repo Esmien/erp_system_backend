@@ -132,7 +132,7 @@ class AuthRepository:
             Обновленная модель пользователя с is_active=True или None, если пользователь не существует
         """
         # Защищаем через for_update от одновременных попыток изменить статус
-        user = await self._get_user_model_by_email(user_email=user_email, for_update=True)
+        user = await self._get_user_model(email=user_email, for_update=True)
 
         if not user:
             return None
