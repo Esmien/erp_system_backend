@@ -2,11 +2,12 @@ from sqlalchemy import NullPool, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import selectinload
 
+from backend.core.config import settings
 from backend.core.uow import UnitOfWork
 from backend.user.models import User
 from backend.user.schemas import UserDTO
 
-TEST_DB_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/test_business_db"
+TEST_DB_URL = settings.db.test_database_url
 
 fixture_engine = create_async_engine(TEST_DB_URL, echo=False, poolclass=NullPool)
 
