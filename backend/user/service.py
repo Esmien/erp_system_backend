@@ -8,6 +8,7 @@ from backend.core.config import settings
 from backend.core.enums import Action, BusinessElementName, RoleName
 from backend.core.security import (
     create_access_token,
+    create_refresh_token,
     get_password_hash,
     verify_password,
 )
@@ -16,6 +17,7 @@ from backend.exceptions import (
     BadCredentialsError,
     InvalidPasswordError,
     RoleDoesNotExistError,
+    UnexpectedError,
     UserAlreadyActiveError,
     UserDoesNotExistError,
     UserExistsError,
@@ -110,6 +112,60 @@ class AuthService:
 
         return user
 
+    async def authenticate_by_telegram(self, tg_id: int) -> UserDTO:
+        """
+        Тихая авторизация по Telegram ID
+
+        Args:
+            tg_id - Telegram ID аользователя
+
+        Returns:
+            Модель зарегистрированного и активного пользователя
+        """
+        user = await self.uow.auth.get_user(tg_id=tg_id)
+
+        if not user:
+            logger.info(f"Пользователь с Telegram ID {tg_id} не найден.")
+            raise BadCredentialsError("Telegram аккаунт не привязан")
+
+        if not self._check_user_active(user):
+            logger.info(f"Пользователь {user.email} деактивирован, но пытался войти через ТГ.")
+            raise UserNotActiveError("Аккаунт удален или деактивирован")
+
+        return user
+
+    async def link_telegram_account(self, email: str, password: str, tg_id: int) -> UserDTO:
+        """
+        Единоразовая привязка Telegram ID к аккаунту
+
+        Args:
+            email - почта пользователя
+            password - пароль пользователя
+            tg_id - TelegramID пользователя для привязки
+
+        Returns:
+            Модель пользователя с привязанным TelegramID
+        """
+        user = await self.check_users_creds(email=email, password=password)
+
+        if getattr(user, "tg_id", None):
+            logger.warning(f"У пользователя {email} уже привязан Telegram. TgID перезаписан на {tg_id}.")
+
+        updated_user = await self.uow.users.update_user(user_id=user.id, update_dict={"tg_id": tg_id})
+
+        if not updated_user:
+            raise UnexpectedError("Неожиданная ошибка при привязке TelegramID к пользователю")
+
+        await self.uow.commit()
+        logger.info(f"Пользователь {user.email} успешно привязал Telegram ID: {tg_id}")
+
+        return updated_user
+
+    async def unlink_telegram_account(self, user: UserDTO) -> None:
+        await self.uow.users.update_user(user_id=user.id, update_dict={"tg_id": None})
+        await self.uow.commit()
+        logger.info(f"Пользователь {user.email} успешно отвязал ТГ-аккаунт {user.tg_id}")
+
     async def activate_user(self, user: UserDTO) -> UserDTO:
         """
         Активирует аккаунт пользователя
@@ -162,8 +218,50 @@ class AuthService:
 
         # Генерируем токен
         access_token = create_access_token(data={"sub": str(user.id)})
+        refresh_token = create_refresh_token(data={"sub": str(user.id)})
 
-        return Token(access_token=access_token, token_type="bearer")
+        return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
+
+    async def refresh_tokens(self, refresh_token: str, redis: Redis) -> Token:
+        """
+        Метод для обработки refresh токена
+
+        Args:
+            refresh_token - refresh токен для обработки
+            redis - инстанс запущенного Redis
+
+        Returns:
+            Новая пара access и refresh токенов
+
+        Raises:
+            BadCredentialsError - если исходный токен не refresh, он в блэклисте или невалиден
+        """
+        try:
+            payload = jwt.decode(
+                jwt=refresh_token,
+                key=settings.security.SECRET_KEY,
+                algorithms=[settings.security.ALGORITHM],
+            )
+            # Проверяем тип токена
+            if payload.get("type") != "refresh":
+                raise BadCredentialsError("Неверный тип токена")
+
+            user_id = payload.get("sub")
+            jti = payload.get("jti")
+
+            # Проверка на блэклист
+            if await redis.get(f"jwt:blacklist:{jti}"):
+                raise BadCredentialsError("Токен отозван")
+
+            user = await self.get_active_user_by_id(int(user_id))
+
+            # Добавляем текущий refresh токен в блэклист
+            await self.logout(token=refresh_token, redis=redis)
+
+            return self.get_auth_token(user=user)
+
+        except jwt.PyJWTError:
+            raise BadCredentialsError("Недействительный токен") from None
 
     async def get_active_user_by_id(self, user_id: int) -> UserDTO:
         """

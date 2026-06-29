@@ -66,26 +66,28 @@ class AuthRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def _get_user_model_by_email(self, user_email: str, for_update: bool = False) -> User | None:
+    async def _get_user_model(
+        self, email: str | None = None, tg_id: int | None = None, for_update: bool = False
+    ) -> User | None:
         """
-        Вспомогательный метод для получения модели пользователя
-
-        Args:
-            user_email - Email искомого пользователя
-            for_update - флаг для блокировки транзакции при обновлении данных в БД
-
-        Returns:
-            Модель пользователя или None, если пользователя с таким Email нет
+        Универсальный приватный метод для поиска модели пользователя.
         """
-        stmt = select(User).where(User.email == user_email)
+        if not email and not tg_id:
+            return None
+
+        stmt = select(User)
+
+        # Динамически добавляем фильтры
+        if email:
+            stmt = stmt.where(User.email == email)
+        if tg_id:
+            stmt = stmt.where(User.tg_id == tg_id)
 
         if for_update:
             stmt = stmt.with_for_update()
 
         result = await self.session.execute(statement=stmt)
-        user_model = result.scalar_one_or_none()
-
-        return user_model if user_model else None
+        return result.scalar_one_or_none()
 
     async def get_user_and_role_by_user_id(self, user_id: int) -> UserDTO | None:
         """
@@ -104,19 +106,20 @@ class AuthRepository:
 
         return UserDTO.model_validate(obj=user_model) if user_model else None
 
-    async def get_user(self, email: str) -> UserDTO | None:
+    async def get_user(self, email: str | None = None, tg_id: int | None = None) -> UserDTO | None:
         """
-        Получает модель пользователя по email
+        Получает DTO пользователя по email или tg_id.
+        Нужно передать хотя бы один из параметров.
 
         Args:
-            email - email пользователя
+            email - почта пользователя
+            tg_id - идентификатор пользователя из ТГ
 
         Returns:
-            Модель пользователя или None, если email не найден
+            Модель пользователя или None, если не найден по переданным параметрам
         """
-        user = await self._get_user_model_by_email(user_email=email)
-
-        return UserDTO.model_validate(obj=user) if user else None
+        user_model = await self._get_user_model(email=email, tg_id=tg_id)
+        return UserDTO.model_validate(obj=user_model) if user_model else None
 
     async def activate_user(self, user_email: str) -> UserDTO | None:
         """
@@ -129,7 +132,7 @@ class AuthRepository:
             Обновленная модель пользователя с is_active=True или None, если пользователь не существует
         """
         # Защищаем через for_update от одновременных попыток изменить статус
-        user = await self._get_user_model_by_email(user_email=user_email, for_update=True)
+        user = await self._get_user_model(email=user_email, for_update=True)
 
         if not user:
             return None
@@ -160,14 +163,14 @@ class UserRepository:
 
     async def update_user(self, user_id: int, update_dict: dict[str, Any]) -> UserDTO | None:
         """
-        Обновляет данные пользователя (имя, фамилия, отчество)
+        Обновляет данные пользователя (имя, фамилия, отчество, TelegramID)
 
         Args:
             user_id - ID пользователя для обновления
             update_dict - данные для обновления
 
         Returns:
-            Обновленная модель пользователя
+            Обновленная модель пользователя или None, если пользователь не найден
         """
 
         user_model = await self._get_user_for_update(user_id=user_id)

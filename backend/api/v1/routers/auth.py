@@ -1,14 +1,23 @@
 from fastapi import APIRouter, Depends, status
 from loguru import logger
 
-from backend.api.dependencies.permissions import CredentialsDepends, get_current_user
+from backend.api.dependencies.permissions import CredentialsDepends, CurrentUserDepends, get_current_user
 from backend.api.dependencies.redis import RedisDepends
 from backend.api.dependencies.reg_and_auth import (
     AuthServiceDepends,
     RegisterServiceDepends,
 )
 from backend.core.utils.error_schemas import ErrorResponseSchema
-from backend.user.schemas import Token, UserChangeStatus, UserLogin, UserRead, UserRegister
+from backend.user.schemas import (
+    RefreshTokenRequest,
+    Token,
+    UserChangeStatus,
+    UserLogin,
+    UserRead,
+    UserRegister,
+    UserTelegramLink,
+    UserTelegramLogin,
+)
 
 router = APIRouter(prefix="/auth", tags=["Аутентификация"])
 
@@ -108,6 +117,88 @@ async def login(
     token = service.get_auth_token(user=user)
 
     return token
+
+
+@router.post(
+    path="/refresh/",
+    response_model=Token,
+    status_code=status.HTTP_200_OK,
+    summary="Обновление access-токена",
+    responses={
+        401: {"model": ErrorResponseSchema, "description": "Невалидный токен"},
+    },
+)
+async def refresh_access_token(
+    request_data: RefreshTokenRequest,
+    service: AuthServiceDepends,
+    redis: RedisDepends,
+):
+    """Обновляет пару токенов по валидному refresh-токену"""
+    return await service.refresh_tokens(refresh_token=request_data.refresh_token, redis=redis)
+
+
+@router.post(
+    path="/telegram/login/",
+    response_model=Token,
+    status_code=status.HTTP_200_OK,
+    summary="Аутентификация через телеграм",
+    responses={
+        401: {
+            "model": ErrorResponseSchema,
+            "description": "Неверные данные учетной записи или пользователь не существует",
+        },
+        403: {"model": ErrorResponseSchema, "description": "Пользователь не активен"},
+    },
+)
+async def telegram_login(
+    service: AuthServiceDepends,
+    credentials: UserTelegramLogin,
+):
+    """
+    Аутентификация пользователя через телеграм-бота
+    Неправильные креды - 401 Unauthorized
+    Пользователь есть, но неактивен - 403 Forbidden
+    """
+    user = await service.authenticate_by_telegram(tg_id=credentials.tg_id)
+
+    return service.get_auth_token(user=user)
+
+
+@router.post(
+    path="/telegram/link/",
+    response_model=Token,
+    status_code=status.HTTP_200_OK,
+    summary="Привязка Telegram ID к аккаунту",
+    responses={
+        401: {
+            "model": ErrorResponseSchema,
+            "description": "Неверные данные учетной записи или пользователь не существует",
+        },
+        403: {"model": ErrorResponseSchema, "description": "Пользователь не активен"},
+    },
+)
+async def link_telegram_account(
+    service: AuthServiceDepends,
+    credentials: UserTelegramLink,
+):
+    """
+    Эндпоинт для единоразовой привязки аккаунта Telegram.
+    Требует email и пароль для подтверждения личности.
+    """
+    user = await service.link_telegram_account(
+        email=credentials.username, password=credentials.password, tg_id=credentials.tg_id
+    )
+
+    return service.get_auth_token(user=user)
+
+
+@router.post(path="/telegram/unlink/", status_code=status.HTTP_200_OK, summary="Отвязка ТГ-аккаунта от учетной записи")
+async def unlink_telegram_account(
+    service: AuthServiceDepends,
+    user: CurrentUserDepends,
+):
+    await service.unlink_telegram_account(user=user)
+    return {"message": f"TG аккаунт {user.tg_id} отвязан от учетной записи {user.email}"}
 
 
 @router.post(

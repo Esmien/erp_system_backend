@@ -19,6 +19,7 @@ from backend.exceptions import (
     TaskNotCompletedError,
     TeamAlreadyExistError,
     TeamDoesNotExistError,
+    UnexpectedError,
     UnknownAccessLevelError,
     UserAlreadyActiveError,
     UserAlreadyInTeamError,
@@ -110,3 +111,4 @@ def setup_exception_handlers(app: FastAPI):
     app.add_exception_handler(CommentDoesNotExistsError, not_found_exception_handler)
     app.add_exception_handler(EvaluationDoesNotExistError, not_found_exception_handler)
     app.add_exception_handler(SQLAlchemyError, sqlalchemy_exception_handler)
+    app.add_exception_handler(UnexpectedError, internal_server_exception_handler)

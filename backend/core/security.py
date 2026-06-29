@@ -86,10 +86,35 @@ def create_access_token(data: dict[str, Any], expires_delta: timedelta | None = 
     logger.debug(f"Время жизни токена: {expires_time}")
 
     # Добавляем время жизни и ID токена в словарь
+    curr_data["type"] = "access"
     curr_data["exp"] = expires_time
     curr_data["jti"] = str(uuid.uuid4())
 
     # Собираем токен со всеми необходимыми данными
+    return jwt.encode(
+        payload=curr_data,
+        key=settings.security.SECRET_KEY,
+        algorithm=settings.security.ALGORITHM,
+    )
+
+
+def create_refresh_token(data: dict[str, Any]) -> str:
+    """
+    Генерирует refresh токен
+
+    Args:
+        data - данные для кодирования внутри токена
+
+    Returns:
+        Готовый refresh-токен
+    """
+    curr_data = data.copy()
+    expires_time = datetime.now(tz=UTC) + timedelta(days=settings.security.REFRESH_TOKEN_EXPIRE_DAYS)
+
+    curr_data["type"] = "refresh"
+    curr_data["exp"] = expires_time
+    curr_data["jti"] = str(uuid.uuid4())
+
     return jwt.encode(
         payload=curr_data,
         key=settings.security.SECRET_KEY,

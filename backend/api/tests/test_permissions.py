@@ -19,7 +19,7 @@ TEST_ALGO = "HS256"
 @pytest.mark.parametrize(
     "token_payload, expected_exception",
     [
-        ({"sub": "1"}, None),  # Успешный кейс
+        ({"sub": "1", "type": "access"}, None),  # Успешный кейс
         ({}, HTTPException),  # Нет sub в токене (401)
         (None, HTTPException),  # Невалидный токен (ошибка декодирования)
     ],

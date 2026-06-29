@@ -59,3 +59,6 @@ class CommentDoesNotExistsError(Exception): ...  # handled
 
 
 class EvaluationDoesNotExistError(Exception): ...  # handled
+
+
+class UnexpectedError(Exception): ...  # handled

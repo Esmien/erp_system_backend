@@ -55,6 +55,10 @@ async def get_current_user(
             key=settings.security.SECRET_KEY,
             algorithms=[settings.security.ALGORITHM],
         )
+
+        if payload.get("type") != "access":
+            raise credentials_exception
+
         user_id = payload.get("sub")
         jti = payload.get("jti")
 

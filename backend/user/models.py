@@ -46,6 +46,7 @@ class User(Base):
     name: Mapped[str] = mapped_column(String(20), nullable=False, comment="Имя пользователя")
     surname: Mapped[str | None] = mapped_column(String(30), nullable=True, comment="Отчество пользователя")
     last_name: Mapped[str | None] = mapped_column(String(35), nullable=True, comment="Фамилия пользователя")
+    tg_id: Mapped[int] = mapped_column(BigInteger, nullable=True, unique=True, comment="ID пользователя в телеграме")
 
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, index=True, comment="Статус активности (True/False)")
 
