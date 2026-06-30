@@ -27,7 +27,7 @@ class AdminAuth(AuthenticationBackend):
                 return False
 
             # Генерируем токен
-            token_obj = service.get_auth_token(user=user)
+            token_obj = service.get_auth_tokens(user=user)
 
             # Сохраняем в сессию браузера
             request.session.update({"token": token_obj.access_token})

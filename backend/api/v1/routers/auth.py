@@ -136,9 +136,9 @@ async def login(
     """
     # Проверяем креды, получаем JWT-токен
     user = await service.check_users_creds(credentials.username, credentials.password)
-    token = service.get_auth_token(user=user)
+    tokens = service.get_auth_tokens(user=user)
 
-    return token
+    return tokens
 
 
 @router.post(
@@ -183,7 +183,7 @@ async def telegram_login(
     """
     user = await service.authenticate_by_telegram(tg_id=credentials.tg_id)
 
-    return service.get_auth_token(user=user)
+    return service.get_auth_tokens(user=user)
 
 
 @router.post(
@@ -211,7 +211,7 @@ async def link_telegram_account(
         email=credentials.username, password=credentials.password, tg_id=credentials.tg_id
     )
 
-    return service.get_auth_token(user=user)
+    return service.get_auth_tokens(user=user)
 
 
 @router.post(path="/telegram/unlink/", status_code=status.HTTP_200_OK, summary="Отвязка ТГ-аккаунта от учетной записи")

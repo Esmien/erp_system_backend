@@ -103,9 +103,9 @@ def test_get_auth_token(auth_service, is_active, expected_exc):
     )
     if expected_exc:
         with pytest.raises(expected_exc):
-            auth_service.get_auth_token(user)
+            auth_service.get_auth_tokens(user)
     else:
-        token = auth_service.get_auth_token(user)
+        token = auth_service.get_auth_tokens(user)
         assert isinstance(token, Token)
         assert token.token_type == "bearer"
         assert isinstance(token.access_token, str)

@@ -231,15 +231,15 @@ class AuthService:
 
         return activated_user
 
-    def get_auth_token(self, user: UserDTO) -> Token:
+    def get_auth_tokens(self, user: UserDTO) -> Token:
         """
-        Получает JWT-токен для пользователя
+        Получает JWT-токены для пользователя (access и refresh)
 
         Args:
             user - запрашивающий токен пользователь
 
         Returns:
-            Token(access_token=JWT-строка, token_type="bearer")
+            Token(access_token=AccessJWT, refresh_token=RefreshJWT, token_type="bearer")
 
         Raises:
             UserNotActiveError - если запрашивающий юзер неактивен
@@ -291,7 +291,7 @@ class AuthService:
             # Добавляем текущий refresh токен в блэклист
             await self.logout(token=refresh_token, redis=redis)
 
-            return self.get_auth_token(user=user)
+            return self.get_auth_tokens(user=user)
 
         except jwt.PyJWTError:
             raise BadCredentialsError("Недействительный токен") from None
