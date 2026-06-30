@@ -54,7 +54,7 @@
 1. #### Клонировать репозиторий:
 
 ```BASH
-git clone https://github.com/Esmien/business_managment_platform.git bm_platform
+git clone https://github.com/Esmien/erp_system_backend.git
 ```
 
 ---
@@ -62,7 +62,7 @@ git clone https://github.com/Esmien/business_managment_platform.git bm_platform
 2. #### Перейти в директорию проекта:
 
 ```BASH
-cd bm_platform
+cd erp_system_backend
 ```
 
 ---
