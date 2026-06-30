@@ -161,10 +161,31 @@ class AuthService:
 
         return updated_user
 
-    async def unlink_telegram_account(self, user: UserDTO) -> None:
-        await self.uow.users.update_user(user_id=user.id, update_dict={"tg_id": None})
+    async def unlink_telegram_account(self, system_secret_key: str, tg_id: int, redis: Redis) -> None:
+        """
+        Отвязывает TelegramID пользователя от учетной записи в БД
+
+        Args:
+            system_secret_key: системный секретный ключ
+            tg_id: TelegramID отвязывающегося пользователя
+            redis: активный клиент Redis с выбранной конфигурационной базой
+        """
+        expected_redis_key = settings.redis.KEY_OF_SYSTEM_TOKEN
+        # Читаем ожидаемый ключ из Redis
+        expected_secret = await redis.get(expected_redis_key)
+
+        # Если ключа в базе нет (бот еще ни разу не запускался) или они не совпадают
+        if not expected_secret or system_secret_key != expected_secret:
+            logger.warning(
+                f"Попытка S2S запроса с невалидным ключом. Передан: {system_secret_key}\n"
+                f"expected_secret: {expected_secret}\n"
+                f"bot_secret_key: {system_secret_key}"
+            )
+            raise BadCredentialsError("Невалидный системный ключ")
+
+        await self.uow.users.update_user(tg_id=tg_id, update_dict={"tg_id": None})
         await self.uow.commit()
-        logger.info(f"Пользователь {user.email} успешно отвязал ТГ-аккаунт {user.tg_id}")
+        logger.info(f"TelegramID {tg_id} успешно отвязан от аккаунта пользователя")
 
     async def activate_user(self, user: UserDTO) -> UserDTO:
         """

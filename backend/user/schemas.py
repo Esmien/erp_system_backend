@@ -41,10 +41,14 @@ class UserLogin(BaseModel):
 
 
 class UserTelegramLogin(BaseModel):
-    tg_id: int = Field(..., description="telegramID пользователя")
+    tg_id: int = Field(..., description="TelegramID пользователя")
 
 
 class UserTelegramLink(UserLogin, UserTelegramLogin):
+    pass
+
+
+class UserTelegramUnlink(UserTelegramLogin):
     pass
 
 

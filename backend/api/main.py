@@ -20,7 +20,7 @@ from backend.api.v1.routers.teams import router as teams_router
 from backend.api.v1.routers.users import router as users_router
 from backend.core.config import settings
 from backend.core.database.engine import engine
-from backend.core.database.redis import close_redis, init_redis
+from backend.core.database.redis import close_redis
 from backend.core.logger import setup_logger
 
 if settings.sentry_conf.ENABLED:
@@ -49,9 +49,6 @@ async def lifespan(app: FastAPI):
     setup_logger()
     logger.info("API запущено, логгер сконфигурирован")
     logger.info(f"Подключение к БД: {settings.db.database_url.split('@')[-1]}")
-
-    await init_redis()
-    logger.info("Подключение к Redis установлено.")
 
     yield
 

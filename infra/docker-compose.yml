@@ -1,52 +1,6 @@
 version: '3.8'
 
 services:
-  db:
-    image: postgres:15-alpine
-    container_name: business_db
-    restart: always
-    ports:
-      - "${DB_PORT}:${DB_PORT}"
-    shm_size: 1gb
-    env_file:
-      - ../.env
-    environment:
-      POSTGRES_DB: ${DB_NAME}
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-    command: postgres -c max_connections=500
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./init-test-db.sh:/docker-entrypoint-initdb.d/init-test-db.sh
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  adminer:
-    image: adminer
-    container_name: adminer
-    restart: always
-    ports:
-      - "8081:8080"
-    depends_on:
-      - db
-
-  redis:
-    image: redis:7-alpine
-    container_name: redis_cache
-    restart: always
-    ports:
-      - "${REDIS_PORT}:${REDIS_PORT}"
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-
   migration:
     build:
       context: ../             # Контекст сборки — корень проекта
@@ -54,8 +8,6 @@ services:
     container_name: migration
     env_file:
       - ../.env
-    depends_on:
-      - db
     entrypoint: [ "/bin/bash", "/app/infra/entrypoint.sh" ]
     # Указываем alembic, где лежит его конфиг
     command: sh -c "alembic -c backend/alembic.ini upgrade head && python -m backend.core.database.init_db"
@@ -73,16 +25,13 @@ services:
     env_file:
       - ../.env
     depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
       migration:
         condition: service_completed_successfully
     volumes:
       - ../:/app
     command: uvicorn backend.api.main:app --host ${UVICORN_HOST} --port "${UVICORN_PORT}" --reload
 
-volumes:
-  postgres_data:
-  redis_data:
+networks:
+  default:
+    name: erp_shared_network
+    external: true

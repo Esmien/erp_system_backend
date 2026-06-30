@@ -23,22 +23,35 @@ class DatabaseConfig(BaseModelConfig):
     DB_USER: str
     DB_PASSWORD: str
     DB_HOST: str
+    DB_TEST_HOST: str = "localhost"
     DB_PORT: int
     DB_NAME: str
+    TEST_DB_NAME: str
 
     @property
     def database_url(self) -> str:
         return f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
 
+    @property
+    def test_database_url(self) -> str:
+        return f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_TEST_HOST}:{self.DB_PORT}/{self.TEST_DB_NAME}"
+
 
 class RedisConfig(BaseModelConfig):
     REDIS_HOST: str
     REDIS_PORT: int
+    KEY_OF_SYSTEM_TOKEN: str  # ключ в хранилище redis, по которому лежит системный токен
+    REDIS_WORK_DB: int = 1
+    REDIS_CONFIG_DB: int = 0
     CACHE_TTL: int = 3600
 
     @property
     def redis_url(self) -> str:
-        return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/0"
+        return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_WORK_DB}"
+
+    @property
+    def redis_config_url(self) -> str:
+        return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_CONFIG_DB}"
 
 
 class InviteCodeConfig(BaseModelConfig):

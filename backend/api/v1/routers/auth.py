@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, status
 from loguru import logger
 
-from backend.api.dependencies.permissions import CredentialsDepends, CurrentUserDepends, get_current_user
-from backend.api.dependencies.redis import RedisDepends
+from backend.api.dependencies.permissions import CredentialsDepends, get_current_user
+from backend.api.dependencies.redis import RedisConfigDepends, RedisDepends
 from backend.api.dependencies.reg_and_auth import (
     AuthServiceDepends,
+    BotSecretHeader,
     RegisterServiceDepends,
 )
 from backend.core.utils.error_schemas import ErrorResponseSchema
@@ -17,6 +18,7 @@ from backend.user.schemas import (
     UserRegister,
     UserTelegramLink,
     UserTelegramLogin,
+    UserTelegramUnlink,
 )
 
 router = APIRouter(prefix="/auth", tags=["Аутентификация"])
@@ -194,11 +196,13 @@ async def link_telegram_account(
 
 @router.post(path="/telegram/unlink/", status_code=status.HTTP_200_OK, summary="Отвязка ТГ-аккаунта от учетной записи")
 async def unlink_telegram_account(
+    payload: UserTelegramUnlink,
     service: AuthServiceDepends,
-    user: CurrentUserDepends,
+    system_secret_key: BotSecretHeader,
+    redis: RedisConfigDepends,
 ):
-    await service.unlink_telegram_account(user=user)
-    return {"message": f"TG аккаунт {user.tg_id} отвязан от учетной записи {user.email}"}
+    await service.unlink_telegram_account(tg_id=payload.tg_id, system_secret_key=system_secret_key, redis=redis)
+    return {"message": f"TG аккаунт {payload.tg_id} отвязан от учетной записи"}
 
 
 @router.post(

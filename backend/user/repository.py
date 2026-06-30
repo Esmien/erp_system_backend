@@ -147,7 +147,7 @@ class UserRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def _get_user_for_update(self, user_id: int) -> User | None:
+    async def _get_user_for_update(self, user_id: int | None = None, tg_id: int | None = None) -> User | None:
         """
         Вспомогательный метод для получения модели пользователя из БД
 
@@ -157,23 +157,41 @@ class UserRepository:
         Returns:
             Найденная модель или None, если пользователя с таким ID не существует
         """
-        stmt = select(User).where(User.id == user_id).with_for_update()
+        stmt = select(User)
+
+        if user_id:
+            stmt = stmt.where(User.id == user_id)
+
+        if tg_id:
+            stmt = stmt.where(User.tg_id == tg_id)
+
+        stmt = stmt.with_for_update()
         result = await self.session.execute(statement=stmt)
         return result.scalar_one_or_none()
 
-    async def update_user(self, user_id: int, update_dict: dict[str, Any]) -> UserDTO | None:
+    async def update_user(
+        self, update_dict: dict[str, Any], user_id: int | None = None, tg_id: int | None = None
+    ) -> UserDTO | None:
         """
         Обновляет данные пользователя (имя, фамилия, отчество, TelegramID)
 
         Args:
-            user_id - ID пользователя для обновления
+            user_id - ID пользователя для обновления. Опциональный
+            tg_id - TelegramID пользователя для обновления. Опциональный
             update_dict - данные для обновления
 
         Returns:
             Обновленная модель пользователя или None, если пользователь не найден
         """
+        id_for_update = {}
 
-        user_model = await self._get_user_for_update(user_id=user_id)
+        if user_id:
+            id_for_update = {"user_id": user_id}
+
+        if tg_id:
+            id_for_update = {"tg_id": tg_id}
+
+        user_model = await self._get_user_for_update(**id_for_update)
 
         if not user_model:
             return None

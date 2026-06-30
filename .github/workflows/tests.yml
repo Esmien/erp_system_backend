@@ -36,7 +36,7 @@ jobs:
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: business_management
+          POSTGRES_DB: erp_system_db
         ports:
           - 5432:5432
         options: >-
@@ -60,8 +60,8 @@ jobs:
 
       - name: Create test database
         run: |
-          PGPASSWORD=postgres psql -h localhost -U postgres -d business_management \
-            -c "CREATE DATABASE test_business_db;"
+          PGPASSWORD=postgres psql -h localhost -U postgres -d erp_system_db \
+            -c "CREATE DATABASE test_erp_system_db;"
 
       - name: Run tests
         env:
@@ -69,9 +69,11 @@ jobs:
           DB_PORT: 5432
           DB_USER: postgres
           DB_PASSWORD: postgres
-          DB_NAME: business_management
+          DB_NAME: erp_system_db
+          TEST_DB_NAME: test_erp_system_db
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
           REDIS_HOST: redis
           REDIS_PORT: 6389
+          KEY_OF_SYSTEM_TOKEN: ""
         run: |
           poetry run pytest --asyncio-mode=auto -v
