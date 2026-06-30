@@ -60,8 +60,8 @@ jobs:
 
       - name: Create test database
         run: |
-          PGPASSWORD=postgres psql -h localhost -U postgres -d business_management \
-            -c "CREATE DATABASE test_business_db;"
+          PGPASSWORD=postgres psql -h localhost -U postgres -d erp_system_db \
+            -c "CREATE DATABASE test_erp_system_db;"
 
       - name: Run tests
         env:
