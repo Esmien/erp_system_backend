@@ -70,6 +70,7 @@ jobs:
           DB_USER: postgres
           DB_PASSWORD: postgres
           DB_NAME: erp_system_db
+          TEST_DB_NAME: test_erp_system_db
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
           REDIS_HOST: redis
           REDIS_PORT: 6389
