@@ -2,9 +2,15 @@
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-orange?style=flat-square&logo=PostgreSQL) ![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-ORM_v2.0+-orange?style=flat-square&logo=SQLAlchemy) ![Alembic](https://img.shields.io/badge/Alembic-Migrations-orange?style=flat-square) ![Alembic](https://img.shields.io/badge/Adminer-Browse_DB-orange?style=flat-square&logo=adminer)
 ![Loguru](https://img.shields.io/badge/Loguru-Logging-brown?style=flat-square) ![Docker](https://img.shields.io/badge/Docker-Infrastructure-brown?style=flat-square&logo=docker) ![Redis](https://img.shields.io/badge/Redis-Infrastructure-brown?style=flat-square&logo=redis)
 
-# Business Management Platform
+# ERP System Backend
 
 **Проект представляет из себя RESTful-API для управления бизнесом.**
+
+**Состоит из 3 модулей:**
+
+1. Инфраструктура: [Infra](https://github.com/Esmien/erp_system_infra)
+2. Бэкенд (ЭТОТ РЕПОЗИТОРИЙ): [Backend](https://github.com/Esmien/erp_system_backend)
+3. ТГ-бот: [Bot](https://github.com/Esmien/erp_system_bot)
 
 **Платформа предоставляет следующие возможности:**
 
@@ -18,6 +24,7 @@
 7. Комментарии к задачам
 8. Оценка завершенных задач
 9. Сводная статистика по оценкам задач пользователей
+10. Интеграция с Telegram BOT
 
 ---
 
@@ -35,6 +42,12 @@
 ---
 
 ### Быстрый запуск
+
+---
+
+0. #### Поднять инфраструктуру:
+
+> Инструкции по запуску инфраструктуры вы можете найти здесь: [Infra/README.md](https://github.com/Esmien/erp_system_infra/blob/master/README.md) 
 
 ---
 
@@ -65,7 +78,13 @@ cp .env.example .env
 4. #### Сгенерировать секретный ключ, скопировать и вставить в .env в переменную **SECRET_KEY**:
 
 ```bash
-openssl rand -base64 50
+make get_key
+```
+
+или (если в системе не установлен make):
+
+```BASH
+python3 ./backend/core/utils/secret_key_generator.py
 ```
 
 5. #### Изменить переменные окружения в `.env` на ваши (подробности в блоке `Конфигурация`)
@@ -78,6 +97,9 @@ openssl rand -base64 50
 docker compose up --build -d
 ```
 
+> После запуска контейнеров можете запустить TG-бота.
+> 
+> Инструкция: [Bot/README.md](https://github.com/Esmien/erp_system_bot/blob/master/README.md)
 ---
 
 ### Конфигурация:
