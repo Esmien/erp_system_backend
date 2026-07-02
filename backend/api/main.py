@@ -18,6 +18,7 @@ from backend.api.v1.routers.meetings import router as meetings_router
 from backend.api.v1.routers.tasks import router as tasks_router
 from backend.api.v1.routers.teams import router as teams_router
 from backend.api.v1.routers.users import router as users_router
+from backend.bot.api.bot_auth_router import router as bot_router
 from backend.core.config import settings
 from backend.core.database.engine import engine
 from backend.core.database.redis import close_redis
@@ -77,6 +78,7 @@ app = FastAPI(
 
 # Подключаем роутеры
 app.include_router(router=auth_router, prefix="/api/v1")
+app.include_router(router=bot_router, prefix="/api/v1")
 app.include_router(router=teams_router, prefix="/api/v1")
 app.include_router(router=users_router, prefix="/api/v1")
 app.include_router(router=tasks_router, prefix="/api/v1")
