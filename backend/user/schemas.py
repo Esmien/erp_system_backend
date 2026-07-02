@@ -40,18 +40,6 @@ class UserLogin(BaseModel):
     password: str
 
 
-class UserTelegramLogin(BaseModel):
-    tg_id: int = Field(..., description="TelegramID пользователя")
-
-
-class UserTelegramLink(UserLogin, UserTelegramLogin):
-    pass
-
-
-class UserTelegramUnlink(UserTelegramLogin):
-    pass
-
-
 class RegisterCode(BaseModel):
     register_code: str = Field(
         ..., min_length=6, max_length=6, description="Одноразовый код для регистрации на платформе"

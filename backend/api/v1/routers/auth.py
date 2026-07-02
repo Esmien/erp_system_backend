@@ -5,7 +5,6 @@ from backend.api.dependencies.permissions import CredentialsDepends, CurrentUser
 from backend.api.dependencies.redis import RedisDepends
 from backend.api.dependencies.reg_and_auth import (
     AuthServiceDepends,
-    BotSecretHeader,
     RegisterServiceDepends,
 )
 from backend.api.dependencies.users import UserServiceDepends
@@ -18,9 +17,6 @@ from backend.user.schemas import (
     UserLogin,
     UserRead,
     UserRegister,
-    UserTelegramLink,
-    UserTelegramLogin,
-    UserTelegramUnlink,
 )
 
 router = APIRouter(prefix="/auth", tags=["Аутентификация"])
@@ -157,72 +153,6 @@ async def refresh_access_token(
 ):
     """Обновляет пару токенов по валидному refresh-токену"""
     return await service.refresh_tokens(refresh_token=request_data.refresh_token, redis=redis)
-
-
-@router.post(
-    path="/telegram/login/",
-    response_model=Token,
-    status_code=status.HTTP_200_OK,
-    summary="Аутентификация через телеграм",
-    responses={
-        401: {
-            "model": ErrorResponseSchema,
-            "description": "Неверные данные учетной записи или пользователь не существует",
-        },
-        403: {"model": ErrorResponseSchema, "description": "Пользователь не активен"},
-    },
-)
-async def telegram_login(
-    service: AuthServiceDepends,
-    credentials: UserTelegramLogin,
-):
-    """
-    Аутентификация пользователя через телеграм-бота
-    Неправильные креды - 401 Unauthorized
-    Пользователь есть, но неактивен - 403 Forbidden
-    """
-    user = await service.authenticate_by_telegram(tg_id=credentials.tg_id)
-
-    return service.get_auth_tokens(user=user)
-
-
-@router.post(
-    path="/telegram/link/",
-    response_model=Token,
-    status_code=status.HTTP_200_OK,
-    summary="Привязка Telegram ID к аккаунту",
-    responses={
-        401: {
-            "model": ErrorResponseSchema,
-            "description": "Неверные данные учетной записи или пользователь не существует",
-        },
-        403: {"model": ErrorResponseSchema, "description": "Пользователь не активен"},
-    },
-)
-async def link_telegram_account(
-    service: AuthServiceDepends,
-    credentials: UserTelegramLink,
-):
-    """
-    Эндпоинт для единоразовой привязки аккаунта Telegram.
-    Требует email и пароль для подтверждения личности.
-    """
-    user = await service.link_telegram_account(
-        email=credentials.username, password=credentials.password, tg_id=credentials.tg_id
-    )
-
-    return service.get_auth_tokens(user=user)
-
-
-@router.post(path="/telegram/unlink/", status_code=status.HTTP_200_OK, summary="Отвязка ТГ-аккаунта от учетной записи")
-async def unlink_telegram_account(
-    payload: UserTelegramUnlink,
-    service: AuthServiceDepends,
-    system_secret_key: BotSecretHeader,
-    redis: RedisDepends,
-):
-    await service.unlink_telegram_account(tg_id=payload.tg_id, system_secret_key=system_secret_key, redis=redis)
-    return {"message": f"TG аккаунт {payload.tg_id} отвязан от учетной записи"}
 
 
 @router.post(
