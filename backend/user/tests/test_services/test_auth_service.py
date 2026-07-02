@@ -158,6 +158,8 @@ async def test_logout_success_adds_to_blacklist(mock_settings, mock_redis, auth_
     exp_time = datetime.now(tz=UTC) + timedelta(minutes=15)
     test_jti = "test-uuid-12345"
 
+    redis_blacklist_key = mock_settings.redis_keys.key_jwt_blacklist(jti=test_jti)
+
     payload = {
         "sub": "1",
         "jti": test_jti,
@@ -171,15 +173,23 @@ async def test_logout_success_adds_to_blacklist(mock_settings, mock_redis, auth_
     # 4. Проверки
     mock_redis.setex.assert_called_once()
 
-    # Достаем аргументы, с которыми был вызван redis.setex
-    call_args = mock_redis.setex.call_args.args
-    called_key = call_args[0]
-    called_ttl = call_args[1]
-    called_value = call_args[2]
+    # Получаем всю информацию о вызове
+    actual_call = mock_redis.setex.call_args
 
-    assert called_key == f"backend:jwt:blacklist:{test_jti}"
+    # Вытаскиваем значения. Сначала пробуем достать из именованных аргументов (kwargs)
+    called_key = actual_call.kwargs.get("name")
+    called_ttl = actual_call.kwargs.get("time")
+    called_value = actual_call.kwargs.get("value")
+
+    # Страховка: если в коде аргументы всё же передаются позиционно (без name=, time=)
+    if not called_key:
+        called_key = actual_call.args[0]
+        called_ttl = actual_call.args[1]
+        called_value = actual_call.args[2]
+
+    assert called_key == redis_blacklist_key
     assert called_value == "revoked"
-    # TTL должен быть около 900 секунд (15 минут), даем погрешность в пару секунд на выполнение теста
+    # TTL должен быть около 900 секунд (15 минут), даем погрешность в пару секунд
     assert 895 < called_ttl <= 900
 
 

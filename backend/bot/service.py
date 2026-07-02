@@ -71,7 +71,7 @@ class BotAuthService:
             system_secret_key: системный секретный ключ
             tg_id: TelegramID отвязывающегося пользователя
         """
-        expected_redis_key = settings.redis.KEY_OF_SYSTEM_TOKEN
+        expected_redis_key = settings.redis_keys.KEY_OF_SYSTEM_TOKEN
         # Читаем ожидаемый ключ из Redis
         expected_secret = await self.redis.get(expected_redis_key)
 

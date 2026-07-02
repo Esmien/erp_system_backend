@@ -49,8 +49,8 @@ class RegisterService:
             UserExistsError - если пользователь существует
             RoleDoesNotExistsError - присваиваемая роль не найдена
         """
-        redis_key = f"backend:reg_code:{user_in.register_code}"
-        is_valid_code = await redis.get(name=redis_key)
+        redis_reg_code_key = settings.redis_keys.key_reg_code(code=user_in.register_code)
+        is_valid_code = await redis.get(name=redis_reg_code_key)
 
         if not is_valid_code:
             logger.warning(f"Попытка регистрации с недействительным кодом: {user_in.register_code}")
@@ -79,7 +79,7 @@ class RegisterService:
         # Регистрируем
         await self.uow.commit()
         # Удаляем код, так как он одноразовый, а регистрация на этом моменте уже закоммичена в БД
-        await redis.delete(redis_key)
+        await redis.delete(redis_reg_code_key)
 
         logger.info(f"Пользователь ID: {registered_user.id}, Email: {registered_user.email} зарегистрирован")
         return registered_user
@@ -207,7 +207,8 @@ class AuthService:
             jti = payload.get("jti")
 
             # Проверка на блэклист
-            if await redis.get(f"backend:jwt:blacklist:{jti}"):
+            redis_blacklist_key = settings.redis_keys.key_jwt_blacklist(jti=jti)
+            if await redis.get(redis_blacklist_key):
                 raise BadCredentialsError("Токен отозван")
 
             user = await self.get_active_user_by_id(int(user_id))
@@ -271,7 +272,8 @@ class AuthService:
 
             if ttl > 0:
                 # Отправляем в Redis
-                await redis.setex(f"backend:jwt:blacklist:{jti}", ttl, "revoked")
+                redis_blacklist_key = settings.redis_keys.key_jwt_blacklist(jti=jti)
+                await redis.setex(name=redis_blacklist_key, time=ttl, value="revoked")
                 logger.debug(f"Токен {jti} успешно добавлен в блэклист на {ttl} сек.")
 
         except jwt.DecodeError:
@@ -298,7 +300,9 @@ class UserService:
         new_code = "".join(secrets.choice(alphabet) for _ in range(6))
 
         # Сохраняем в Redis с TTL на 24 часа (86400 секунд)
-        await redis.setex(f"backend:reg_code:{new_code}", 86400, "valid")
+
+        redis_reg_code_key = settings.redis_keys.key_reg_code(code=new_code)
+        await redis.setex(name=redis_reg_code_key, time=86400, value="valid")
         return RegisterCode(register_code=new_code)
 
     async def update_profile(self, user: UserDTO, update_data: UserUpdate) -> UserDTO:

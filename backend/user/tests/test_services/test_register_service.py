@@ -4,7 +4,7 @@ from backend.exceptions import BadCredentialsError, RoleDoesNotExistError, UserE
 
 
 @pytest.mark.parametrize("exc", [None, UserExistsError, RoleDoesNotExistError])
-async def test_register_cases(mock_redis, user_in, user_out, mock_uow, register_service, exc):
+async def test_register_cases(mock_settings, mock_redis, user_in, user_out, mock_uow, register_service, exc):
     mock_redis.get.return_value = "000000"
     # 1. Мокаем поиск роли
     if exc == RoleDoesNotExistError:
@@ -24,10 +24,11 @@ async def test_register_cases(mock_redis, user_in, user_out, mock_uow, register_
             await register_service.register_user(user_in=user_in, redis=mock_redis)
     else:
         result = await register_service.register_user(user_in=user_in, redis=mock_redis)
+        redis_reg_code_key = mock_settings.redis_keys.key_reg_code(code=user_in.register_code)
         assert result == user_out
         # Если всё прошло успешно, сервис должен был закоммитить транзакцию
         mock_uow.commit.assert_called_once()
-        mock_redis.delete.assert_called_once_with(f"backend:reg_code:{user_in.register_code}")
+        mock_redis.delete.assert_called_once_with(redis_reg_code_key)
 
 
 async def test_register_invalid_code(mock_redis, user_in, register_service):

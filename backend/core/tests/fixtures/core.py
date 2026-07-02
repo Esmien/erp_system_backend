@@ -1,8 +1,8 @@
-from unittest.mock import MagicMock
-
 import pytest
+
+from backend.core.config import settings
 
 
 @pytest.fixture
 def mock_settings():
-    return MagicMock()
+    return settings

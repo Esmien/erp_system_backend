@@ -4,6 +4,7 @@ from typing import Any
 
 from loguru import logger
 
+from backend.core.config import settings
 from backend.rbac.schemas import AccessRuleDTO
 
 
@@ -12,7 +13,7 @@ def rbac_cache(ttl: int = 3600) -> Callable:
         @wraps(func)
         async def wrapper(self: Any, role_id: int, business_element_name: str) -> AccessRuleDTO | None:
             # Формируем ключ напрямую из аргументов
-            cache_key = f"backend:rbac:rule:{role_id}:{business_element_name}"
+            cache_key = settings.redis_keys.key_rbac_rule(role_id=role_id, business_element_name=business_element_name)
 
             # Проверяем кэш
             cached_data = await self.redis.get(cache_key)
