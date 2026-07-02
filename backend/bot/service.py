@@ -9,9 +9,10 @@ from backend.user.service import AuthService
 
 
 class BotAuthService:
-    def __init__(self, uow: IUnitOfWork):
+    def __init__(self, uow: IUnitOfWork, api_auth_service: AuthService, redis: Redis):
         self.uow = uow
-        self.api_auth_service = AuthService(uow=self.uow)
+        self.api_auth_service = api_auth_service
+        self.redis = redis
 
     async def authenticate_by_telegram(self, tg_id: int) -> UserDTO:
         """
@@ -29,7 +30,7 @@ class BotAuthService:
             logger.info(f"Пользователь с Telegram ID {tg_id} не найден.")
             raise BadCredentialsError("Telegram аккаунт не привязан")
 
-        if not self.api_auth_service._check_user_active(user):
+        if not user.is_active:
             logger.info(f"Пользователь {user.email} деактивирован, но пытался войти через ТГ.")
             raise UserNotActiveError("Аккаунт удален или деактивирован")
 
@@ -62,18 +63,17 @@ class BotAuthService:
 
         return updated_user
 
-    async def unlink_telegram_account(self, system_secret_key: str, tg_id: int, redis: Redis) -> None:
+    async def unlink_telegram_account(self, system_secret_key: str, tg_id: int) -> None:
         """
         Отвязывает TelegramID пользователя от учетной записи в БД
 
         Args:
             system_secret_key: системный секретный ключ
             tg_id: TelegramID отвязывающегося пользователя
-            redis: активный клиент Redis с выбранной конфигурационной базой
         """
         expected_redis_key = settings.redis.KEY_OF_SYSTEM_TOKEN
         # Читаем ожидаемый ключ из Redis
-        expected_secret = await redis.get(expected_redis_key)
+        expected_secret = await self.redis.get(expected_redis_key)
 
         # Если ключа в базе нет (бот еще ни разу не запускался) или они не совпадают
         if not expected_secret or system_secret_key != expected_secret:

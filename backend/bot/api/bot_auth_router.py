@@ -1,6 +1,5 @@
 from fastapi import APIRouter, status
 
-from backend.api.dependencies.redis import RedisDepends
 from backend.bot.api.dependencies import BotAuthServiceDepends, BotSecretHeader
 from backend.bot.schemas import UserTelegramLink, UserTelegramLogin, UserTelegramUnlink
 from backend.core.utils.error_schemas import ErrorResponseSchema
@@ -81,7 +80,7 @@ async def unlink_telegram_account(
     payload: UserTelegramUnlink,
     service: BotAuthServiceDepends,
     system_secret_key: BotSecretHeader,
-    redis: RedisDepends,
 ):
-    await service.unlink_telegram_account(tg_id=payload.tg_id, system_secret_key=system_secret_key, redis=redis)
+    """Отвязывает TGID от аккаунта ERP"""
+    await service.unlink_telegram_account(tg_id=payload.tg_id, system_secret_key=system_secret_key)
     return {"message": f"TG аккаунт {payload.tg_id} отвязан от учетной записи"}
