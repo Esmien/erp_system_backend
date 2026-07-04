@@ -10,7 +10,7 @@ from backend.user.service import AuthService
 
 def get_bot_auth_service(uow: UowDepends, redis: RedisDepends) -> BotAuthService:
     """Провайдер сервиса аутентификации для инъекции в Annotated"""
-    api_auth_service = AuthService(uow=uow)
+    api_auth_service = AuthService(uow=uow, redis=redis)
     return BotAuthService(uow=uow, api_auth_service=api_auth_service, redis=redis)
 
 
