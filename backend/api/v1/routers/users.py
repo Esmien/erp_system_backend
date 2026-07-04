@@ -8,7 +8,7 @@ from backend.api.dependencies.users import (
 )
 from backend.core.utils.error_schemas import ErrorResponseSchema
 from backend.evaluation.schemas import UserStatisticsRead
-from backend.user.schemas import UserRead
+from backend.user.schemas import RoleForCodeDTO, UserRead
 
 router = APIRouter(
     prefix="/users",
@@ -102,3 +102,24 @@ async def delete_me(
     # Удаляем пользователя, делая его неактивным
     await service.soft_delete_profile(user=current_user)
     return {"message": f"Пользователь {current_user.name} удален"}
+
+
+@router.get(
+    path="/roles/",
+    status_code=status.HTTP_200_OK,
+    summary="Получить список всех ролей",
+    response_model=list[RoleForCodeDTO],
+    responses={
+        403: {"model": ErrorResponseSchema, "description": "Недостаточно прав для получения списка ролей"},
+        500: {
+            "model": ErrorResponseSchema,
+            "description": "Отсутствуют роли в БД, обратитесь к администратору сервиса",
+        },
+    },
+)
+async def get_all_roles(
+    current_user: CurrentUserDepends,
+    service: UserServiceDepends,
+):
+    """Получает список всех доступных ролей"""
+    return await service.get_all_roles(user=current_user)

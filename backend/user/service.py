@@ -20,6 +20,7 @@ from backend.exceptions import (
     BadCredentialsError,
     InvalidPasswordError,
     RoleDoesNotExistError,
+    UnexpectedError,
     UserAlreadyActiveError,
     UserDoesNotExistError,
     UserExistsError,
@@ -27,7 +28,15 @@ from backend.exceptions import (
 )
 from backend.rbac.schemas import AccessContextDTO
 from backend.rbac.service import RbacService
-from backend.user.schemas import RegisterCode, Token, UserCreateDTO, UserDTO, UserRegister, UserUpdate
+from backend.user.schemas import (
+    RegisterCode,
+    RoleForCodeDTO,
+    Token,
+    UserCreateDTO,
+    UserDTO,
+    UserRegister,
+    UserUpdate,
+)
 
 
 class RegisterService:
@@ -36,20 +45,32 @@ class RegisterService:
         self.redis = redis
         self.rbac = rbac_service
 
-    async def validate_registration_code(self, code: str) -> None:
+    async def get_role_by_register_code(self, code: str) -> RoleName:
         """
-        Проверяет валидность кода регистрации
+        Получает название роли из инвайт-кода
 
         Args:
             code - код для проверки
+
+        Returns:
+            Название роли, вшитое в код регистрации
         """
         redis_reg_code_key = settings.redis_keys.key_reg_code(code=code)
-        is_valid_code = await self.redis.get(name=redis_reg_code_key)
+        raw_role = await self.redis.get(name=redis_reg_code_key)
 
-        if not is_valid_code:
-            raise AccessDeniedError("Указан неверный или просроченный код регистрации")
+        if not raw_role:
+            raise AccessDeniedError("Код недействителен или просрочен")
 
-    async def generate_registration_code(self, user: UserDTO) -> RegisterCode:
+        # Успокаиваем линтер и страхуемся на случай отсутствия decode_responses
+        if isinstance(raw_role, bytes):
+            raw_role = raw_role.decode("utf-8")
+
+        if raw_role not in RoleName:
+            raise UnexpectedError(f"Роли с названием {raw_role} не существует")
+
+        return RoleName(raw_role)
+
+    async def generate_registration_code(self, user: UserDTO, role: RoleForCodeDTO) -> RegisterCode:
         await self.rbac.enforce_permission(
             user=user,
             business_element_name=BusinessElementName.USERS,
@@ -63,10 +84,10 @@ class RegisterService:
         # Сохраняем в Redis с TTL на 24 часа (86400 секунд)
 
         redis_reg_code_key = settings.redis_keys.key_reg_code(code=new_code)
-        await self.redis.setex(name=redis_reg_code_key, time=86400, value="valid")
+        await self.redis.setex(name=redis_reg_code_key, time=86400, value=RoleName(role.name))
         return RegisterCode(register_code=new_code)
 
-    async def register_user(self, user_in: UserRegister, role_name: RoleName = RoleName.USER) -> UserDTO:
+    async def register_user(self, user_in: UserRegister) -> UserDTO:
         """
         Регистрирует пользователя, присваивая ему роль
 
@@ -81,7 +102,7 @@ class RegisterService:
             UserExistsError - если пользователь существует
             RoleDoesNotExistsError - присваиваемая роль не найдена
         """
-        await self.validate_registration_code(code=user_in.register_code)
+        role_name = await self.get_role_by_register_code(code=user_in.register_code)
 
         # Защита от присвоения несуществующей роли
         role_id = await self.uow.register.get_role_id(role_name=role_name)
@@ -315,6 +336,30 @@ class UserService:
     def __init__(self, uow: IUnitOfWork, rbac_service: RbacService):
         self.uow = uow
         self.rbac = rbac_service
+
+    async def get_all_roles(self, user: UserDTO) -> list[RoleForCodeDTO]:
+        """
+        Получает список всех доступных ролей
+
+        Args:
+            user: запрашивающий роли пользователь
+
+        Returns:
+            Список ролей
+        """
+        await self.rbac.enforce_permission(
+            user=user,
+            business_element_name=BusinessElementName.USERS,
+            action=Action.CREATE,
+            error_msg="Недостаточно прав для получения списка ролей",
+        )
+
+        roles = await self.uow.users.get_all_roles()
+
+        if not roles:
+            raise RoleDoesNotExistError("Роли не найдены")
+
+        return roles
 
     async def update_profile(self, user: UserDTO, update_data: UserUpdate) -> UserDTO:
         """

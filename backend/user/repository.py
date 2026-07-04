@@ -7,7 +7,7 @@ from sqlalchemy.orm import selectinload
 
 from backend.core.enums import RoleName
 from backend.user.models import Role, User
-from backend.user.schemas import UserCreateDTO, UserDTO
+from backend.user.schemas import RoleForCodeDTO, UserCreateDTO, UserDTO
 
 
 class RegisterRepository:
@@ -168,6 +168,19 @@ class UserRepository:
         stmt = stmt.with_for_update()
         result = await self.session.execute(statement=stmt)
         return result.scalar_one_or_none()
+
+    async def get_all_roles(self) -> list[RoleForCodeDTO] | None:
+        """
+        Получает список всех ролей, доступных в БД
+
+        Returns:
+            Список полученных ролей
+        """
+        stmt = select(Role.name)
+        result = await self.session.execute(statement=stmt)
+        raw_roles = result.scalars().all()
+
+        return [RoleForCodeDTO(name=role.value if hasattr(role, "value") else role) for role in raw_roles]
 
     async def update_user(
         self, update_dict: dict[str, Any], user_id: int | None = None, tg_id: int | None = None
