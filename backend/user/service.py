@@ -16,6 +16,7 @@ from backend.core.security import (
 )
 from backend.core.uow import IUnitOfWork
 from backend.exceptions import (
+    AccessDeniedError,
     BadCredentialsError,
     InvalidPasswordError,
     RoleDoesNotExistError,
@@ -30,17 +31,48 @@ from backend.user.schemas import RegisterCode, Token, UserCreateDTO, UserDTO, Us
 
 
 class RegisterService:
-    def __init__(self, uow: IUnitOfWork):
+    def __init__(self, uow: IUnitOfWork, redis: Redis, rbac_service: RbacService):
         self.uow = uow
+        self.redis = redis
+        self.rbac = rbac_service
 
-    async def register_user(self, user_in: UserRegister, redis: Redis, role_name: RoleName = RoleName.USER) -> UserDTO:
+    async def validate_registration_code(self, code: str) -> None:
+        """
+        Проверяет валидность кода регистрации
+
+        Args:
+            code - код для проверки
+        """
+        redis_reg_code_key = settings.redis_keys.key_reg_code(code=code)
+        is_valid_code = await self.redis.get(name=redis_reg_code_key)
+
+        if not is_valid_code:
+            raise AccessDeniedError("Указан неверный или просроченный код регистрации")
+
+    async def generate_registration_code(self, user: UserDTO) -> RegisterCode:
+        await self.rbac.enforce_permission(
+            user=user,
+            business_element_name=BusinessElementName.USERS,
+            action=Action.CREATE,
+            error_msg="Недостаточно прав для создания кода для регистрации",
+        )
+
+        alphabet = string.ascii_uppercase + string.digits
+        new_code = "".join(secrets.choice(alphabet) for _ in range(6))
+
+        # Сохраняем в Redis с TTL на 24 часа (86400 секунд)
+
+        redis_reg_code_key = settings.redis_keys.key_reg_code(code=new_code)
+        await self.redis.setex(name=redis_reg_code_key, time=86400, value="valid")
+        return RegisterCode(register_code=new_code)
+
+    async def register_user(self, user_in: UserRegister, role_name: RoleName = RoleName.USER) -> UserDTO:
         """
         Регистрирует пользователя, присваивая ему роль
 
         Args:
             user_in - Pydantic-модель пользователя с данными для регистрации
             role_name - присваиваемая роль (по умолчанию User)
-            redis - инстанс Redis с открытым подключением
 
         Returns:
             Модель зарегистрированного пользователя
@@ -49,12 +81,8 @@ class RegisterService:
             UserExistsError - если пользователь существует
             RoleDoesNotExistsError - присваиваемая роль не найдена
         """
-        redis_reg_code_key = settings.redis_keys.key_reg_code(code=user_in.register_code)
-        is_valid_code = await redis.get(name=redis_reg_code_key)
+        await self.validate_registration_code(code=user_in.register_code)
 
-        if not is_valid_code:
-            logger.warning(f"Попытка регистрации с недействительным кодом: {user_in.register_code}")
-            raise BadCredentialsError("Код регистрации недействителен или уже был использован")
         # Защита от присвоения несуществующей роли
         role_id = await self.uow.register.get_role_id(role_name=role_name)
         # Проблема на стороне сервера, роль не найдена
@@ -78,16 +106,19 @@ class RegisterService:
 
         # Регистрируем
         await self.uow.commit()
+
         # Удаляем код, так как он одноразовый, а регистрация на этом моменте уже закоммичена в БД
-        await redis.delete(redis_reg_code_key)
+        redis_reg_code_key = settings.redis_keys.key_reg_code(code=user_in.register_code)
+        await self.redis.delete(redis_reg_code_key)
 
         logger.info(f"Пользователь ID: {registered_user.id}, Email: {registered_user.email} зарегистрирован")
         return registered_user
 
 
 class AuthService:
-    def __init__(self, uow: IUnitOfWork):
+    def __init__(self, uow: IUnitOfWork, redis: Redis):
         self.uow = uow
+        self.redis = redis
 
     @staticmethod
     def _check_user_active(user: UserDTO) -> bool:
@@ -179,13 +210,12 @@ class AuthService:
 
         return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
 
-    async def refresh_tokens(self, refresh_token: str, redis: Redis) -> Token:
+    async def refresh_tokens(self, refresh_token: str) -> Token:
         """
         Метод для обработки refresh токена
 
         Args:
             refresh_token - refresh токен для обработки
-            redis - инстанс запущенного Redis
 
         Returns:
             Новая пара access и refresh токенов
@@ -208,13 +238,13 @@ class AuthService:
 
             # Проверка на блэклист
             redis_blacklist_key = settings.redis_keys.key_jwt_blacklist(jti=jti)
-            if await redis.get(redis_blacklist_key):
+            if await self.redis.get(redis_blacklist_key):
                 raise BadCredentialsError("Токен отозван")
 
             user = await self.get_active_user_by_id(int(user_id))
 
             # Добавляем текущий refresh токен в блэклист
-            await self.logout(token=refresh_token, redis=redis)
+            await self.logout(token=refresh_token)
 
             return self.get_auth_tokens(user=user)
 
@@ -247,14 +277,12 @@ class AuthService:
         logger.info(f"Пользователь с ID {user_id} успешно получен. ({user.email})")
         return user
 
-    @staticmethod
-    async def logout(token: str | None, redis: Redis) -> None:
+    async def logout(self, token: str | None) -> None:
         """
         Разлогинивает пользователя с добавлением JWT в блэклист
 
         Args:
             token - JWT-токен из заголовка
-            redis - инстанс Redis для записи токена в него
         """
         try:
             # Декодируем токен
@@ -273,7 +301,7 @@ class AuthService:
             if ttl > 0:
                 # Отправляем в Redis
                 redis_blacklist_key = settings.redis_keys.key_jwt_blacklist(jti=jti)
-                await redis.setex(name=redis_blacklist_key, time=ttl, value="revoked")
+                await self.redis.setex(name=redis_blacklist_key, time=ttl, value="revoked")
                 logger.debug(f"Токен {jti} успешно добавлен в блэклист на {ttl} сек.")
 
         except jwt.DecodeError:
@@ -287,23 +315,6 @@ class UserService:
     def __init__(self, uow: IUnitOfWork, rbac_service: RbacService):
         self.uow = uow
         self.rbac = rbac_service
-
-    async def generate_registration_code(self, user: UserDTO, redis: Redis) -> RegisterCode:
-        await self.rbac.enforce_permission(
-            user=user,
-            business_element_name=BusinessElementName.USERS,
-            action=Action.CREATE,
-            error_msg="Недостаточно прав для создания кода для регистрации",
-        )
-
-        alphabet = string.ascii_uppercase + string.digits
-        new_code = "".join(secrets.choice(alphabet) for _ in range(6))
-
-        # Сохраняем в Redis с TTL на 24 часа (86400 секунд)
-
-        redis_reg_code_key = settings.redis_keys.key_reg_code(code=new_code)
-        await redis.setex(name=redis_reg_code_key, time=86400, value="valid")
-        return RegisterCode(register_code=new_code)
 
     async def update_profile(self, user: UserDTO, update_data: UserUpdate) -> UserDTO:
         """
