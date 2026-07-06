@@ -1,11 +1,11 @@
 import pytest
 
-from backend.exceptions import BadCredentialsError, RoleDoesNotExistError, UserExistsError
+from backend.exceptions import AccessDeniedError, RoleDoesNotExistError, UserExistsError
 
 
 @pytest.mark.parametrize("exc", [None, UserExistsError, RoleDoesNotExistError])
 async def test_register_cases(mock_settings, mock_redis, user_in, user_out, mock_uow, register_service, exc):
-    mock_redis.get.return_value = "000000"
+    mock_redis.get.return_value = "user"
     # 1. Мокаем поиск роли
     if exc == RoleDoesNotExistError:
         mock_uow.register.get_role_id.return_value = None
@@ -21,9 +21,9 @@ async def test_register_cases(mock_settings, mock_redis, user_in, user_out, mock
     # 3. Проверяем поведение сервиса
     if exc:
         with pytest.raises(exc):
-            await register_service.register_user(user_in=user_in, redis=mock_redis)
+            await register_service.register_user(user_in=user_in)
     else:
-        result = await register_service.register_user(user_in=user_in, redis=mock_redis)
+        result = await register_service.register_user(user_in=user_in)
         redis_reg_code_key = mock_settings.redis_keys.key_reg_code(code=user_in.register_code)
         assert result == user_out
         # Если всё прошло успешно, сервис должен был закоммитить транзакцию
@@ -32,10 +32,7 @@ async def test_register_cases(mock_settings, mock_redis, user_in, user_out, mock
 
 
 async def test_register_invalid_code(mock_redis, user_in, register_service):
-    # Учим мок Redis имитировать отсутствие кода (код неверный или протух)
-    mock_redis.get.return_value = None
+    with pytest.raises(AccessDeniedError) as exc_info:
+        await register_service.register_user(user_in=user_in)
 
-    with pytest.raises(BadCredentialsError) as exc_info:
-        await register_service.register_user(user_in=user_in, redis=mock_redis)
-
-    assert str(exc_info.value) == "Код регистрации недействителен или уже был использован"
+    assert str(exc_info.value) == "Код недействителен или просрочен"
