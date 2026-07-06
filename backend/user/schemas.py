@@ -94,6 +94,10 @@ class RefreshTokenRequest(BaseModel):
     refresh_token: str
 
 
+class RoleForCodeDTO(RoleBase):
+    pass
+
+
 class RoleDTO(RoleBase):
     """DTO-схема роли для передачи между слоями"""
 

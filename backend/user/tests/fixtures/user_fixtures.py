@@ -28,13 +28,13 @@ def user_repo(db_session):
 
 
 @pytest.fixture
-def register_service(mock_uow):
-    return RegisterService(uow=mock_uow)
+def register_service(mock_uow, mock_rbac_service, mock_redis):
+    return RegisterService(uow=mock_uow, rbac_service=mock_rbac_service, redis=mock_redis)
 
 
 @pytest.fixture
-def auth_service(mock_uow):
-    return AuthService(uow=mock_uow)
+def auth_service(mock_uow, mock_redis):
+    return AuthService(uow=mock_uow, redis=mock_redis)
 
 
 @pytest.fixture

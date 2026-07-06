@@ -5,13 +5,23 @@
     "version": "0.1.0"
   },
   "paths": {
-    "/api/v1/auth/generate-register-code/": {
+    "/api/v1/register_code/generate/": {
       "post": {
         "tags": [
-          "Аутентификация"
+          "Код регистрации"
         ],
         "summary": "Генерация кода регистрации (Только для админов)",
-        "operationId": "generate_registration_code_api_v1_auth_generate_register_code__post",
+        "operationId": "generate_registration_code_api_v1_register_code_generate__post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RoleForCodeDTO"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "201": {
             "description": "Successful Response",
@@ -22,6 +32,16 @@
                 }
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -29,6 +49,56 @@
             "HTTPBearer": []
           }
         ]
+      }
+    },
+    "/api/v1/register_code/{code}/validate/": {
+      "get": {
+        "tags": [
+          "Код регистрации"
+        ],
+        "summary": "Проверка валидности кода регистрации",
+        "operationId": "validate_registration_code_api_v1_register_code__code__validate__get",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Code"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "403": {
+            "description": "Код не существует или истек",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/auth/register/": {
@@ -269,14 +339,39 @@
         }
       }
     },
-    "/api/v1/auth/telegram/login/": {
+    "/api/v1/auth/logout/": {
       "post": {
         "tags": [
           "Аутентификация"
         ],
+        "summary": "Выход из системы",
+        "description": "Выход пользователя из системы\nПри логауте токен добавляется в блэклист",
+        "operationId": "logout_api_v1_auth_logout__post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/telegram/login/": {
+      "post": {
+        "tags": [
+          "Telegram BOT"
+        ],
         "summary": "Аутентификация через телеграм",
-        "description": "Аутентификация пользователя через телеграм-бота\nНеправильные креды - 401 Unauthorized\nПользователь есть, но неактивен - 403 Forbidden",
-        "operationId": "telegram_login_api_v1_auth_telegram_login__post",
+        "description": "Аутентификация пользователя через телеграм-бота\nНет связи TGID и аккаунта ERP - 401 Unauthorized\nПользователь есть, но неактивен - 403 Forbidden",
+        "operationId": "telegram_login_api_v1_telegram_login__post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -331,14 +426,14 @@
         }
       }
     },
-    "/api/v1/auth/telegram/link/": {
+    "/api/v1/telegram/link/": {
       "post": {
         "tags": [
-          "Аутентификация"
+          "Telegram BOT"
         ],
         "summary": "Привязка Telegram ID к аккаунту",
-        "description": "Эндпоинт для единоразовой привязки аккаунта Telegram.\nТребует email и пароль для подтверждения личности.",
-        "operationId": "link_telegram_account_api_v1_auth_telegram_link__post",
+        "description": "Эндпоинт для единоразовой привязки аккаунта Telegram.\nТребует email и пароль для подтверждения личности.\nНеверные креды - 401 Unauthorized\nСбой привязки - 500 Internal Server Error",
+        "operationId": "link_telegram_account_api_v1_telegram_link__post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -370,8 +465,8 @@
               }
             }
           },
-          "403": {
-            "description": "Пользователь не активен",
+          "500": {
+            "description": "Неизвестная ошибка при привязке TGID к аккаунту ERP",
             "content": {
               "application/json": {
                 "schema": {
@@ -393,13 +488,14 @@
         }
       }
     },
-    "/api/v1/auth/telegram/unlink/": {
+    "/api/v1/telegram/unlink/": {
       "post": {
         "tags": [
-          "Аутентификация"
+          "Telegram BOT"
         ],
         "summary": "Отвязка ТГ-аккаунта от учетной записи",
-        "operationId": "unlink_telegram_account_api_v1_auth_telegram_unlink__post",
+        "description": "Отвязывает TGID от аккаунта ERP",
+        "operationId": "unlink_telegram_account_api_v1_telegram_unlink__post",
         "parameters": [
           {
             "name": "x-bot-secret-token",
@@ -432,6 +528,16 @@
               }
             }
           },
+          "401": {
+            "description": "Неверный системный ключ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -443,31 +549,6 @@
             }
           }
         }
-      }
-    },
-    "/api/v1/auth/logout/": {
-      "post": {
-        "tags": [
-          "Аутентификация"
-        ],
-        "summary": "Выход из системы",
-        "description": "Выход пользователя из системы\nПри логауте токен добавляется в блэклист",
-        "operationId": "logout_api_v1_auth_logout__post",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
       }
     },
     "/api/v1/teams/{team_id}/": {
@@ -822,6 +903,57 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UserStatisticsRead"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/roles/": {
+      "get": {
+        "tags": [
+          "Пользователи"
+        ],
+        "summary": "Получить список всех ролей",
+        "description": "Получает список всех доступных ролей",
+        "operationId": "get_all_roles_api_v1_users_roles__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RoleForCodeDTO"
+                  },
+                  "type": "array",
+                  "title": "Response Get All Roles Api V1 Users Roles  Get"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Недостаточно прав для получения списка ролей",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Отсутствуют роли в БД, обратитесь к администратору сервиса",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
                 }
               }
             }
@@ -2554,6 +2686,19 @@
           "register_code"
         ],
         "title": "RegisterCode"
+      },
+      "RoleForCodeDTO": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "RoleForCodeDTO"
       },
       "RoleRead": {
         "properties": {

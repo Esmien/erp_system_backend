@@ -40,13 +40,36 @@ class DatabaseConfig(BaseModelConfig):
 class RedisConfig(BaseModelConfig):
     REDIS_HOST: str
     REDIS_PORT: int
-    KEY_OF_SYSTEM_TOKEN: str  # ключ в хранилище redis, по которому лежит системный токен
     REDIS_DB: int = 0
     CACHE_TTL: int = 3600
 
     @property
     def redis_url(self) -> str:
         return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
+
+
+class RedisKeys(BaseModelConfig):
+    KEY_OF_SYSTEM_TOKEN: str  # ключ в хранилище redis, по которому лежит системный токен
+
+    @staticmethod
+    def key_jwt_blacklist(jti: str) -> str:
+        return f"backend:jwt:blacklist:{jti}"
+
+    @staticmethod
+    def key_jwt_access(tg_id: int) -> str:
+        return f"backend:jwt:access:{tg_id}"
+
+    @staticmethod
+    def key_jwt_refresh(tg_id: int) -> str:
+        return f"backend:jwt:refresh:{tg_id}"
+
+    @staticmethod
+    def key_reg_code(code: str) -> str:
+        return f"backend:reg_code:{code}"
+
+    @staticmethod
+    def key_rbac_rule(role_id: int, business_element_name: str) -> str:
+        return f"backend:rbac:rule:{role_id}:{business_element_name}"
 
 
 class InviteCodeConfig(BaseModelConfig):
@@ -68,6 +91,7 @@ class SentryConfig(BaseModelConfig):
 class Settings(BaseModelConfig):
     db: DatabaseConfig = DatabaseConfig()
     redis: RedisConfig = RedisConfig()
+    redis_keys: RedisKeys = RedisKeys()
     inv_code: InviteCodeConfig = InviteCodeConfig()
     logger: LoggerConfig = LoggerConfig()
     security: SecurityConfig = SecurityConfig()

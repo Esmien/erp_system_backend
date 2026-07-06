@@ -15,6 +15,7 @@ from backend.api.v1.routers.calendar import router as calendar_router
 from backend.api.v1.routers.comments import router as comments_router
 from backend.api.v1.routers.evaluations import router as evaluations_router
 from backend.api.v1.routers.meetings import router as meetings_router
+from backend.api.v1.routers.register_code import router as reg_code_router
 from backend.api.v1.routers.tasks import router as tasks_router
 from backend.api.v1.routers.teams import router as teams_router
 from backend.api.v1.routers.users import router as users_router
@@ -75,17 +76,19 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+API_PREFIX = "/api/v1"
 
 # Подключаем роутеры
-app.include_router(router=auth_router, prefix="/api/v1")
-app.include_router(router=bot_router, prefix="/api/v1")
-app.include_router(router=teams_router, prefix="/api/v1")
-app.include_router(router=users_router, prefix="/api/v1")
-app.include_router(router=tasks_router, prefix="/api/v1")
-app.include_router(router=comments_router, prefix="/api/v1")
-app.include_router(router=evaluations_router, prefix="/api/v1")
-app.include_router(router=meetings_router, prefix="/api/v1")
-app.include_router(router=calendar_router, prefix="/api/v1")
+app.include_router(router=reg_code_router, prefix=API_PREFIX)
+app.include_router(router=auth_router, prefix=API_PREFIX)
+app.include_router(router=bot_router, prefix=API_PREFIX)
+app.include_router(router=teams_router, prefix=API_PREFIX)
+app.include_router(router=users_router, prefix=API_PREFIX)
+app.include_router(router=tasks_router, prefix=API_PREFIX)
+app.include_router(router=comments_router, prefix=API_PREFIX)
+app.include_router(router=evaluations_router, prefix=API_PREFIX)
+app.include_router(router=meetings_router, prefix=API_PREFIX)
+app.include_router(router=calendar_router, prefix=API_PREFIX)
 
 setup_exception_handlers(app=app)
 
