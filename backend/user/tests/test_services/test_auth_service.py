@@ -168,7 +168,7 @@ async def test_logout_success_adds_to_blacklist(mock_settings, mock_redis, auth_
     valid_token = jwt.encode(payload, TEST_SECRET, algorithm=TEST_ALGO)
 
     # 3. Вызываем тестируемый метод
-    await auth_service.logout(token=valid_token, redis=mock_redis)
+    await auth_service.logout(token=valid_token)
 
     # 4. Проверки
     mock_redis.setex.assert_called_once()
@@ -203,7 +203,7 @@ async def test_logout_invalid_token_ignored(mock_settings, mock_redis, auth_serv
     invalid_token = "some.invalid.jwt_token"
 
     # 2. Вызываем метод
-    await auth_service.logout(token=invalid_token, redis=mock_redis)
+    await auth_service.logout(token=invalid_token)
 
     # 3. Проверяем, что метод не упал с ошибкой и НЕ трогал Redis
     mock_redis.setex.assert_not_called()
