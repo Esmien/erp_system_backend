@@ -76,18 +76,19 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+API_PREFIX = "/api/v1"
 
 # Подключаем роутеры
-app.include_router(router=reg_code_router, prefix="/api/v1")
-app.include_router(router=auth_router, prefix="/api/v1")
-app.include_router(router=bot_router, prefix="/api/v1")
-app.include_router(router=teams_router, prefix="/api/v1")
-app.include_router(router=users_router, prefix="/api/v1")
-app.include_router(router=tasks_router, prefix="/api/v1")
-app.include_router(router=comments_router, prefix="/api/v1")
-app.include_router(router=evaluations_router, prefix="/api/v1")
-app.include_router(router=meetings_router, prefix="/api/v1")
-app.include_router(router=calendar_router, prefix="/api/v1")
+app.include_router(router=reg_code_router, prefix=API_PREFIX)
+app.include_router(router=auth_router, prefix=API_PREFIX)
+app.include_router(router=bot_router, prefix=API_PREFIX)
+app.include_router(router=teams_router, prefix=API_PREFIX)
+app.include_router(router=users_router, prefix=API_PREFIX)
+app.include_router(router=tasks_router, prefix=API_PREFIX)
+app.include_router(router=comments_router, prefix=API_PREFIX)
+app.include_router(router=evaluations_router, prefix=API_PREFIX)
+app.include_router(router=meetings_router, prefix=API_PREFIX)
+app.include_router(router=calendar_router, prefix=API_PREFIX)
 
 setup_exception_handlers(app=app)
 

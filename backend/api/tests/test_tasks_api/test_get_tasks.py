@@ -21,7 +21,7 @@ async def test_get_task_not_found(client):
     response_json = response.json()
 
     assert response.status_code == 404
-    assert response_json == {"detail": "Задача не найдена."}
+    assert response_json == {"detail": "Задача не найдена.", "status_code": 404}
 
 
 async def test_get_tasks_by_filters(client):

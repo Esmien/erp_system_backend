@@ -5,14 +5,14 @@ from backend.exceptions import RoleDoesNotExistError
 
 
 async def test_register_success(client, mock_redis, valid_data_for_register, success_register_response):
-    mock_redis.get.return_value = "000000"
+    mock_redis.get.return_value = "user"
     response = await client.post("/api/v1/auth/register/", json=valid_data_for_register)
     assert response.status_code == 201
     assert response.json() == success_register_response
 
 
 async def test_register_already_exists(client, mock_redis, valid_data_for_register, reg_user_already_exists_response):
-    mock_redis.get.return_value = "000000"
+    mock_redis.get.return_value = "user"
     await client.post("/api/v1/auth/register/", json=valid_data_for_register)
     response = await client.post("/api/v1/auth/register/", json=valid_data_for_register)
 
@@ -21,7 +21,7 @@ async def test_register_already_exists(client, mock_redis, valid_data_for_regist
 
 
 class FakeRegisterService:
-    def register_user(self, user_in, redis):
+    def register_user(self, user_in):
         raise RoleDoesNotExistError("Запрашиваемая роль не найдена, обратитесь в поддержку")
 
 
@@ -46,7 +46,7 @@ async def test_register_role_not_exists(client, valid_data_for_register, reg_rol
 async def test_register_with_mismatch_passwords(
     client, mock_redis, data_for_register_with_mismatch_passwords, mismatch_passwords_response
 ):
-    mock_redis.get.return_value = "000000"
+    mock_redis.get.return_value = "user"
     response = await client.post("/api/v1/auth/register/", json=data_for_register_with_mismatch_passwords)
 
     assert response.status_code == 400

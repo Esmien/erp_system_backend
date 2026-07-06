@@ -1,5 +1,7 @@
 import pytest
 
+from backend.core.utils.error_schemas import ErrorResponseSchema
+
 
 @pytest.fixture
 def response_get_team_by_id():
@@ -29,7 +31,8 @@ def request_duplicate():
 
 @pytest.fixture
 def response_data_duplicate():
-    return {"detail": "Команда с таким названием уже существует"}
+    content = ErrorResponseSchema(detail="Команда с таким названием уже существует", status_code=400)
+    return content.model_dump()
 
 
 @pytest.fixture
@@ -49,9 +52,11 @@ def join_team_success_response():
 
 @pytest.fixture
 def join_team_already_exists_response():
-    return {"detail": "Вы уже состоите в команде"}
+    content = ErrorResponseSchema(detail="Вы уже состоите в команде", status_code=400)
+    return content.model_dump()
 
 
 @pytest.fixture
 def join_team_wrong_code_response():
-    return {"detail": "Команда с таким кодом не найдена"}
+    content = ErrorResponseSchema(detail="Команда с таким кодом не найдена", status_code=404)
+    return content.model_dump()

@@ -1,5 +1,7 @@
 import pytest
 
+from backend.core.utils.error_schemas import ErrorResponseSchema
+
 
 @pytest.fixture
 def base_user_data():
@@ -48,14 +50,17 @@ def success_register_response(base_user_data):
 
 @pytest.fixture
 def reg_user_already_exists_response():
-    return {"detail": "Пользователь с таким email уже зарегистрирован!"}
+    content = ErrorResponseSchema(detail="Пользователь с таким email уже зарегистрирован!", status_code=400)
+    return content.model_dump()
 
 
 @pytest.fixture
 def reg_role_not_exists_response():
-    return {"detail": "Запрашиваемая роль не найдена, обратитесь в поддержку"}
+    content = ErrorResponseSchema(detail="Запрашиваемая роль не найдена, обратитесь в поддержку", status_code=500)
+    return content.model_dump()
 
 
 @pytest.fixture
 def mismatch_passwords_response():
-    return {"detail": "Пароли не совпадают!"}
+    content = ErrorResponseSchema(detail="Пароли не совпадают!", status_code=400)
+    return content.model_dump()
