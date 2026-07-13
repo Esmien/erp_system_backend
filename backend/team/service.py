@@ -146,7 +146,11 @@ class TeamService(BaseService[TeamWithMembersRead]):
             logger.info(f"Инвайт код {invite_code} не найден.")
             raise TeamDoesNotExistError("Команда с таким кодом не найдена")
 
-        await self.repository.add_user_to_team(user_id=user.id, team_id=team.id)
+        is_added = await self.repository.add_user_to_team(user_id=user.id, team_id=team.id)
+
+        if not is_added:
+            raise UserAlreadyInTeamError("Вы уже состоите в команде")
+
         await self.uow.commit()
 
         logger.info(f"Пользователь ID: {user.id} добавлен в команду ID: {team.id}")

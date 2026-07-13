@@ -101,10 +101,10 @@ class TeamRepository(BaseRepository[Team, TeamWithMembersRead]):
         user = await self._get_obj_model_by_id(class_=User, obj_id=user_id, for_update=True)
         team = await self._get_obj_model_by_id(class_=Team, obj_id=team_id)
 
-        if not user:
+        if not all([user, team]):
             return False
 
-        if not team:
+        if user.team_id is not None:
             return False
 
         user.team_id = team_id
