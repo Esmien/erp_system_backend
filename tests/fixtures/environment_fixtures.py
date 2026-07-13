@@ -4,14 +4,18 @@ from unittest.mock import AsyncMock, MagicMock
 import httpx
 import pytest
 from httpx import ASGITransport
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from backend.api.dependencies.pagination import PaginationParams
 from backend.api.dependencies.permissions import get_current_user
 from backend.api.dependencies.uow import get_uow
 from backend.core.database.redis import get_redis
 from backend.core.uow import IUnitOfWork
-from tests.fixtures.environment_setup import TestUnitOfWork, fixture_async_session_maker, override_get_admin_user
+from tests.fixtures.environment_setup import (
+    TestUnitOfWork,
+    fixture_engine,
+    override_get_admin_user,
+)
 
 
 @pytest.fixture
@@ -21,10 +25,30 @@ def mock_redis():
     return mock
 
 
-@pytest.fixture
+@pytest.fixture(scope="function")
 async def db_session():
-    async with fixture_async_session_maker() as session:
-        yield session
+    """
+    Создает изолированную сессию для теста.
+    Все изменения откатятся после завершения теста.
+    """
+    async with fixture_engine.connect() as conn:
+        # Начинаем корневую транзакцию
+        transaction = await conn.begin()
+
+        # Создаем sessionmaker, жестко привязанный к этому соединению.
+        # join_transaction_mode="create_savepoint" говорит Алхимии:
+        # "Если внутри кода кто-то вызовет session.begin() или session.commit(),
+        # не трогай главную транзакцию, а делай SAVEPOINT".
+        TestSessionMaker = async_sessionmaker(
+            bind=conn, expire_on_commit=False, join_transaction_mode="create_savepoint"
+        )
+
+        async with TestSessionMaker() as session:
+            yield session
+
+        # Тест завершен. Жестко откатываем ВСЁ, что наделал тест,
+        # возвращая базу к состоянию после prepare_db_and_data
+        await transaction.rollback()
 
 
 @pytest.fixture
