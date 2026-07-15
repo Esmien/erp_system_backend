@@ -1,9 +1,9 @@
 from fastapi import APIRouter, status
 
+from backend.auth.schemas import Token
 from backend.bot.api.dependencies import BotAuthServiceDepends, BotSecretHeader
 from backend.bot.schemas import UserTelegramLink, UserTelegramLogin, UserTelegramUnlink
 from backend.core.utils.error_schemas import ErrorResponseSchema
-from backend.user.schemas import Token
 
 router = APIRouter(prefix="/telegram", tags=["Telegram BOT"])
 

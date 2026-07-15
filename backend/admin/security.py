@@ -3,11 +3,11 @@ from fastapi import Request
 from jwt.exceptions import PyJWTError
 from sqladmin.authentication import AuthenticationBackend
 
+from backend.auth.service import AuthService
 from backend.core.config import settings
 from backend.core.enums import RoleName
 from backend.core.uow import UnitOfWork
 from backend.exceptions import BadCredentialsError
-from backend.user.service import AuthService
 
 
 class AdminAuth(AuthenticationBackend):

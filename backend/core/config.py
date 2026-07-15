@@ -48,6 +48,17 @@ class RedisConfig(BaseModelConfig):
         return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
 
 
+class RabbitMQConfig(BaseModelConfig):
+    RABBITMQ_USER: str
+    RABBITMQ_PASSWORD: str
+    RABBITMQ_HOST: str
+    RABBITMQ_PORT: int
+
+    @property
+    def rabbitmq_url(self) -> str:
+        return f"amqp://{self.RABBITMQ_USER}:{self.RABBITMQ_PASSWORD}@{self.RABBITMQ_HOST}:{self.RABBITMQ_PORT}/"
+
+
 class RedisKeys(BaseModelConfig):
     KEY_OF_SYSTEM_TOKEN: str  # ключ в хранилище redis, по которому лежит системный токен
 
@@ -91,6 +102,7 @@ class SentryConfig(BaseModelConfig):
 class Settings(BaseModelConfig):
     db: DatabaseConfig = DatabaseConfig()
     redis: RedisConfig = RedisConfig()
+    rabbitmq: RabbitMQConfig = RabbitMQConfig()
     redis_keys: RedisKeys = RedisKeys()
     inv_code: InviteCodeConfig = InviteCodeConfig()
     logger: LoggerConfig = LoggerConfig()

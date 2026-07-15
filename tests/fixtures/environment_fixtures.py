@@ -1,5 +1,5 @@
 from collections.abc import AsyncGenerator
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
 import pytest
@@ -7,15 +7,25 @@ from httpx import ASGITransport
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from backend.api.dependencies.pagination import PaginationParams
-from backend.api.dependencies.permissions import get_current_user
 from backend.api.dependencies.uow import get_uow
 from backend.core.database.redis import get_redis
 from backend.core.uow import IUnitOfWork
+from backend.rbac.api.permissions_dependencies import get_current_user
 from tests.fixtures.environment_setup import (
     TestUnitOfWork,
     fixture_engine,
     override_get_admin_user,
 )
+
+
+@pytest.fixture(autouse=True)
+def mock_audit_task():
+    """
+    Автоматически отключает отправку задачи AuditLog в RabbitMQ во время тестов.
+    """
+    # Указываем точный путь импорта до задачи, которую нужно заглушить
+    with patch("backend.core.tasks_queue.audit.log_audit_action.kiq", new_callable=AsyncMock) as mock_kiq:
+        yield mock_kiq
 
 
 @pytest.fixture

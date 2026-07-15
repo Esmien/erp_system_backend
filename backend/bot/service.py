@@ -1,11 +1,11 @@
 from loguru import logger
 from redis.asyncio import Redis
 
+from backend.auth.service import AuthService
 from backend.core.config import settings
 from backend.core.uow import IUnitOfWork
 from backend.exceptions import BadCredentialsError, UnexpectedError, UserNotActiveError
 from backend.user.schemas import UserDTO
-from backend.user.service import AuthService
 
 
 class BotAuthService:
