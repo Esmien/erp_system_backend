@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware import Middleware
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
+from prometheus_fastapi_instrumentator import Instrumentator
 from sqladmin import Admin
 
 from backend.admin.security import AdminAuth
@@ -77,6 +78,8 @@ app = FastAPI(
 )
 
 API_PREFIX = "/api/v1"
+
+Instrumentator().instrument(app).expose(app)
 
 # Подключаем роутеры
 app.include_router(router=reg_code_router, prefix=API_PREFIX)
