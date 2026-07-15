@@ -86,7 +86,7 @@ app = FastAPI(
 
 API_PREFIX = "/api/v1"
 
-Instrumentator().instrument(app).expose(app)
+Instrumentator().instrument(app=app).expose(app=app, tags=["Мониторинг"])
 
 # Подключаем роутеры
 app.include_router(router=reg_code_router, prefix=API_PREFIX)
