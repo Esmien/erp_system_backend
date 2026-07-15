@@ -8,7 +8,7 @@ class BaseModelConfig(BaseSettings):
 
 class LoggerConfig(BaseModelConfig):
     LOG_LEVEL: str = "DEBUG"
-    LOG_SERIALIZE: bool = False  # Если True, будет писать в JSON
+    LOG_SERIALIZE: bool = True  # Если True, будет писать в JSON
 
 
 class SecurityConfig(BaseModelConfig):

@@ -29,9 +29,15 @@ services:
         condition: service_completed_successfully
     volumes:
       - ../:/app
+      - erp_logs_volume:/app/logs
     command: uvicorn backend.api.main:app --host ${UVICORN_HOST} --port "${UVICORN_PORT}" --reload
 
 networks:
   default:
     name: erp_shared_network
     external: true
+
+volumes:
+  erp_logs_volume:
+    external: true
+    name: erp_logs_volume

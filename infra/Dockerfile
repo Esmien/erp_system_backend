@@ -12,6 +12,10 @@ RUN apt-get update && apt-get install -y gcc libffi-dev make\
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
+# Создаем группу и пользователя с UID/GID 1000.
+RUN groupadd -g 1000 appgroup \
+    && useradd -u 1000 -g appgroup -d /app -s /bin/bash appuser
+
 # Копируем зависимости
 COPY pyproject.toml poetry.lock ./
 
@@ -23,6 +27,10 @@ COPY backend/ ./backend/
 COPY infra/entrypoint.sh ./entrypoint.sh
 
 # Делаем скрипт исполняемым
-RUN chmod +x ./entrypoint.sh
+RUN mkdir -p /app/logs \
+    && chown -R appuser:appgroup /app \
+    && chmod +x ./entrypoint.sh
+
+USER appuser
 
 CMD ["uvicorn", "backend.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
