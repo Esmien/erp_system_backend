@@ -11,11 +11,11 @@ from sqladmin import Admin
 from backend.admin.security import AdminAuth
 from backend.admin.views import TaskAdmin, TeamAdmin, UserAdmin
 from backend.api.exception_handlers import setup_exception_handlers
-from backend.auth.api.v1.auth import router as auth_router
-from backend.auth.api.v1.register_code import router as reg_code_router
+from backend.auth.api.v1.auth_api import router as auth_router
+from backend.auth.api.v1.register_code_api import router as reg_code_router
 from backend.bot.api.bot_auth_router import router as bot_router
-from backend.calendar.api.v1.calendar import router as calendar_router
-from backend.comment.api.v1.comments_endpoint import router as comments_router
+from backend.calendar.api.v1.calendar_api import router as calendar_router
+from backend.comment.api.v1.comments_api import router as comments_router
 from backend.core.config import settings
 from backend.core.database.engine import engine
 from backend.core.database.redis import close_redis

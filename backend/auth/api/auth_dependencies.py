@@ -4,8 +4,8 @@ from fastapi import Depends
 
 from backend.api.dependencies.redis import RedisDepends
 from backend.api.dependencies.uow import UowDepends
+from backend.auth.service import AuthService, RegisterService
 from backend.rbac.api.rbac_dependencies import RbacServiceDepends
-from backend.user.service import AuthService, RegisterService
 
 
 def get_auth_service(uow: UowDepends, redis: RedisDepends) -> AuthService:

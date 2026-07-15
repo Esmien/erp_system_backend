@@ -1,6 +1,52 @@
+import asyncio
+
 import pytest
 
+from backend.auth.repository import RegisterRepository
+from backend.auth.schemas import UserRegister
+from backend.auth.service import RegisterService
+from backend.core.security import get_password_hash
 from backend.core.utils.error_schemas import ErrorResponseSchema
+from backend.user.schemas import UserDTO
+
+HASHED_PASSWORD = asyncio.run(get_password_hash("test"))
+
+
+@pytest.fixture
+def register_repo(db_session):
+    return RegisterRepository(session=db_session)
+
+
+@pytest.fixture
+def register_service(mock_uow, mock_rbac_service, mock_redis):
+    return RegisterService(uow=mock_uow, rbac_service=mock_rbac_service, redis=mock_redis)
+
+
+@pytest.fixture
+def user_in():
+    return UserRegister(
+        email="test@test.com",
+        password="test",
+        repeat_password="test",
+        name="Test",
+        surname="Test_1",
+        last_name="Test_2",
+        register_code="000000",
+    )
+
+
+@pytest.fixture
+def user_out():
+    return UserDTO(
+        id=5,
+        email="test@test.com",
+        hashed_password=HASHED_PASSWORD,
+        name="Test",
+        surname="Test_1",
+        last_name="Test_2",
+        role_id=1,
+        is_active=True,
+    )
 
 
 @pytest.fixture

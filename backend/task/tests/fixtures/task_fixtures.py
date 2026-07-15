@@ -65,3 +65,22 @@ def sample_task():
         executor_id=None,
         created_at=datetime.now(UTC),
     )
+
+
+@pytest.fixture
+def task_in_json():
+    return {
+        "title": "Настроить CI/CD",
+        "description": "Дописать Github Actions для деплоя",
+        "expire": "2026-12-31",
+    }
+
+
+@pytest.fixture
+def closed_task_json(task_in_json):
+    return task_in_json | {"status": TaskStatus.DONE}
+
+
+@pytest.fixture
+def open_task_json(task_in_json):
+    return task_in_json | {"status": TaskStatus.OPEN}

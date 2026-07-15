@@ -4,8 +4,8 @@ from fastapi import Depends, Header
 
 from backend.api.dependencies.redis import RedisDepends
 from backend.api.dependencies.uow import UowDepends
+from backend.auth.service import AuthService
 from backend.bot.service import BotAuthService
-from backend.user.service import AuthService
 
 
 def get_bot_auth_service(uow: UowDepends, redis: RedisDepends) -> BotAuthService:

@@ -4,6 +4,7 @@ from unittest.mock import patch
 import jwt
 import pytest
 
+from backend.auth.schemas import Token
 from backend.exceptions import (
     BadCredentialsError,
     InvalidPasswordError,
@@ -12,7 +13,7 @@ from backend.exceptions import (
     UserNotActiveError,
 )
 from backend.user.models import User
-from backend.user.schemas import Token, UserDTO
+from backend.user.schemas import UserDTO
 
 
 @pytest.mark.parametrize(
@@ -26,7 +27,7 @@ from backend.user.schemas import Token, UserDTO
         ("invalid_username@user.com", "any_password", BadCredentialsError),
     ],
 )
-@patch("backend.user.service.verify_password")
+@patch("backend.auth.service.verify_password")
 async def test_auth_check_creds(mock_verify_password, mock_uow, auth_service, email, plain_password, exc):
     testing_user = None
 
@@ -147,7 +148,7 @@ TEST_SECRET = "super_secret_test_key_that_is_at_least_32_bytes_long"
 TEST_ALGO = "HS256"
 
 
-@patch("backend.user.service.settings")
+@patch("backend.auth.service.settings")
 async def test_logout_success_adds_to_blacklist(mock_settings, mock_redis, auth_service):
     """Тест: валидный токен успешно добавляется в Redis с правильным TTL"""
     # 1. Подготавливаем моки
@@ -193,7 +194,7 @@ async def test_logout_success_adds_to_blacklist(mock_settings, mock_redis, auth_
     assert 895 < called_ttl <= 900
 
 
-@patch("backend.user.service.settings")
+@patch("backend.auth.service.settings")
 async def test_logout_invalid_token_ignored(mock_settings, mock_redis, auth_service):
     """Тест: при попытке логаута с невалидным токеном Redis не вызывается"""
     # 1. Подготавливаем моки

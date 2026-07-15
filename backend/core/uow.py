@@ -3,6 +3,7 @@ from types import TracebackType
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.auth.repository import AuthRepository, RegisterRepository
 from backend.comment.repository import CommentRepository
 from backend.core.database.engine import async_session_maker
 from backend.evaluation.repository import EvaluationRepository
@@ -10,7 +11,7 @@ from backend.meeting.repository import MeetingRepository
 from backend.rbac.repository import RbacRepository
 from backend.task.repository import TaskRepository
 from backend.team.repository import TeamRepository
-from backend.user.repository import AuthRepository, RegisterRepository, UserRepository
+from backend.user.repository import UserRepository
 
 
 class IUnitOfWork(ABC):

@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 
-from backend.user.schemas import UserLogin
+from backend.auth.schemas import UserLogin
 
 
 class UserTelegramLogin(BaseModel):

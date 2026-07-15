@@ -5,15 +5,12 @@ from backend.auth.api.auth_dependencies import (
     AuthServiceDepends,
     RegisterServiceDepends,
 )
+from backend.auth.schemas import RefreshTokenRequest, Token, UserLogin, UserRegister
 from backend.core.utils.error_schemas import ErrorResponseSchema
 from backend.rbac.api.permissions_dependencies import CredentialsDepends, get_current_user
 from backend.user.schemas import (
-    RefreshTokenRequest,
-    Token,
     UserChangeStatus,
-    UserLogin,
     UserRead,
-    UserRegister,
 )
 
 router = APIRouter(prefix="/auth", tags=["Аутентификация"])

@@ -1,6 +1,6 @@
 from datetime import UTC, datetime, timedelta
 
-from backend.api.tests.test_meeting_api.utils import get_future_times
+from backend.meeting.tests.test_meeting_api.utils import get_future_times
 
 
 async def test_create_meeting_success(client):
