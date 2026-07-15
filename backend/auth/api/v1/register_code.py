@@ -1,9 +1,9 @@
 from fastapi import APIRouter, status
 from loguru import logger
 
-from backend.api.dependencies.permissions import CurrentUserDepends
-from backend.api.dependencies.reg_and_auth import RegisterServiceDepends
+from backend.auth.api.auth_dependencies import RegisterServiceDepends
 from backend.core.utils.error_schemas import ErrorResponseSchema
+from backend.rbac.api.permissions_dependencies import CurrentUserDepends
 from backend.user.schemas import RegisterCode, RoleForCodeDTO
 
 router = APIRouter(prefix="/register_code", tags=["Код регистрации"])

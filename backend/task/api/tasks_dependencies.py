@@ -2,9 +2,9 @@ from typing import Annotated, Literal
 
 from fastapi import Body, Depends, Query
 
-from backend.api.dependencies.rbac import RbacServiceDepends
 from backend.api.dependencies.uow import UowDepends
 from backend.core.enums import TaskStatus
+from backend.rbac.api.rbac_dependencies import RbacServiceDepends
 from backend.task.schemas import TaskChangeStatus, TaskCreate, TaskUpdate
 from backend.task.service import TaskService
 

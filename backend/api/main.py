@@ -11,21 +11,21 @@ from sqladmin import Admin
 from backend.admin.security import AdminAuth
 from backend.admin.views import TaskAdmin, TeamAdmin, UserAdmin
 from backend.api.exception_handlers import setup_exception_handlers
-from backend.api.v1.routers.auth import router as auth_router
-from backend.api.v1.routers.calendar import router as calendar_router
-from backend.api.v1.routers.comments import router as comments_router
-from backend.api.v1.routers.evaluations import router as evaluations_router
-from backend.api.v1.routers.meetings import router as meetings_router
-from backend.api.v1.routers.register_code import router as reg_code_router
-from backend.api.v1.routers.tasks import router as tasks_router
-from backend.api.v1.routers.teams import router as teams_router
-from backend.api.v1.routers.users import router as users_router
+from backend.auth.api.v1.auth import router as auth_router
+from backend.auth.api.v1.register_code import router as reg_code_router
 from backend.bot.api.bot_auth_router import router as bot_router
+from backend.calendar.api.v1.calendar import router as calendar_router
+from backend.comment.api.v1.comments_endpoint import router as comments_router
 from backend.core.config import settings
 from backend.core.database.engine import engine
 from backend.core.database.redis import close_redis
 from backend.core.logger import setup_logger
 from backend.core.tasks_queue.broker import broker
+from backend.evaluation.api.v1.evaluations_api import router as evaluations_router
+from backend.meeting.api.v1.meetings_api import router as meetings_router
+from backend.task.api.v1.tasks_api import router as tasks_router
+from backend.team.api.v1.teams_api import router as teams_router
+from backend.user.api.v1.users_api import router as users_router
 
 if settings.sentry_conf.ENABLED:
     sentry_sdk.init(

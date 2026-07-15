@@ -4,11 +4,11 @@ import jwt
 import pytest
 from fastapi import HTTPException
 
-from backend.api.dependencies.permissions import get_current_user
 from backend.exceptions import (
     UserDoesNotExistError,
     UserNotActiveError,
 )
+from backend.rbac.api.permissions_dependencies import get_current_user
 from backend.user.schemas import UserDTO
 
 # Секреты для тестов
@@ -24,7 +24,7 @@ TEST_ALGO = "HS256"
         (None, HTTPException),  # Невалидный токен (ошибка декодирования)
     ],
 )
-@patch("backend.api.dependencies.permissions.settings")
+@patch("backend.rbac.api.permissions_dependencies.settings")
 async def test_get_current_user(
     mock_settings, mock_creds, mock_redis, auth_service_mock, token_payload, expected_exception
 ):
@@ -61,7 +61,7 @@ async def test_get_current_user(
 
 
 @pytest.mark.parametrize("service_exception", [UserDoesNotExistError, UserNotActiveError])
-@patch("backend.api.dependencies.permissions.settings")
+@patch("backend.rbac.api.permissions_dependencies.settings")
 async def test_get_current_user_service_errors(
     mock_redis, mock_creds, mock_settings, auth_service_mock, valid_token, service_exception
 ):

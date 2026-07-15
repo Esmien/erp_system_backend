@@ -1,14 +1,14 @@
 from fastapi import APIRouter, Depends, status
 
-from backend.api.dependencies.meetings import (
+from backend.api.dependencies.pagination import Page, PaginationParamsDepends
+from backend.core.utils.error_schemas import ErrorResponseSchema
+from backend.meeting.api.meetings_dependencies import (
     MeetingCreateBody,
     MeetingServiceDepends,
     MeetingUpdateBody,
 )
-from backend.api.dependencies.pagination import Page, PaginationParamsDepends
-from backend.api.dependencies.permissions import CurrentUserDepends, get_current_user
-from backend.core.utils.error_schemas import ErrorResponseSchema
 from backend.meeting.schemas import MeetingReadWithParticipants
+from backend.rbac.api.permissions_dependencies import CurrentUserDepends, get_current_user
 
 router = APIRouter(
     prefix="/meetings",

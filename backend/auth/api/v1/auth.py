@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Depends, status
 from loguru import logger
 
-from backend.api.dependencies.permissions import CredentialsDepends, get_current_user
-from backend.api.dependencies.reg_and_auth import (
+from backend.auth.api.auth_dependencies import (
     AuthServiceDepends,
     RegisterServiceDepends,
 )
 from backend.core.utils.error_schemas import ErrorResponseSchema
+from backend.rbac.api.permissions_dependencies import CredentialsDepends, get_current_user
 from backend.user.schemas import (
     RefreshTokenRequest,
     Token,

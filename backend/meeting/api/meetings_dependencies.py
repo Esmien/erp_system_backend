@@ -2,10 +2,10 @@ from typing import Annotated
 
 from fastapi import Body, Depends
 
-from backend.api.dependencies.rbac import RbacServiceDepends
 from backend.api.dependencies.uow import UowDepends
 from backend.meeting.schemas import MeetingCreate, MeetingUpdate
 from backend.meeting.service import MeetingService
+from backend.rbac.api.rbac_dependencies import RbacServiceDepends
 
 
 def get_meeting_service(uow: UowDepends, rbac_service: RbacServiceDepends) -> MeetingService:

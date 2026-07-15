@@ -1,15 +1,15 @@
 from fastapi import APIRouter, Depends, status
 
-from backend.api.dependencies.permissions import (
+from backend.core.utils.error_schemas import ErrorResponseSchema
+from backend.rbac.api.permissions_dependencies import (
     CurrentUserDepends,
     get_current_user,
 )
-from backend.api.dependencies.teams import (
+from backend.team.api.teams_dependencies import (
     TeamCreateBody,
     TeamJoinBody,
     TeamServiceDepends,
 )
-from backend.core.utils.error_schemas import ErrorResponseSchema
 from backend.team.schemas import TeamRead, TeamWithMembersRead
 
 router = APIRouter(prefix="/teams", tags=["Команды"], dependencies=[Depends(get_current_user)])

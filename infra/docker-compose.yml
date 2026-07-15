@@ -47,7 +47,7 @@ services:
       - ../:/app
       - erp_logs_volume:/app/logs
     # Команда запуска воркера
-    command: taskiq worker backend.core.broker:broker backend.core.tasks_queue.audit
+    command: taskiq worker backend.core.tasks_queue.broker:broker backend.core.tasks_queue.audit
 
 networks:
   default:

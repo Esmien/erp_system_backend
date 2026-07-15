@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, status
 
-from backend.api.dependencies.calendar import CalendarServiceDepends, DateRangeDepends
-from backend.api.dependencies.permissions import CurrentUserDepends, get_current_user
+from backend.calendar.api.calendar_dependencies import CalendarServiceDepends, DateRangeDepends
 from backend.calendar.schemas import CalendarResponse
+from backend.rbac.api.permissions_dependencies import CurrentUserDepends, get_current_user
 
 router = APIRouter(
     prefix="/calendar",

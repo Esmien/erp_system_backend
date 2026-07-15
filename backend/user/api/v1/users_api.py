@@ -1,13 +1,13 @@
 from fastapi import APIRouter, Depends, status
 
-from backend.api.dependencies.evaluations import EvaluationServiceDepends
-from backend.api.dependencies.permissions import CurrentUserDepends, get_current_user
-from backend.api.dependencies.users import (
+from backend.core.utils.error_schemas import ErrorResponseSchema
+from backend.evaluation.api.evaluations_dependencies import EvaluationServiceDepends
+from backend.evaluation.schemas import UserStatisticsRead
+from backend.rbac.api.permissions_dependencies import CurrentUserDepends, get_current_user
+from backend.user.api.users_dependencies import (
     UserServiceDepends,
     UserUpdateBody,
 )
-from backend.core.utils.error_schemas import ErrorResponseSchema
-from backend.evaluation.schemas import UserStatisticsRead
 from backend.user.schemas import RoleForCodeDTO, UserRead
 
 router = APIRouter(

@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Depends, status
 
 from backend.api.dependencies.pagination import Page, PaginationParamsDepends
-from backend.api.dependencies.permissions import CurrentUserDepends, get_current_user
-from backend.api.dependencies.tasks import (
+from backend.core.tasks_queue.audit import log_audit_action
+from backend.core.utils.error_schemas import ErrorResponseSchema
+from backend.rbac.api.permissions_dependencies import CurrentUserDepends, get_current_user
+from backend.task.api.tasks_dependencies import (
     TaskChangeStatusBody,
     TaskCreateBody,
     TaskScopeFilterQuery,
@@ -10,8 +12,6 @@ from backend.api.dependencies.tasks import (
     TaskStatusFilterQuery,
     TaskUpdateBody,
 )
-from backend.core.tasks_queue.audit import log_audit_action
-from backend.core.utils.error_schemas import ErrorResponseSchema
 from backend.task.schemas import TaskRead
 
 router = APIRouter(

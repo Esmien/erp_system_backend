@@ -5,7 +5,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from backend.api.dependencies.redis import RedisDepends
-from backend.api.dependencies.reg_and_auth import AuthServiceDepends
+from backend.auth.api.auth_dependencies import AuthServiceDepends
 from backend.core.config import settings
 from backend.exceptions import (
     UserDoesNotExistError,

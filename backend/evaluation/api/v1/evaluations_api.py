@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Depends, status
 
-from backend.api.dependencies.evaluations import (
+from backend.core.utils.error_schemas import ErrorResponseSchema
+from backend.evaluation.api.evaluations_dependencies import (
     EvaluationCreateBody,
     EvaluationServiceDepends,
 )
-from backend.api.dependencies.permissions import CurrentUserDepends, get_current_user
-from backend.core.utils.error_schemas import ErrorResponseSchema
 from backend.evaluation.schemas import EvaluationRead
+from backend.rbac.api.permissions_dependencies import CurrentUserDepends, get_current_user
 
 router = APIRouter(
     prefix="/tasks/{task_id}/evaluation",

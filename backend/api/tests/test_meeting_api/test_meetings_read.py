@@ -1,5 +1,5 @@
-from backend.api.dependencies.permissions import get_current_user
 from backend.api.tests.test_meeting_api.utils import get_future_times
+from backend.rbac.api.permissions_dependencies import get_current_user
 from tests.fixtures.environment_setup import (
     override_get_regular_user,
 )

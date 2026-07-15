@@ -2,9 +2,9 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from backend.api.dependencies.rbac import RbacServiceDepends
 from backend.api.dependencies.redis import RedisDepends
 from backend.api.dependencies.uow import UowDepends
+from backend.rbac.api.rbac_dependencies import RbacServiceDepends
 from backend.user.service import AuthService, RegisterService
 
 

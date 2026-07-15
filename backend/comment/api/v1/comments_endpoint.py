@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, status
 
-from backend.api.dependencies.comments import CommentCreateBody, CommentServiceDepends
 from backend.api.dependencies.pagination import Page, PaginationParamsDepends
-from backend.api.dependencies.permissions import CurrentUserDepends, get_current_user
+from backend.comment.api.comments_dependencies import CommentCreateBody, CommentServiceDepends
 from backend.comment.schemas import CommentRead
 from backend.core.utils.error_schemas import ErrorResponseSchema
+from backend.rbac.api.permissions_dependencies import CurrentUserDepends, get_current_user
 
 router = APIRouter(
     prefix="/tasks/{task_id}/comments",

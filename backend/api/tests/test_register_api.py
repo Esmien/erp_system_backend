@@ -1,4 +1,4 @@
-from backend.api.dependencies.reg_and_auth import (
+from backend.auth.api.auth_dependencies import (
     get_register_service,
 )
 from backend.exceptions import RoleDoesNotExistError

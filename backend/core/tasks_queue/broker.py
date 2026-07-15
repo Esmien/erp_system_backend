@@ -13,10 +13,12 @@ broker = AioPikaBroker(url=RABBITMQ_URL)
 
 taskiq_fastapi.init(broker=broker, app_or_path="backend.api.main:app")
 
+
 # --- События для Воркера (taskiq worker) ---
 @broker.on_event(TaskiqEvents.WORKER_STARTUP)
 async def worker_startup(state: TaskiqState) -> None:
     logger.info("🐰 Воркер подключился к RabbitMQ и готов к работе")
+
 
 @broker.on_event(TaskiqEvents.WORKER_SHUTDOWN)
 async def worker_shutdown(state: TaskiqState) -> None:
@@ -27,6 +29,7 @@ async def worker_shutdown(state: TaskiqState) -> None:
 @broker.on_event(TaskiqEvents.CLIENT_STARTUP)
 async def client_startup(state: TaskiqState) -> None:
     logger.info("📤 FastAPI-клиент установил соединение с RabbitMQ")
+
 
 @broker.on_event(TaskiqEvents.CLIENT_SHUTDOWN)
 async def client_shutdown(state: TaskiqState) -> None:
