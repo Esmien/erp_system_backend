@@ -75,5 +75,9 @@ jobs:
           REDIS_HOST: redis
           REDIS_PORT: 6389
           KEY_OF_SYSTEM_TOKEN: ""
+          RABBITMQ_USER: admin
+          RABBITMQ_PASSWORD: admin
+          RABBITMQ_HOST: rabbitmq
+          RABBITMQ_PORT: 5672
         run: |
           poetry run pytest --asyncio-mode=auto -v
