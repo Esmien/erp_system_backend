@@ -25,6 +25,7 @@ from backend.core.config import settings
 from backend.core.database.engine import engine
 from backend.core.database.redis import close_redis
 from backend.core.logger import setup_logger
+from backend.core.tasks_queue.broker import broker
 
 if settings.sentry_conf.ENABLED:
     sentry_sdk.init(
@@ -53,7 +54,13 @@ async def lifespan(app: FastAPI):
     logger.info("API запущено, логгер сконфигурирован")
     logger.info(f"Подключение к БД: {settings.db.database_url.split('@')[-1]}")
 
+    if not broker.is_worker_process:
+        await broker.startup()
+
     yield
+
+    if not broker.is_worker_process:
+        await broker.shutdown()
 
     await close_redis()
     logger.info("🛑 Сервис остановлен")

@@ -16,6 +16,7 @@ from backend.user.repository import AuthRepository, RegisterRepository, UserRepo
 class IUnitOfWork(ABC):
     """Абстрактный интерфейс для Unit of Work"""
 
+    session: AsyncSession
     users: UserRepository
     auth: AuthRepository
     register: RegisterRepository

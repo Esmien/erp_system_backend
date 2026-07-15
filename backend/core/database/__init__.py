@@ -9,6 +9,7 @@ def load_all_models() -> tuple:
     Необходима для корректной работы маппера SQLAlchemy и резолва связей.
     """
     from backend.comment.models import Comment
+    from backend.core.tasks_queue.core_models import AuditLog
     from backend.evaluation.models import Evaluation
     from backend.meeting.models import Meeting
     from backend.rbac.models import AccessRule, BusinessElement
@@ -19,6 +20,7 @@ def load_all_models() -> tuple:
     logger.info("Реестр моделей SQLAlchemy успешно инициализирован")
 
     return (
+        AuditLog,
         User,
         Role,
         Team,

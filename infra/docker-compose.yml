@@ -32,6 +32,23 @@ services:
       - erp_logs_volume:/app/logs
     command: uvicorn backend.api.main:app --host ${UVICORN_HOST} --port "${UVICORN_PORT}" --reload
 
+  worker:
+    build:
+      context: ../
+      dockerfile: infra/Dockerfile
+    container_name: taskiq_worker
+    restart: always
+    user: "1000:1000" # Тот же юзер, что и у бэкенда
+    env_file:
+      - ../.env
+    depends_on:
+      - backend
+    volumes:
+      - ../:/app
+      - erp_logs_volume:/app/logs
+    # Команда запуска воркера
+    command: taskiq worker backend.core.broker:broker backend.core.tasks_queue.audit
+
 networks:
   default:
     name: erp_shared_network

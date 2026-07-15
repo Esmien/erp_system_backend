@@ -13,6 +13,7 @@ from backend.core.enums import RoleName
 # Для аннотаций во избежание циклических импортов
 if TYPE_CHECKING:
     from backend.comment.models import Comment
+    from backend.core.tasks_queue.core_models import AuditLog
     from backend.meeting.models import Meeting
     from backend.task.models import Task
     from backend.team.models import Team
@@ -67,6 +68,7 @@ class User(Base):
     participant_meetings: Mapped[list[Meeting]] = relationship(
         secondary="meeting_participants", back_populates="participants"
     )
+    logs: Mapped[list[AuditLog]] = relationship(back_populates="user")
 
     def __str__(self) -> str:
         # sqladmin будет дергать этот метод для отображения

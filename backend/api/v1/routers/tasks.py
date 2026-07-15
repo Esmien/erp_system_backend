@@ -10,6 +10,7 @@ from backend.api.dependencies.tasks import (
     TaskStatusFilterQuery,
     TaskUpdateBody,
 )
+from backend.core.tasks_queue.audit import log_audit_action
 from backend.core.utils.error_schemas import ErrorResponseSchema
 from backend.task.schemas import TaskRead
 
@@ -91,7 +92,13 @@ async def create_task(
     """
     Создает задачу
     """
-    return await service.create_task(task_in=task_in, author=current_user)
+    new_task = await service.create_task(task_in=task_in, author=current_user)
+
+    await log_audit_action.kiq(
+        user_id=current_user.id, action="task_created", entity_name="Task", entity_id=new_task.id
+    )
+
+    return new_task
 
 
 @router.patch(
